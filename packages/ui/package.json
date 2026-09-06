@@ -10,6 +10,9 @@
     "test": "echo \"no tests\" && exit 0",
     "lint": "echo \"no lint config\" && exit 0"
   },
+  "dependencies": {
+    "@medikiosk/shared-types": "workspace:*"
+  },
   "peerDependencies": {
     "react": "^18.3.1"
   },
