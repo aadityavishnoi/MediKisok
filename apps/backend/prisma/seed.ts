@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 import { IdentificationMethod } from '@medikiosk/shared-types';
 
 const prisma = new PrismaClient();
@@ -6,6 +7,9 @@ const prisma = new PrismaClient();
 // Stable IDs so re-running this script is idempotent - never creates duplicate demo rows.
 const DEMO_PATIENT_001_ID = 'demo-patient-001';
 const DEMO_RFID_CARD_001_ID = 'demo-rfid-card-001';
+const DEMO_DOCTOR_ID = 'demo-doctor-001';
+const DEMO_DOCTOR_EMAIL = 'demo.doctor@medikiosk.local';
+const DEMO_DOCTOR_PASSWORD = 'MediKiosk@123';
 
 async function main() {
   const patient001 = await prisma.patient.upsert({
