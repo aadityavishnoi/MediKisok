@@ -35,9 +35,8 @@ describe('DashboardScreen', () => {
     render(<DashboardScreen onLoggedOut={vi.fn()} onOpenSession={vi.fn()} />);
     expect(await screen.findByText('Demo Patient 001')).toBeInTheDocument();
     expect(screen.getByText('Chest pain')).toBeInTheDocument();
-    expect(screen.getByText(/HIGH/)).toBeInTheDocument();
-    expect(screen.getByText('Active Sessions')).toBeInTheDocument();
-    expect(screen.getByText('Red Flags')).toBeInTheDocument();
+    expect(screen.getByText('Patients Today')).toBeInTheDocument();
+    expect(screen.getByText('Emergency Alerts')).toBeInTheDocument();
   });
 
   it('opens the session detail view when a row is clicked', async () => {

@@ -400,6 +400,9 @@ importers:
       '@medikiosk/shared-types':
         specifier: workspace:*
         version: link:../shared-types
+      lucide-react:
+        specifier: ^0.451.0
+        version: 0.451.0(react@18.3.1)
       react:
         specifier: ^18.3.1
         version: 18.3.1

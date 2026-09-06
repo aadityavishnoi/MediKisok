@@ -195,6 +195,7 @@ export interface SessionDetailResponse {
   patient: Pick<Patient, 'id' | 'fullName' | 'dateOfBirth' | 'gender' | 'phone'>;
   consent: Pick<Consent, 'status' | 'language' | 'grantedAt'> | null;
   history: (ClinicalHistory & { answers: ClinicalAnswer[] }) | null;
+  summary?: AISummary | null;
   alerts: Alert[];
 }
 

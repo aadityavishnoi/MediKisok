@@ -11,7 +11,8 @@
     "lint": "eslint src"
   },
   "dependencies": {
-    "@medikiosk/shared-types": "workspace:*"
+    "@medikiosk/shared-types": "workspace:*",
+    "lucide-react": "^0.451.0"
   },
   "peerDependencies": {
     "react": "^18.3.1"
