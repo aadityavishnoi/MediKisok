@@ -7,6 +7,8 @@ import { rfidRouter } from './routes/rfid.js';
 import { sessionRouter } from './routes/session.js';
 import { consentRouter } from './routes/consent.js';
 import { historyRouter } from './routes/history.js';
+import { authRouter } from './routes/auth.js';
+import { doctorRouter } from './routes/doctor.js';
 
 export function createApp() {
   const app = express();
