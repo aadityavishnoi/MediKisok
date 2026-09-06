@@ -7,6 +7,19 @@ const colors = require('tailwindcss/colors');
 module.exports = {
   theme: {
     extend: {
+      fontFamily: {
+        sans: [
+          'Inter',
+          'ui-sans-serif',
+          'system-ui',
+          '-apple-system',
+          'Segoe UI',
+          'Roboto',
+          'Helvetica Neue',
+          'Arial',
+          'sans-serif',
+        ],
+      },
       colors: {
         // Deep clinical blue/indigo - primary actions, brand.
         primary: colors.indigo,
