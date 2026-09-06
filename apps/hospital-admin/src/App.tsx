@@ -7,180 +7,200 @@ import {
   FileBarChart,
   Settings,
   Users,
-  Clock,
-  AlertTriangle,
-  Activity,
+  Timer,
+  AlertOctagon,
+  Wifi,
   Search,
-  Filter,
-  RefreshCw,
-  CheckCircle2,
-  XCircle,
-  AlertCircle
+  Bell,
+  ChevronRight
 } from 'lucide-react';
-import { Sidebar, Topbar, StatCard } from '@medikiosk/ui';
 
 export default function App() {
-  const [nav, setNav] = useState('overview');
+  const [activeNav, setActiveNav] = useState('overview');
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [fleetSearch, setFleetSearch] = useState('');
 
-  const [departments] = useState([
-    { name: 'General Medicine', count: 42, avgWait: '12 min', maxCap: 50 },
-    { name: 'Cardiology', count: 28, avgWait: '18 min', maxCap: 35 },
-    { name: 'Neurology', count: 14, avgWait: '8 min', maxCap: 20 },
-    { name: 'Pediatrics', count: 22, avgWait: '10 min', maxCap: 30 },
-    { name: 'Orthopedics', count: 18, avgWait: '15 min', maxCap: 25 },
-  ]);
+  const depts = [
+    { name: 'Cardiology', val: 62 },
+    { name: 'General OPD', val: 84 },
+    { name: 'Orthopedics', val: 41 },
+    { name: 'Pediatrics', val: 55 },
+    { name: 'Radiology', val: 28 },
+  ];
 
-  const [doctors] = useState([
-    { name: 'Dr. Rajesh Sharma', dept: 'General Medicine', status: 'AVAILABLE', room: 'OPD 101' },
-    { name: 'Dr. Eleanor Pena', dept: 'Cardiology', status: 'IN_CONSULTATION', room: 'OPD 304' },
-    { name: 'Dr. Albert Flores', dept: 'Neurology', status: 'AVAILABLE', room: 'OPD 202' },
-    { name: 'Dr. Jane Cooper', dept: 'Pediatrics', status: 'OFF_DUTY', room: 'OPD 105' },
-    { name: 'Dr. Rohan Mehta', dept: 'Cardiology', status: 'IN_CONSULTATION', room: 'OPD 305' },
-  ]);
+  const docs = [
+    { name: 'Dr. Rohan Mehta', dept: 'Cardiology', status: 'Available', badge: 'bg-emerald-50 text-emerald-700 font-semibold' },
+    { name: 'Dr. Kavita Nair', dept: 'Pediatrics', status: 'In Consultation', badge: 'bg-blue-50 text-blue-900 font-semibold' },
+    { name: 'Dr. Sameer Joshi', dept: 'Orthopedics', status: 'Off Duty', badge: 'bg-slate-100 text-slate-500 font-semibold' },
+    { name: 'Dr. Anjali Rao', dept: 'Radiology', status: 'Available', badge: 'bg-emerald-50 text-emerald-700 font-semibold' },
+  ];
 
-  const [fleet] = useState([
-    { code: 'KIOSK-DELHI-001', location: 'Building A - Main Entrance', firmware: 'v2.4.1-prod', heartbeat: '5s ago', status: 'ONLINE' },
-    { code: 'KIOSK-DELHI-002', location: 'Building A - OPD Waiting Area', firmware: 'v2.4.1-prod', heartbeat: '12s ago', status: 'ONLINE' },
-    { code: 'KIOSK-DELHI-003', location: 'Emergency Triage Room 1', firmware: 'v2.3.9-patch', heartbeat: '2m ago', status: 'DEGRADED' },
-    { code: 'READER-NFC-0104', location: 'Registration Counter 3', firmware: 'v1.0.4-esp', heartbeat: '3s ago', status: 'ONLINE' },
-    { code: 'KIOSK-DELHI-004', location: 'Cardiology Wing Corridor', firmware: 'v2.4.0-prod', heartbeat: '45m ago', status: 'OFFLINE' },
-  ]);
+  const fleet = [
+    { code: 'KSK-014', location: 'Main Lobby', firmware: 'v2.3.1', heartbeat: '12s ago', status: 'Online', badge: 'bg-emerald-50 text-emerald-700', dot: 'bg-emerald-500' },
+    { code: 'KSK-015', location: 'Cardiology Wing', firmware: 'v2.3.1', heartbeat: '8s ago', status: 'Online', badge: 'bg-emerald-50 text-emerald-700', dot: 'bg-emerald-500' },
+    { code: 'KSK-016', location: 'OPD Block B', firmware: 'v2.2.9', heartbeat: '2m ago', status: 'Degraded', badge: 'bg-amber-50 text-amber-700', dot: 'bg-amber-500' },
+    { code: 'KSK-017', location: 'Emergency Entrance', firmware: 'v2.3.1', heartbeat: '—', status: 'Offline', badge: 'bg-red-50 text-red-700', dot: 'bg-red-500' },
+  ];
 
-  const filteredFleet = fleet.filter(item => {
-    const matchesStatus = statusFilter === 'ALL' || item.status === statusFilter;
-    const matchesSearch = item.code.toLowerCase().includes(search.toLowerCase()) || item.location.toLowerCase().includes(search.toLowerCase());
-    return matchesStatus && matchesSearch;
-  });
+  const filteredFleet = fleet.filter(item =>
+    item.code.toLowerCase().includes(fleetSearch.toLowerCase()) ||
+    item.location.toLowerCase().includes(fleetSearch.toLowerCase())
+  );
 
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex selection:bg-blue-600 selection:text-white">
       {/* Sidebar */}
-      <Sidebar
-        activeKey={nav}
-        onNavigate={setNav}
-        items={[
-          { key: 'overview', label: 'Overview', icon: <LayoutDashboard size={18} /> },
-          { key: 'departments', label: 'Departments', icon: <Building2 size={18} /> },
-          { key: 'doctors', label: 'Doctor Roster', icon: <Stethoscope size={18} /> },
-          { key: 'fleet', label: 'Hardware Fleet', icon: <HardDrive size={18} /> },
-          { key: 'reports', label: 'Analytics Reports', icon: <FileBarChart size={18} /> },
-          { key: 'settings', label: 'Settings', icon: <Settings size={18} /> },
-        ]}
-      />
+      <aside className="w-60 h-screen sticky top-0 bg-white border-r border-slate-200 flex flex-col shrink-0">
+        <div className="px-5 py-6 flex items-center gap-3 border-b border-slate-100">
+          <div className="w-9 h-9 rounded-xl bg-blue-500 flex items-center justify-center text-white font-extrabold text-lg shadow-sm">
+            M
+          </div>
+          <div>
+            <div className="font-extrabold text-slate-900 leading-none text-base font-display">MediCore AI</div>
+            <div className="text-xs text-slate-400 leading-none mt-1">Hospital Admin</div>
+          </div>
+        </div>
+
+        <nav className="flex-1 px-3 py-4 space-y-1 text-sm font-medium">
+          {[
+            { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+            { id: 'departments', label: 'Departments', icon: Building2 },
+            { id: 'doctors', label: 'Doctors', icon: Stethoscope },
+            { id: 'fleet', label: 'Hardware Fleet', icon: HardDrive },
+            { id: 'reports', label: 'Reports', icon: FileBarChart },
+            { id: 'settings', label: 'Settings', icon: Settings },
+          ].map((item) => {
+            const Icon = item.icon;
+            const active = activeNav === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveNav(item.id)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                  active
+                    ? 'bg-blue-500 text-white font-bold shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <Icon size={18} />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </aside>
 
       {/* Main Container */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <Topbar
-          title="MediKiosk"
-          subtitle="Hospital Operations & Facility Control"
-          search={search}
-          onSearchChange={setSearch}
-          user={{ name: 'Facility Admin', avatar: '' }}
-        />
-
-        <main className="p-6 space-y-6 max-w-7xl mx-auto w-full">
-          {/* Top 4 Executive Stat Cards */}
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <StatCard
-              label="Intake Volume Today"
-              value={412}
-              delta="↑ 14% vs yesterday"
-              deltaType="positive"
-              icon={<Users size={20} />}
-              iconBg="bg-blue-100 text-blue-700"
-            />
-            <StatCard
-              label="Avg Intake Time"
-              value="3.4 min"
-              delta="Target: < 5 min"
-              deltaType="positive"
-              icon={<Clock size={20} />}
-              iconBg="bg-emerald-100 text-emerald-700"
-            />
-            <StatCard
-              label="Red Flags Today"
-              value={3}
-              delta="Immediate Triage"
-              deltaType="negative"
-              icon={<AlertTriangle size={20} />}
-              iconBg="bg-red-100 text-red-700"
-            />
-            <StatCard
-              label="Reader Uptime %"
-              value="99.8%"
-              delta="Hardware Nominal"
-              deltaType="positive"
-              icon={<Activity size={20} />}
-              iconBg="bg-indigo-100 text-indigo-700"
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Topbar */}
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-10">
+          <div className="w-96 max-w-full relative">
+            <Search size={16} className="absolute left-3 top-3 text-slate-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              placeholder="Search departments, kiosks..."
             />
           </div>
 
-          {/* 2-Column Row: Department Queue Load (Left 7 cols) & Doctor Availability (Right 5 cols) */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-            {/* Left 7 Cols: Horizontal Bar Chart - Department Queue Load */}
-            <div className="lg:col-span-7 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-bold text-slate-900">Department Queue Load</h2>
-                  <p className="text-xs text-slate-500">Live OPD intake volume vs max facility capacity</p>
-                </div>
-                <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">Real-time Feed</span>
+          <div className="flex items-center gap-4">
+            <button type="button" className="w-9 h-9 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-colors">
+              <Bell size={18} />
+            </button>
+            <div className="flex items-center gap-3 border-l border-slate-200 pl-4">
+              <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-900 text-xs">
+                S
               </div>
+              <div className="text-sm">
+                <div className="font-semibold leading-none text-slate-900">Sunita Rao</div>
+                <div className="text-xs text-slate-400 leading-none mt-1">Facility Manager</div>
+              </div>
+            </div>
+          </div>
+        </header>
 
+        {/* Dashboard Body */}
+        <main className="p-6 space-y-5 max-w-7xl mx-auto w-full">
+          {/* Top 4 Stat Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+              <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 mb-3">
+                <Users size={20} />
+              </div>
+              <div className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Intake Volume Today</div>
+              <div className="text-3xl font-extrabold text-slate-900 mt-1 font-display">318</div>
+              <div className="text-xs text-emerald-600 font-semibold mt-1">↑ 9% from yesterday</div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+              <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 mb-3">
+                <Timer size={20} />
+              </div>
+              <div className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Avg Intake Time</div>
+              <div className="text-3xl font-extrabold text-slate-900 mt-1 font-display">6.4<span className="text-lg">m</span></div>
+              <div className="text-xs text-red-600 font-semibold mt-1">↑ 1.1m from yesterday</div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+              <div className="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center text-red-600 mb-3">
+                <AlertOctagon size={20} />
+              </div>
+              <div className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Red Flags Today</div>
+              <div className="text-3xl font-extrabold text-slate-900 mt-1 font-display">5</div>
+              <div className="text-xs text-slate-400 font-semibold mt-1">Same as yesterday</div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+              <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 mb-3">
+                <Wifi size={20} />
+              </div>
+              <div className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Reader Uptime</div>
+              <div className="text-3xl font-extrabold text-slate-900 mt-1 font-display">99.2%</div>
+              <div className="text-xs text-emerald-600 font-semibold mt-1">↑ 0.4% from yesterday</div>
+            </div>
+          </div>
+
+          {/* 2-Column Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            {/* Department Queue Load (Left 7 cols) */}
+            <div className="lg:col-span-7 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+              <h2 className="font-bold text-base mb-4 text-slate-900 font-display">Department Queue Load</h2>
               <div className="space-y-4">
-                {departments.map((dept) => {
-                  const pct = Math.round((dept.count / dept.maxCap) * 100);
-                  return (
-                    <div key={dept.name} className="space-y-1.5">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-bold text-slate-800">{dept.name}</span>
-                        <div className="flex items-center gap-3">
-                          <span className="text-slate-500 font-medium">{dept.count} in queue</span>
-                          <span className="text-slate-400 font-mono">Avg Wait: {dept.avgWait}</span>
-                        </div>
-                      </div>
-                      <div className="w-full h-3.5 bg-slate-100 rounded-full overflow-hidden flex">
-                        <div
-                          className="h-full bg-blue-600 rounded-full transition-all duration-500"
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
+                {depts.map((d) => (
+                  <div key={d.name} className="space-y-1">
+                    <div className="flex justify-between text-xs font-semibold">
+                      <span className="text-slate-700">{d.name}</span>
+                      <span className="text-slate-400 font-medium">{d.val} in queue</span>
                     </div>
-                  );
-                })}
+                    <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                        style={{ width: `${d.val}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Right 5 Cols: Doctor Availability List */}
-            <div className="lg:col-span-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-bold text-slate-900">Doctor Availability</h2>
-                  <p className="text-xs text-slate-500">Active clinician status & room assignment</p>
-                </div>
-                <span className="text-xs font-semibold text-slate-400">{doctors.length} Roster</span>
-              </div>
-
+            {/* Doctor Availability (Right 5 cols) */}
+            <div className="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+              <h2 className="font-bold text-base mb-4 text-slate-900 font-display">Doctor Availability</h2>
               <div className="space-y-3">
-                {doctors.map((doc) => (
+                {docs.map((doc) => (
                   <div key={doc.name} className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-xs">
-                        {doc.name.split(' ').map(n => n[0]).join('')}
+                      <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center font-bold text-blue-900 text-xs">
+                        {doc.name.split(' ').map((n) => n[0]).slice(-2).join('')}
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-slate-900">{doc.name}</p>
-                        <p className="text-[11px] text-slate-400">{doc.dept} • {doc.room}</p>
+                        <div className="text-sm font-semibold text-slate-900">{doc.name}</div>
+                        <div className="text-xs text-slate-400">{doc.dept}</div>
                       </div>
                     </div>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
-                      doc.status === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-700' :
-                      doc.status === 'IN_CONSULTATION' ? 'bg-blue-50 text-blue-700' :
-                      'bg-slate-100 text-slate-500'
-                    }`}>
-                      {doc.status === 'AVAILABLE' ? 'Available' : doc.status === 'IN_CONSULTATION' ? 'In Consult' : 'Off Duty'}
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs ${doc.badge}`}>
+                      {doc.status}
                     </span>
                   </div>
                 ))}
@@ -188,63 +208,43 @@ export default function App() {
             </div>
           </div>
 
-          {/* Bottom Full-Width Table: Live Hardware Device Fleet */}
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden space-y-0">
-            {/* Table Toolbar */}
-            <div className="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <h2 className="text-base font-bold text-slate-900">Live Hardware Device Fleet</h2>
-                <p className="text-xs text-slate-500">Connected kiosks, touch units, and RFID readers telemetry</p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold">
-                  {['ALL', 'ONLINE', 'DEGRADED', 'OFFLINE'].map(st => (
-                    <button
-                      key={st}
-                      onClick={() => setStatusFilter(st)}
-                      className={`px-3 py-1 rounded-lg transition-all ${
-                        statusFilter === st ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      {st}
-                    </button>
-                  ))}
-                </div>
+          {/* Live Hardware Device Fleet */}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+              <h2 className="font-bold text-base text-slate-900 font-display">Live Hardware Device Fleet</h2>
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
+                <input
+                  value={fleetSearch}
+                  onChange={(e) => setFleetSearch(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-xs w-56 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder="Search kiosk code, location..."
+                />
               </div>
             </div>
 
-            {/* Table */}
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100">
-                  <tr>
-                    <th className="px-5 py-3.5">Kiosk / Device Code</th>
-                    <th className="px-5 py-3.5">Location</th>
-                    <th className="px-5 py-3.5">Firmware Version</th>
-                    <th className="px-5 py-3.5">Last Heartbeat</th>
-                    <th className="px-5 py-3.5">Status</th>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-slate-400 text-xs border-b border-slate-100 uppercase tracking-wider">
+                    <th className="pb-3 font-semibold">Kiosk Code</th>
+                    <th className="pb-3 font-semibold">Location</th>
+                    <th className="pb-3 font-semibold">Firmware</th>
+                    <th className="pb-3 font-semibold">Last Heartbeat</th>
+                    <th className="pb-3 font-semibold">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredFleet.map((row) => (
-                    <tr key={row.code} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="px-5 py-4 font-mono font-bold text-slate-900">{row.code}</td>
-                      <td className="px-5 py-4 font-bold text-slate-800">{row.location}</td>
-                      <td className="px-5 py-4 font-mono text-xs text-slate-500">{row.firmware}</td>
-                      <td className="px-5 py-4 text-xs font-medium text-slate-400">{row.heartbeat}</td>
-                      <td className="px-5 py-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                          row.status === 'ONLINE' ? 'bg-emerald-50 text-emerald-700' :
-                          row.status === 'DEGRADED' ? 'bg-amber-50 text-amber-700' :
-                          'bg-red-50 text-red-700'
-                        }`}>
-                          <span className={`w-2 h-2 rounded-full ${
-                            row.status === 'ONLINE' ? 'bg-emerald-500 animate-pulse' :
-                            row.status === 'DEGRADED' ? 'bg-amber-500' :
-                            'bg-red-500'
-                          }`} />
-                          {row.status}
+                <tbody className="divide-y divide-slate-50">
+                  {filteredFleet.map((r) => (
+                    <tr key={r.code} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="py-3 font-bold text-slate-900 font-mono">{r.code}</td>
+                      <td className="py-3 text-slate-600 font-medium">{r.location}</td>
+                      <td className="py-3 text-slate-400 text-xs font-mono">{r.firmware}</td>
+                      <td className="py-3 text-slate-400 text-xs">{r.heartbeat}</td>
+                      <td className="py-3">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${r.badge}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${r.dot} animate-pulse`} />
+                          {r.status}
                         </span>
                       </td>
                     </tr>

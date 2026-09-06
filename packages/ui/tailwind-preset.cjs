@@ -96,10 +96,8 @@ module.exports = {
         },
       },
       fontFamily: {
-        // Patient-facing apps ship UI text in 13 Indian languages across 9 scripts;
-        // Inter only covers Latin, so every other script needs its own Noto Sans
-        // fallback here as the shared default (patient-kiosk also sets this locally).
         sans: [
+          'Plus Jakarta Sans',
           'Inter',
           'Noto Sans Devanagari',
           'Noto Sans Bengali',
@@ -115,7 +113,7 @@ module.exports = {
           'system-ui',
           'sans-serif',
         ],
-        display: ['Outfit', 'Inter', 'ui-sans-serif', 'sans-serif'],
+        display: ['Plus Jakarta Sans', 'Outfit', 'Inter', 'ui-sans-serif', 'sans-serif'],
       },
       borderRadius: {
         '2xl': '16px',

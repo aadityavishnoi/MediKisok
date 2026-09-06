@@ -1,223 +1,254 @@
 import React, { useState } from 'react';
-import { CreditCard, Search, Download, RefreshCw, AlertTriangle, CheckCircle2, ShieldAlert, Scan, Plus, User, Building } from 'lucide-react';
-import { Sidebar, Topbar, StatCard } from '@medikiosk/ui';
+import {
+  CreditCard,
+  PlusCircle,
+  Building2,
+  BarChart3,
+  Settings,
+  Search,
+  Bell,
+  CheckCircle2,
+  AlertTriangle,
+  Clock,
+  MoreHorizontal,
+  Download
+} from 'lucide-react';
 
-interface RFIDCardItem {
-  id: string;
+interface CardRow {
   uid: string;
-  patientName: string;
-  status: 'ACTIVE' | 'LOST' | 'STOLEN' | 'SUSPENDED';
-  issuedAt: string;
+  patient: string;
+  date: string;
   facility: string;
+  status: 'Active' | 'Lost' | 'Stolen' | 'Suspended';
 }
 
 export default function App() {
-  const [nav, setNav] = useState('inventory');
-  const [cards, setCards] = useState<RFIDCardItem[]>([
-    { id: '1', uid: 'RFID-9042-881A', patientName: 'Aarav Sharma', status: 'ACTIVE', issuedAt: '2026-08-10', facility: 'AIIMS New Delhi' },
-    { id: '2', uid: 'RFID-1102-443B', patientName: 'Priya Verma', status: 'ACTIVE', issuedAt: '2026-08-12', facility: 'Safdarjung OPD' },
-    { id: '3', uid: 'RFID-7721-009C', patientName: 'Ramesh Patel', status: 'LOST', issuedAt: '2026-08-15', facility: 'AIIMS New Delhi' },
-    { id: '4', uid: 'RFID-3341-998D', patientName: 'Sunita Devi', status: 'STOLEN', issuedAt: '2026-08-18', facility: 'Max Healthcare' },
-    { id: '5', uid: 'RFID-8812-332E', patientName: 'Vikramaditya Joshi', status: 'SUSPENDED', issuedAt: '2026-08-20', facility: 'Safdarjung OPD' },
-  ]);
-
-  const [newUid, setNewUid] = useState('');
-  const [patientName, setPatientName] = useState('');
-  const [facility, setFacility] = useState('AIIMS New Delhi');
-  const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  const [activeNav, setActiveNav] = useState('inventory');
   const [search, setSearch] = useState('');
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = useState<string>('All');
+
+  const [patientInput, setPatientInput] = useState('');
+  const [cardUidInput, setCardUidInput] = useState('');
+  const [facilityInput, setFacilityInput] = useState('CityCare Multi-Speciality Hospital');
+
+  const [rows, setRows] = useState<CardRow[]>([
+    { uid: 'A1F3-88C2', patient: 'Arjun Sharma', date: '12 May 2026', facility: 'CityCare Main', status: 'Active' },
+    { uid: 'B7D1-441A', patient: 'Neha Kapoor', date: '10 May 2026', facility: 'CityCare North', status: 'Active' },
+    { uid: 'C29E-1023', patient: 'Vikram Singh', date: '02 May 2026', facility: 'CityCare Main', status: 'Lost' },
+    { uid: 'D883-77F0', patient: 'Pooja Verma', date: '28 Apr 2026', facility: 'CityCare Main', status: 'Active' },
+    { uid: 'E11A-902B', patient: 'Rakesh Patel', date: '20 Apr 2026', facility: 'CityCare North', status: 'Stolen' },
+    { uid: 'F004-3C6D', patient: 'Ananya Joshi', date: '18 Apr 2026', facility: 'CityCare Main', status: 'Suspended' },
+  ]);
 
   const handleEnroll = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newUid || !patientName) return;
-    const uidFormatted = newUid.startsWith('RFID-') ? newUid : `RFID-${newUid.toUpperCase()}`;
-    const newCard: RFIDCardItem = {
-      id: String(Date.now()),
-      uid: uidFormatted,
-      patientName,
-      status: 'ACTIVE',
-      issuedAt: new Date().toISOString().split('T')[0],
-      facility,
+    if (!patientInput || !cardUidInput) return;
+    const newCard: CardRow = {
+      uid: cardUidInput.toUpperCase(),
+      patient: patientInput,
+      date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      facility: facilityInput,
+      status: 'Active',
     };
-    setCards([newCard, ...cards]);
-    setNewUid('');
-    setPatientName('');
-    setToastMessage(`Card ${uidFormatted} successfully enrolled for ${patientName}`);
-    setTimeout(() => setToastMessage(null), 4000);
+    setRows([newCard, ...rows]);
+    setPatientInput('');
+    setCardUidInput('');
   };
 
-  const setCardState = (id: string, newStatus: RFIDCardItem['status']) => {
-    setCards(cards.map(c => c.id === id ? { ...c, status: newStatus } : c));
+  const statusBadge = (status: CardRow['status']) => {
+    switch (status) {
+      case 'Active':
+        return 'bg-emerald-50 text-emerald-700 font-semibold';
+      case 'Lost':
+        return 'bg-amber-50 text-amber-700 font-semibold';
+      case 'Stolen':
+        return 'bg-red-50 text-red-700 font-semibold';
+      case 'Suspended':
+        return 'bg-slate-100 text-slate-500 font-semibold';
+    }
   };
 
-  const handleSimulateTap = (uid: string) => {
-    setToastMessage(`⚡ Hardware Tap Event Emitted for UID ${uid} → Kiosk Intake Initialized`);
-    setTimeout(() => setToastMessage(null), 4500);
-  };
-
-  const filteredCards = cards.filter(c => {
-    const matchesStatus = filterStatus === 'ALL' || c.status === filterStatus;
-    const matchesSearch = c.uid.toLowerCase().includes(search.toLowerCase()) || c.patientName.toLowerCase().includes(search.toLowerCase());
-    return matchesStatus && matchesSearch;
+  const filteredRows = rows.filter((r) => {
+    const matchesFilter = filterStatus === 'All' || r.status === filterStatus;
+    const matchesSearch = r.uid.toLowerCase().includes(search.toLowerCase()) || r.patient.toLowerCase().includes(search.toLowerCase());
+    return matchesFilter && matchesSearch;
   });
 
-  const totalIssued = cards.length + 1250;
-  const activeCount = cards.filter(c => c.status === 'ACTIVE').length + 1210;
-  const lostOrStolenCount = cards.filter(c => c.status === 'LOST' || c.status === 'STOLEN').length + 22;
-  const pendingSuspensionCount = cards.filter(c => c.status === 'SUSPENDED').length + 18;
-
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
-      {/* Shared Sidebar */}
-      <Sidebar
-        activeKey={nav}
-        onNavigate={setNav}
-        items={[
-          { key: 'inventory', label: 'Card Inventory', icon: <CreditCard size={18} /> },
-          { key: 'enrollment', label: 'New Card Scan', icon: <Scan size={18} /> },
-          { key: 'facilities', label: 'Facility Terminals', icon: <Building size={18} /> },
-        ]}
-      />
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex selection:bg-blue-600 selection:text-white">
+      {/* Sidebar */}
+      <aside className="w-60 h-screen sticky top-0 bg-white border-r border-slate-200 flex flex-col shrink-0">
+        <div className="px-5 py-6 flex items-center gap-3 border-b border-slate-100">
+          <div className="w-9 h-9 rounded-xl bg-blue-500 flex items-center justify-center text-white font-extrabold text-lg shadow-sm">
+            M
+          </div>
+          <div>
+            <div className="font-extrabold text-slate-900 leading-none text-base font-display">MediCore AI</div>
+            <div className="text-xs text-slate-400 leading-none mt-1">RFID Portal</div>
+          </div>
+        </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <Topbar
-          title="MediKiosk"
-          subtitle="RFID Inventory & Patient Token Admin"
-          search={search}
-          onSearchChange={setSearch}
-          user={{ name: 'Admin Staff', avatar: '' }}
-        />
+        <nav className="flex-1 px-3 py-4 space-y-1 text-sm font-medium">
+          {[
+            { id: 'inventory', label: 'Card Inventory', icon: CreditCard },
+            { id: 'enrollment', label: 'Enrollment', icon: PlusCircle },
+            { id: 'facilities', label: 'Facilities', icon: Building2 },
+            { id: 'reports', label: 'Reports', icon: BarChart3 },
+            { id: 'settings', label: 'Settings', icon: Settings },
+          ].map((item) => {
+            const Icon = item.icon;
+            const active = activeNav === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveNav(item.id)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                  active
+                    ? 'bg-blue-500 text-white font-bold shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <Icon size={18} />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </aside>
 
-        <main className="p-6 space-y-6 max-w-7xl mx-auto w-full">
-          {/* Toast Notification Banner */}
-          {toastMessage && (
-            <div className="p-4 bg-blue-600 text-white font-bold rounded-2xl shadow-md flex items-center justify-between animate-fade-in">
-              <span className="text-sm">⚡ {toastMessage}</span>
-              <button onClick={() => setToastMessage(null)} className="text-xs bg-white/20 px-2.5 py-1 rounded-lg hover:bg-white/30">Dismiss</button>
-            </div>
-          )}
-
-          {/* Top Stat Strip */}
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <StatCard
-              label="Total Cards Issued"
-              value={totalIssued}
-              delta="↑ 45 this week"
-              deltaType="positive"
-              icon={<CreditCard size={20} />}
-              iconBg="bg-blue-100 text-blue-700"
-            />
-            <StatCard
-              label="Active Cards"
-              value={activeCount}
-              delta="96.8% Operational"
-              deltaType="positive"
-              icon={<CheckCircle2 size={20} />}
-              iconBg="bg-emerald-100 text-emerald-700"
-            />
-            <StatCard
-              label="Lost or Stolen"
-              value={lostOrStolenCount}
-              delta="Blocked & Secured"
-              deltaType="negative"
-              icon={<ShieldAlert size={20} />}
-              iconBg="bg-red-100 text-red-700"
-            />
-            <StatCard
-              label="Pending Suspension"
-              value={pendingSuspensionCount}
-              delta="Audit Flagged"
-              deltaType="neutral"
-              icon={<AlertTriangle size={20} />}
-              iconBg="bg-amber-100 text-amber-700"
+      {/* Main Container */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Topbar */}
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-10">
+          <div className="w-96 max-w-full relative">
+            <Search size={16} className="absolute left-3 top-3 text-slate-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              placeholder="Search card UID, patient..."
             />
           </div>
 
-          {/* Main 12-Col Layout */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-            {/* Left 4-Cols: Enroll Form */}
-            <div className="lg:col-span-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-5 h-fit">
-              <div className="flex items-center gap-2 text-blue-600">
-                <Scan size={20} />
-                <h2 className="text-base font-bold text-slate-900">Enroll New Smart Card</h2>
+          <div className="flex items-center gap-4">
+            <button type="button" className="w-9 h-9 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-colors">
+              <Bell size={18} />
+            </button>
+            <div className="flex items-center gap-3 border-l border-slate-200 pl-4">
+              <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-900 text-xs">
+                A
               </div>
-              <p className="text-xs text-slate-500">Scan or manually enter physical RFID UID to pair with a registered patient record.</p>
+              <div className="text-sm">
+                <div className="font-semibold leading-none text-slate-900">Admin User</div>
+                <div className="text-xs text-slate-400 leading-none mt-1">Ops Team</div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Dashboard Body */}
+        <main className="p-6 space-y-5 max-w-7xl mx-auto w-full">
+          {/* Stat Strip */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+              <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 mb-3">
+                <CreditCard size={20} />
+              </div>
+              <div className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Total Cards Issued</div>
+              <div className="text-3xl font-extrabold text-slate-900 mt-1 font-display">1,284</div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+              <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 mb-3">
+                <CheckCircle2 size={20} />
+              </div>
+              <div className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Active</div>
+              <div className="text-3xl font-extrabold text-slate-900 mt-1 font-display">1,146</div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+              <div className="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center text-red-600 mb-3">
+                <AlertTriangle size={20} />
+              </div>
+              <div className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Lost / Stolen</div>
+              <div className="text-3xl font-extrabold text-slate-900 mt-1 font-display">27</div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+              <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 mb-3">
+                <Clock size={20} />
+              </div>
+              <div className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Pending Suspension</div>
+              <div className="text-3xl font-extrabold text-slate-900 mt-1 font-display">8</div>
+            </div>
+          </div>
+
+          {/* 2-Column Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            {/* Enrollment Form (Left 4 cols) */}
+            <div className="lg:col-span-4 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 h-fit">
+              <h2 className="font-bold text-base mb-4 text-slate-900 font-display">Enroll New Card</h2>
 
               <form onSubmit={handleEnroll} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Patient Search</label>
-                  <div className="relative">
-                    <User size={16} className="absolute left-3 top-3 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="Enter patient full name..."
-                      value={patientName}
-                      onChange={(e) => setPatientName(e.target.value)}
-                      required
-                      className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
-                    />
-                  </div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Patient</label>
+                  <input
+                    value={patientInput}
+                    onChange={(e) => setPatientInput(e.target.value)}
+                    required
+                    placeholder="Search patient by name or ID"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Card UID Scan Field</label>
-                  <div className="relative">
-                    <Scan size={18} className="absolute left-3 top-3 text-blue-600" />
-                    <input
-                      type="text"
-                      placeholder="e.g. 9042-881A"
-                      value={newUid}
-                      onChange={(e) => setNewUid(e.target.value)}
-                      required
-                      className="w-full pl-10 pr-3 py-2.5 rounded-xl border-2 border-dashed border-blue-300 bg-blue-50/40 text-sm font-mono font-bold text-blue-900 focus:outline-none focus:border-blue-600 uppercase"
-                    />
-                  </div>
-                  <span className="text-[11px] text-slate-400 mt-1 block">USB NFC Reader connected & listening...</span>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Card UID</label>
+                  <input
+                    value={cardUidInput}
+                    onChange={(e) => setCardUidInput(e.target.value)}
+                    required
+                    placeholder="Tap card on scanner..."
+                    className="w-full bg-slate-50 border border-dashed border-slate-300 rounded-xl px-3 py-2 text-sm font-mono font-bold text-slate-900 uppercase placeholder:text-slate-400 placeholder:normal-case focus:outline-none focus:border-blue-500"
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Issuing Facility</label>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Facility</label>
                   <select
-                    value={facility}
-                    onChange={(e) => setFacility(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    value={facilityInput}
+                    onChange={(e) => setFacilityInput(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   >
-                    <option value="AIIMS New Delhi">AIIMS New Delhi (Main OPD)</option>
-                    <option value="Safdarjung OPD">Safdarjung Hospital</option>
-                    <option value="Max Healthcare">Max Super Speciality</option>
+                    <option value="CityCare Multi-Speciality Hospital">CityCare Multi-Speciality Hospital</option>
+                    <option value="CityCare North Wing">CityCare North Wing</option>
+                    <option value="AIIMS OPD Center">AIIMS OPD Center</option>
                   </select>
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-sm transition-all flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-bold text-sm shadow-sm transition-all mt-2"
                 >
-                  <Plus size={16} />
-                  Enroll & Activate Card
+                  Enroll Card
                 </button>
               </form>
             </div>
 
-            {/* Right 8-Cols: Data Table Card */}
-            <div className="lg:col-span-8 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
-              {/* Table Toolbar */}
-              <div className="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-base font-bold text-slate-900">Card Inventory Registry</h2>
-                  <p className="text-xs text-slate-500">Live hardware status of all issued RFID patient credentials</p>
-                </div>
+            {/* Inventory Table (Right 8 cols) */}
+            <div className="lg:col-span-8 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                <h2 className="font-bold text-base text-slate-900 font-display">Card Inventory</h2>
 
-                <div className="flex items-center gap-2">
-                  {/* Status Filter Chips */}
-                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold">
-                    {['ALL', 'ACTIVE', 'LOST', 'STOLEN', 'SUSPENDED'].map(st => (
+                <div className="flex items-center gap-3">
+                  <div className="flex gap-1 text-xs font-semibold bg-slate-100 p-1 rounded-xl">
+                    {['All', 'Active', 'Lost', 'Stolen'].map((st) => (
                       <button
                         key={st}
                         onClick={() => setFilterStatus(st)}
-                        className={`px-2.5 py-1 rounded-lg transition-all ${
-                          filterStatus === st ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                        className={`px-3 py-1 rounded-lg transition-all ${
+                          filterStatus === st
+                            ? 'bg-white text-blue-900 shadow-sm'
+                            : 'text-slate-500 hover:text-slate-900'
                         }`}
                       >
                         {st}
@@ -225,64 +256,40 @@ export default function App() {
                     ))}
                   </div>
 
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50">
+                  <button type="button" className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 px-2.5 py-1.5 rounded-lg">
                     <Download size={14} /> Export CSV
                   </button>
                 </div>
               </div>
 
-              {/* Table */}
-              <div className="overflow-x-auto flex-1">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100">
-                    <tr>
-                      <th className="px-5 py-3.5">Card UID</th>
-                      <th className="px-5 py-3.5">Mapped Patient</th>
-                      <th className="px-5 py-3.5">Issued Date</th>
-                      <th className="px-5 py-3.5">Facility</th>
-                      <th className="px-5 py-3.5">Status</th>
-                      <th className="px-5 py-3.5 text-right">Actions</th>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-slate-400 text-xs border-b border-slate-100 uppercase tracking-wider">
+                      <th className="pb-3 font-semibold">Card UID</th>
+                      <th className="pb-3 font-semibold">Mapped Patient</th>
+                      <th className="pb-3 font-semibold">Issued Date</th>
+                      <th className="pb-3 font-semibold">Facility</th>
+                      <th className="pb-3 font-semibold">Status</th>
+                      <th className="pb-3 font-semibold text-right"></th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredCards.map((row) => (
-                      <tr key={row.id} className="hover:bg-slate-50/70 transition-colors">
-                        <td className="px-5 py-4 font-mono font-bold text-blue-900">{row.uid}</td>
-                        <td className="px-5 py-4 font-bold text-slate-900">{row.patientName}</td>
-                        <td className="px-5 py-4 text-xs text-slate-500 font-medium">{row.issuedAt}</td>
-                        <td className="px-5 py-4 text-xs font-semibold text-slate-700">{row.facility}</td>
-                        <td className="px-5 py-4">
-                          <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                            row.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700' :
-                            row.status === 'LOST' ? 'bg-amber-50 text-amber-700' :
-                            row.status === 'STOLEN' ? 'bg-red-50 text-red-700' :
-                            'bg-slate-100 text-slate-600'
-                          }`}>
-                            {row.status}
+                  <tbody className="divide-y divide-slate-50">
+                    {filteredRows.map((r) => (
+                      <tr key={r.uid} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="py-3.5 font-mono text-slate-700 font-bold">{r.uid}</td>
+                        <td className="py-3.5 font-semibold text-slate-900">{r.patient}</td>
+                        <td className="py-3.5 text-slate-500 text-xs">{r.date}</td>
+                        <td className="py-3.5 text-slate-500 text-xs font-medium">{r.facility}</td>
+                        <td className="py-3.5">
+                          <span className={`px-2.5 py-0.5 rounded-full text-xs ${statusBadge(r.status)}`}>
+                            {r.status}
                           </span>
                         </td>
-                        <td className="px-5 py-4 text-right space-x-1.5">
-                          <button
-                            onClick={() => handleSimulateTap(row.uid)}
-                            className="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold transition-colors"
-                          >
-                            Simulate Tap
+                        <td className="py-3.5 text-right text-slate-400">
+                          <button type="button" className="p-1 hover:bg-slate-100 rounded-lg text-slate-500">
+                            <MoreHorizontal size={16} />
                           </button>
-                          {row.status === 'ACTIVE' ? (
-                            <button
-                              onClick={() => setCardState(row.id, 'SUSPENDED')}
-                              className="px-2.5 py-1 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-lg text-xs font-bold transition-colors"
-                            >
-                              Suspend
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => setCardState(row.id, 'ACTIVE')}
-                              className="px-2.5 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-bold transition-colors"
-                            >
-                              Reissue
-                            </button>
-                          )}
                         </td>
                       </tr>
                     ))}
