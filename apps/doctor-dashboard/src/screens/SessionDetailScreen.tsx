@@ -42,6 +42,7 @@ export function SessionDetailScreen({ sessionId, onBack, onLoggedOut }: SessionD
   const [detail, setDetail] = useState<SessionDetailResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [acknowledging, setAcknowledging] = useState<string | null>(null);
+  const [wsState, setWsState] = useState<WsConnectionState>('connecting');
 
   const refresh = useCallback(async () => {
     try {
@@ -61,6 +62,7 @@ export function SessionDetailScreen({ sessionId, onBack, onLoggedOut }: SessionD
   useEffect(() => {
     refresh();
     const disconnect = connectWs({
+      onStateChange: setWsState,
       onEvent: (event) => {
         if (
           ('payload' in event && 'sessionId' in event.payload && event.payload.sessionId === sessionId) ||
@@ -85,22 +87,38 @@ export function SessionDetailScreen({ sessionId, onBack, onLoggedOut }: SessionD
     }
   }
 
+  const shellProps = {
+    active: 'dashboard' as const,
+    onNavigate: () => onBack(),
+    alertCount: detail?.alerts.filter((a) => !a.acknowledged).length ?? 0,
+    onSignOut: () => {
+      clearSession();
+      onLoggedOut();
+    },
+    title: 'MediKiosk',
+    subtitle: 'Clinical Intake Dashboard',
+    search: '',
+    onSearchChange: () => {},
+    wsState,
+    doctorName: getDoctorName() ?? 'Doctor',
+  };
+
   if (error && !detail) {
     return (
-      <div className="mx-auto max-w-3xl px-6 py-8">
-        <button type="button" onClick={onBack} className="mb-4 text-sm font-medium text-primary-700">
-          ← Back to dashboard
+      <DashboardShell {...shellProps}>
+        <button type="button" onClick={onBack} className="mb-4 flex items-center gap-1.5 text-sm font-medium text-primary-700">
+          <ArrowLeft size={16} /> Back to dashboard
         </button>
         <div role="alert" className="rounded-lg bg-danger-50 px-4 py-3 text-sm text-danger-800">{error}</div>
-      </div>
+      </DashboardShell>
     );
   }
 
   if (!detail) {
     return (
-      <div className="mx-auto max-w-3xl px-6 py-8">
+      <DashboardShell {...shellProps}>
         <p className="text-neutral-500">Loading…</p>
-      </div>
+      </DashboardShell>
     );
   }
 
@@ -108,20 +126,23 @@ export function SessionDetailScreen({ sessionId, onBack, onLoggedOut }: SessionD
   const acknowledged = detail.alerts.filter((a) => a.acknowledged);
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-8">
-      <button type="button" onClick={onBack} className="mb-4 text-sm font-medium text-primary-700">
-        ← Back to dashboard
+    <DashboardShell {...shellProps}>
+      <button type="button" onClick={onBack} className="mb-4 flex items-center gap-1.5 text-sm font-medium text-primary-700">
+        <ArrowLeft size={16} /> Back to dashboard
       </button>
 
-      <div className="mb-6 rounded-xl border border-neutral-200 bg-white p-5">
+      <div className="mb-6 rounded-2xl border border-neutral-200 bg-white p-5">
         <div className="flex flex-wrap items-start justify-between gap-2">
-          <div>
-            <h1 className="text-2xl font-bold text-neutral-900">{detail.patient.fullName}</h1>
-            <p className="text-sm text-neutral-500">
-              {detail.patient.gender ?? 'Gender unknown'}
-              {detail.patient.dateOfBirth ? ` · DOB ${new Date(detail.patient.dateOfBirth).toLocaleDateString()}` : ''}
-              {detail.isDemo ? ' · Demo Patient' : ''}
-            </p>
+          <div className="flex items-center gap-3">
+            <InitialsAvatar name={detail.patient.fullName} size={48} />
+            <div>
+              <h1 className="text-2xl font-bold text-neutral-900">{detail.patient.fullName}</h1>
+              <p className="text-sm text-neutral-500">
+                {detail.patient.gender ?? 'Gender unknown'}
+                {detail.patient.dateOfBirth ? ` · DOB ${new Date(detail.patient.dateOfBirth).toLocaleDateString()}` : ''}
+                {detail.isDemo ? ' · Demo Patient' : ''}
+              </p>
+            </div>
           </div>
           <span className="rounded-full bg-neutral-100 px-3 py-1 text-sm font-medium text-neutral-700">
             {STATUS_DISPLAY[detail.status].dot} {STATUS_DISPLAY[detail.status].label}
@@ -213,6 +234,6 @@ export function SessionDetailScreen({ sessionId, onBack, onLoggedOut }: SessionD
           </ul>
         </div>
       )}
-    </div>
+    </DashboardShell>
   );
 }
