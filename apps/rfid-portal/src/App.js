@@ -1,53 +1,67 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from 'react';
+import { CreditCard, PlusCircle, Building2, BarChart3, Settings, Search, Bell, CheckCircle2, AlertTriangle, Clock, MoreHorizontal, Download } from 'lucide-react';
 export default function App() {
-    const [cards, setCards] = useState([
-        { id: '1', uid: 'DEMO-RFID-001', patientName: 'Aarav Sharma', status: 'ACTIVE', issuedAt: '2026-08-10', facility: 'AIIMS New Delhi' },
-        { id: '2', uid: 'DEMO-RFID-002', patientName: 'Priya Verma', status: 'ACTIVE', issuedAt: '2026-08-12', facility: 'AIIMS New Delhi' },
-        { id: '3', uid: 'DEMO-RFID-003', patientName: 'Ramesh Patel', status: 'ACTIVE', issuedAt: '2026-08-15', facility: 'Safdarjung Hospital' },
-        { id: '4', uid: 'DEMO-RFID-004', patientName: 'Sunita Devi', status: 'LOST', issuedAt: '2026-08-18', facility: 'AIIMS New Delhi' },
-        { id: '5', uid: 'DEMO-RFID-005', patientName: 'Vikramaditya Joshi', status: 'ACTIVE', issuedAt: '2026-08-20', facility: 'Max Healthcare' },
+    const [activeNav, setActiveNav] = useState('inventory');
+    const [search, setSearch] = useState('');
+    const [filterStatus, setFilterStatus] = useState('All');
+    const [patientInput, setPatientInput] = useState('');
+    const [cardUidInput, setCardUidInput] = useState('');
+    const [facilityInput, setFacilityInput] = useState('CityCare Multi-Speciality Hospital');
+    const [rows, setRows] = useState([
+        { uid: 'A1F3-88C2', patient: 'Arjun Sharma', date: '12 May 2026', facility: 'CityCare Main', status: 'Active' },
+        { uid: 'B7D1-441A', patient: 'Neha Kapoor', date: '10 May 2026', facility: 'CityCare North', status: 'Active' },
+        { uid: 'C29E-1023', patient: 'Vikram Singh', date: '02 May 2026', facility: 'CityCare Main', status: 'Lost' },
+        { uid: 'D883-77F0', patient: 'Pooja Verma', date: '28 Apr 2026', facility: 'CityCare Main', status: 'Active' },
+        { uid: 'E11A-902B', patient: 'Rakesh Patel', date: '20 Apr 2026', facility: 'CityCare North', status: 'Stolen' },
+        { uid: 'F004-3C6D', patient: 'Ananya Joshi', date: '18 Apr 2026', facility: 'CityCare Main', status: 'Suspended' },
     ]);
-    const [newUid, setNewUid] = useState('');
-    const [patientName, setPatientName] = useState('');
-    const [scanMessage, setScanMessage] = useState(null);
-    const handleRegister = (e) => {
+    const handleEnroll = (e) => {
         e.preventDefault();
-        if (!newUid || !patientName)
+        if (!patientInput || !cardUidInput)
             return;
         const newCard = {
-            id: String(Date.now()),
-            uid: newUid,
-            patientName,
-            status: 'ACTIVE',
-            issuedAt: new Date().toISOString().split('T')[0],
-            facility: 'AIIMS New Delhi',
+            uid: cardUidInput.toUpperCase(),
+            patient: patientInput,
+            date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+            facility: facilityInput,
+            status: 'Active',
         };
-        setCards([newCard, ...cards]);
-        setNewUid('');
-        setPatientName('');
+        setRows([newCard, ...rows]);
+        setPatientInput('');
+        setCardUidInput('');
     };
-    const toggleStatus = (id, newStatus) => {
-        setCards(cards.map(c => c.id === id ? { ...c, status: newStatus } : c));
-    };
-    const handleSimulateScan = async (uid) => {
-        try {
-            const res = await fetch('http://localhost:3000/api/rfid/scan', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ uid }),
-            });
-            const data = await res.json();
-            setScanMessage(`Scan event dispatched for UID ${uid}: ${data.session?.id ? 'Session Active' : 'Identified'}`);
-            setTimeout(() => setScanMessage(null), 4000);
-        }
-        catch (err) {
-            setScanMessage(`Scan Simulated for ${uid} (Local Mode)`);
-            setTimeout(() => setScanMessage(null), 4000);
+    const statusBadge = (status) => {
+        switch (status) {
+            case 'Active':
+                return 'bg-emerald-50 text-emerald-700 font-semibold';
+            case 'Lost':
+                return 'bg-amber-50 text-amber-700 font-semibold';
+            case 'Stolen':
+                return 'bg-red-50 text-red-700 font-semibold';
+            case 'Suspended':
+                return 'bg-slate-100 text-slate-500 font-semibold';
         }
     };
-    return (_jsx("div", { className: "min-h-screen bg-slate-100 p-6", children: _jsxs("div", { className: "max-w-7xl mx-auto space-y-6", children: [_jsxs("header", { className: "flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-200", children: [_jsxs("div", { children: [_jsx("span", { className: "text-xs font-semibold uppercase tracking-wider text-blue-600", children: "MediKiosk Identity Layer" }), _jsx("h1", { className: "text-2xl font-bold text-slate-900", children: "RFID Card Enrollment & Lifecycle Portal" }), _jsx("p", { className: "text-sm text-slate-500", children: "Physical token manufacturing, patient mapping, inventory control, and audit" })] }), _jsxs("div", { className: "flex space-x-3", children: [_jsx("span", { className: "px-3 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800", children: "System Online" }), _jsx("span", { className: "px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800", children: "Port 5175" })] })] }), scanMessage && (_jsxs("div", { className: "p-4 bg-blue-50 border border-blue-200 text-blue-800 rounded-xl text-sm font-medium animate-fade-in", children: ["\u26A1 ", scanMessage] })), _jsxs("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-6", children: [_jsxs("div", { className: "bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4", children: [_jsx("h2", { className: "text-lg font-semibold text-slate-900", children: "Enroll New RFID Token" }), _jsxs("form", { onSubmit: handleRegister, className: "space-y-4", children: [_jsxs("div", { children: [_jsx("label", { className: "block text-xs font-medium text-slate-700 mb-1", children: "Hardware Card UID" }), _jsx("input", { type: "text", placeholder: "e.g. DEMO-RFID-009", value: newUid, onChange: (e) => setNewUid(e.target.value), className: "w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-xs font-medium text-slate-700 mb-1", children: "Patient Full Name" }), _jsx("input", { type: "text", placeholder: "e.g. Anjali Mehta", value: patientName, onChange: (e) => setPatientName(e.target.value), className: "w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" })] }), _jsx("button", { type: "submit", className: "w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-xl text-sm transition-colors", children: "Register & Enroll Card" })] })] }), _jsxs("div", { className: "lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4", children: [_jsxs("div", { className: "flex justify-between items-center", children: [_jsx("h2", { className: "text-lg font-semibold text-slate-900", children: "Registered Cards & Lifecycle State" }), _jsxs("span", { className: "text-xs text-slate-500", children: [cards.length, " Total Cards"] })] }), _jsx("div", { className: "overflow-x-auto", children: _jsxs("table", { className: "w-full text-left text-sm text-slate-600", children: [_jsx("thead", { className: "bg-slate-50 text-xs font-semibold uppercase text-slate-500", children: _jsxs("tr", { children: [_jsx("th", { className: "p-3", children: "Card UID" }), _jsx("th", { className: "p-3", children: "Mapped Patient" }), _jsx("th", { className: "p-3", children: "Status" }), _jsx("th", { className: "p-3", children: "Actions" })] }) }), _jsx("tbody", { className: "divide-y divide-slate-100", children: cards.map((c) => (_jsxs("tr", { className: "hover:bg-slate-50", children: [_jsx("td", { className: "p-3 font-mono font-semibold text-slate-900", children: c.uid }), _jsx("td", { className: "p-3 font-medium text-slate-800", children: c.patientName }), _jsx("td", { className: "p-3", children: _jsx("span", { className: `px-2.5 py-1 text-xs font-semibold rounded-full ${c.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800' :
-                                                                    c.status === 'LOST' ? 'bg-amber-100 text-amber-800' :
-                                                                        'bg-red-100 text-red-800'}`, children: c.status }) }), _jsxs("td", { className: "p-3 space-x-2", children: [_jsx("button", { onClick: () => handleSimulateScan(c.uid), className: "px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-medium", children: "Simulate Tap" }), c.status === 'ACTIVE' ? (_jsx("button", { onClick: () => toggleStatus(c.id, 'LOST'), className: "px-2 py-1 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-lg text-xs font-medium", children: "Mark Lost" })) : (_jsx("button", { onClick: () => toggleStatus(c.id, 'ACTIVE'), className: "px-2 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-medium", children: "Reactivate" }))] })] }, c.id))) })] }) })] })] })] }) }));
+    const filteredRows = rows.filter((r) => {
+        const matchesFilter = filterStatus === 'All' || r.status === filterStatus;
+        const matchesSearch = r.uid.toLowerCase().includes(search.toLowerCase()) || r.patient.toLowerCase().includes(search.toLowerCase());
+        return matchesFilter && matchesSearch;
+    });
+    return (_jsxs("div", { className: "min-h-screen bg-slate-50 text-slate-900 font-sans flex selection:bg-blue-600 selection:text-white", children: [_jsxs("aside", { className: "w-60 h-screen sticky top-0 bg-white border-r border-slate-200 flex flex-col shrink-0", children: [_jsxs("div", { className: "px-5 py-6 flex items-center gap-3 border-b border-slate-100", children: [_jsx("div", { className: "w-9 h-9 rounded-xl bg-blue-500 flex items-center justify-center text-white font-extrabold text-lg shadow-sm", children: "M" }), _jsxs("div", { children: [_jsx("div", { className: "font-extrabold text-slate-900 leading-none text-base font-display", children: "MediCore AI" }), _jsx("div", { className: "text-xs text-slate-400 leading-none mt-1", children: "RFID Portal" })] })] }), _jsx("nav", { className: "flex-1 px-3 py-4 space-y-1 text-sm font-medium", children: [
+                            { id: 'inventory', label: 'Card Inventory', icon: CreditCard },
+                            { id: 'enrollment', label: 'Enrollment', icon: PlusCircle },
+                            { id: 'facilities', label: 'Facilities', icon: Building2 },
+                            { id: 'reports', label: 'Reports', icon: BarChart3 },
+                            { id: 'settings', label: 'Settings', icon: Settings },
+                        ].map((item) => {
+                            const Icon = item.icon;
+                            const active = activeNav === item.id;
+                            return (_jsxs("button", { onClick: () => setActiveNav(item.id), className: `w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${active
+                                    ? 'bg-blue-500 text-white font-bold shadow-sm'
+                                    : 'text-slate-600 hover:bg-slate-50'}`, children: [_jsx(Icon, { size: 18 }), _jsx("span", { children: item.label })] }, item.id));
+                        }) })] }), _jsxs("div", { className: "flex-1 flex flex-col min-w-0", children: [_jsxs("header", { className: "h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-10", children: [_jsxs("div", { className: "w-96 max-w-full relative", children: [_jsx(Search, { size: 16, className: "absolute left-3 top-3 text-slate-400" }), _jsx("input", { value: search, onChange: (e) => setSearch(e.target.value), className: "w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500", placeholder: "Search card UID, patient..." })] }), _jsxs("div", { className: "flex items-center gap-4", children: [_jsx("button", { type: "button", className: "w-9 h-9 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-colors", children: _jsx(Bell, { size: 18 }) }), _jsxs("div", { className: "flex items-center gap-3 border-l border-slate-200 pl-4", children: [_jsx("div", { className: "w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-900 text-xs", children: "A" }), _jsxs("div", { className: "text-sm", children: [_jsx("div", { className: "font-semibold leading-none text-slate-900", children: "Admin User" }), _jsx("div", { className: "text-xs text-slate-400 leading-none mt-1", children: "Ops Team" })] })] })] })] }), _jsxs("main", { className: "p-6 space-y-5 max-w-7xl mx-auto w-full", children: [_jsxs("div", { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5", children: [_jsxs("div", { className: "bg-white rounded-2xl shadow-sm border border-slate-200 p-5", children: [_jsx("div", { className: "w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 mb-3", children: _jsx(CreditCard, { size: 20 }) }), _jsx("div", { className: "text-slate-500 text-xs font-semibold uppercase tracking-wider", children: "Total Cards Issued" }), _jsx("div", { className: "text-3xl font-extrabold text-slate-900 mt-1 font-display", children: "1,284" })] }), _jsxs("div", { className: "bg-white rounded-2xl shadow-sm border border-slate-200 p-5", children: [_jsx("div", { className: "w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 mb-3", children: _jsx(CheckCircle2, { size: 20 }) }), _jsx("div", { className: "text-slate-500 text-xs font-semibold uppercase tracking-wider", children: "Active" }), _jsx("div", { className: "text-3xl font-extrabold text-slate-900 mt-1 font-display", children: "1,146" })] }), _jsxs("div", { className: "bg-white rounded-2xl shadow-sm border border-slate-200 p-5", children: [_jsx("div", { className: "w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center text-red-600 mb-3", children: _jsx(AlertTriangle, { size: 20 }) }), _jsx("div", { className: "text-slate-500 text-xs font-semibold uppercase tracking-wider", children: "Lost / Stolen" }), _jsx("div", { className: "text-3xl font-extrabold text-slate-900 mt-1 font-display", children: "27" })] }), _jsxs("div", { className: "bg-white rounded-2xl shadow-sm border border-slate-200 p-5", children: [_jsx("div", { className: "w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 mb-3", children: _jsx(Clock, { size: 20 }) }), _jsx("div", { className: "text-slate-500 text-xs font-semibold uppercase tracking-wider", children: "Pending Suspension" }), _jsx("div", { className: "text-3xl font-extrabold text-slate-900 mt-1 font-display", children: "8" })] })] }), _jsxs("div", { className: "grid grid-cols-1 lg:grid-cols-12 gap-5", children: [_jsxs("div", { className: "lg:col-span-4 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 h-fit", children: [_jsx("h2", { className: "font-bold text-base mb-4 text-slate-900 font-display", children: "Enroll New Card" }), _jsxs("form", { onSubmit: handleEnroll, className: "space-y-4", children: [_jsxs("div", { children: [_jsx("label", { className: "block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1", children: "Patient" }), _jsx("input", { value: patientInput, onChange: (e) => setPatientInput(e.target.value), required: true, placeholder: "Search patient by name or ID", className: "w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1", children: "Card UID" }), _jsx("input", { value: cardUidInput, onChange: (e) => setCardUidInput(e.target.value), required: true, placeholder: "Tap card on scanner...", className: "w-full bg-slate-50 border border-dashed border-slate-300 rounded-xl px-3 py-2 text-sm font-mono font-bold text-slate-900 uppercase placeholder:text-slate-400 placeholder:normal-case focus:outline-none focus:border-blue-500" })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1", children: "Facility" }), _jsxs("select", { value: facilityInput, onChange: (e) => setFacilityInput(e.target.value), className: "w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500", children: [_jsx("option", { value: "CityCare Multi-Speciality Hospital", children: "CityCare Multi-Speciality Hospital" }), _jsx("option", { value: "CityCare North Wing", children: "CityCare North Wing" }), _jsx("option", { value: "AIIMS OPD Center", children: "AIIMS OPD Center" })] })] }), _jsx("button", { type: "submit", className: "w-full py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-bold text-sm shadow-sm transition-all mt-2", children: "Enroll Card" })] })] }), _jsxs("div", { className: "lg:col-span-8 bg-white rounded-2xl shadow-sm border border-slate-200 p-6", children: [_jsxs("div", { className: "flex flex-wrap items-center justify-between gap-4 mb-4", children: [_jsx("h2", { className: "font-bold text-base text-slate-900 font-display", children: "Card Inventory" }), _jsxs("div", { className: "flex items-center gap-3", children: [_jsx("div", { className: "flex gap-1 text-xs font-semibold bg-slate-100 p-1 rounded-xl", children: ['All', 'Active', 'Lost', 'Stolen'].map((st) => (_jsx("button", { onClick: () => setFilterStatus(st), className: `px-3 py-1 rounded-lg transition-all ${filterStatus === st
+                                                                        ? 'bg-white text-blue-900 shadow-sm'
+                                                                        : 'text-slate-500 hover:text-slate-900'}`, children: st }, st))) }), _jsxs("button", { type: "button", className: "inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 px-2.5 py-1.5 rounded-lg", children: [_jsx(Download, { size: 14 }), " Export CSV"] })] })] }), _jsx("div", { className: "overflow-x-auto", children: _jsxs("table", { className: "w-full text-sm", children: [_jsx("thead", { children: _jsxs("tr", { className: "text-left text-slate-400 text-xs border-b border-slate-100 uppercase tracking-wider", children: [_jsx("th", { className: "pb-3 font-semibold", children: "Card UID" }), _jsx("th", { className: "pb-3 font-semibold", children: "Mapped Patient" }), _jsx("th", { className: "pb-3 font-semibold", children: "Issued Date" }), _jsx("th", { className: "pb-3 font-semibold", children: "Facility" }), _jsx("th", { className: "pb-3 font-semibold", children: "Status" }), _jsx("th", { className: "pb-3 font-semibold text-right" })] }) }), _jsx("tbody", { className: "divide-y divide-slate-50", children: filteredRows.map((r) => (_jsxs("tr", { className: "hover:bg-slate-50/70 transition-colors", children: [_jsx("td", { className: "py-3.5 font-mono text-slate-700 font-bold", children: r.uid }), _jsx("td", { className: "py-3.5 font-semibold text-slate-900", children: r.patient }), _jsx("td", { className: "py-3.5 text-slate-500 text-xs", children: r.date }), _jsx("td", { className: "py-3.5 text-slate-500 text-xs font-medium", children: r.facility }), _jsx("td", { className: "py-3.5", children: _jsx("span", { className: `px-2.5 py-0.5 rounded-full text-xs ${statusBadge(r.status)}`, children: r.status }) }), _jsx("td", { className: "py-3.5 text-right text-slate-400", children: _jsx("button", { type: "button", className: "p-1 hover:bg-slate-100 rounded-lg text-slate-500", children: _jsx(MoreHorizontal, { size: 16 }) }) })] }, r.uid))) })] }) })] })] })] })] })] }));
 }
 //# sourceMappingURL=App.js.map
