@@ -96,7 +96,7 @@ export function SessionDetailScreen({ sessionId, onBack, onLoggedOut }: SessionD
       clearSession();
       onLoggedOut();
     },
-    title: 'MediCore AI',
+    title: 'MediKiosk',
     subtitle: 'Patient 360 & Copilot',
     search: '',
     onSearchChange: () => {},

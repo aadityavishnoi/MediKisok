@@ -103,7 +103,7 @@ export default function App() {
             <Activity size={20} />
           </div>
           <div>
-            <h1 className="text-base font-extrabold font-display text-white tracking-wide">MediCore AI</h1>
+            <h1 className="text-base font-extrabold font-display text-white tracking-wide">MediKiosk</h1>
             <p className="text-[11px] text-blue-400 font-semibold tracking-wider uppercase">Central Command Center</p>
           </div>
         </div>

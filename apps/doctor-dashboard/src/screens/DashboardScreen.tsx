@@ -120,7 +120,7 @@ export function DashboardScreen({ onLoggedOut, onOpenSession }: DashboardScreenP
         clearSession();
         onLoggedOut();
       }}
-      title="MediCore AI"
+      title="MediKiosk"
       subtitle="Cardiologist View"
       search={search}
       onSearchChange={setSearch}

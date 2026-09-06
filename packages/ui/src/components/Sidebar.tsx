@@ -16,7 +16,7 @@ export interface SidebarProps {
 }
 
 export function Sidebar({
-  brandTitle = 'MediCore AI',
+  brandTitle = 'MediKiosk',
   brandSubtitle = 'Clinical Platform',
   items,
   activeId,

@@ -73,7 +73,7 @@ export default function App() {
       {/* Main Container */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         <Topbar
-          title="MediCore AI"
+          title="MediKiosk"
           subtitle="Hospital Operations & Facility Control"
           search={search}
           onSearchChange={setSearch}
