@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { BigButton, KioskLayout, dictionaries } from '@medikiosk/ui';
-import { ApiClientError, answerHistory } from '@medikiosk/api-client';
+import { BigButton, dictionaries } from '@medikiosk/ui';
+import { answerHistory } from '@medikiosk/api-client';
 import type { HistoryAnswerResponse, HistoryQuestion, Language } from '@medikiosk/shared-types';
 import { speechToText, textToSpeech, toSpeechLang } from '../lib/speech.js';
+import { toUserMessage } from '../lib/errors.js';
 
 export interface HistoryScreenProps {
   sessionId: string;
@@ -11,6 +12,23 @@ export interface HistoryScreenProps {
   redFlagActive: boolean;
   onAnswered: (result: HistoryAnswerResponse) => void;
 }
+
+const PHASE_ORDER = ['symptoms', 'background', 'ayush'] as const;
+type Phase = (typeof PHASE_ORDER)[number];
+
+const SECTION_PHASE: Record<string, Phase> = {
+  chiefComplaint: 'symptoms',
+  hpi: 'symptoms',
+  pastMedicalHistory: 'background',
+  pastSurgicalHistory: 'background',
+  currentMedications: 'background',
+  drugAllergies: 'background',
+  familyHistory: 'background',
+  personalHistory: 'background',
+  reviewOfSystems: 'background',
+  previousInvestigations: 'background',
+  ayush: 'ayush',
+};
 
 export function HistoryScreen({ sessionId, language, question, redFlagActive, onAnswered }: HistoryScreenProps) {
   const t = dictionaries[language].history;
@@ -22,6 +40,11 @@ export function HistoryScreen({ sessionId, language, question, redFlagActive, on
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const phase = SECTION_PHASE[question.section] ?? 'background';
+  const phaseIndex = PHASE_ORDER.indexOf(phase);
+  const totalPhases = phase === 'ayush' ? 3 : 2;
+  const phaseLabel = { symptoms: t.phaseSymptoms, background: t.phaseBackground, ayush: t.phaseAyush }[phase];
+
   async function submit(answerValue: unknown) {
     setSubmitting(true);
     setError(null);
@@ -31,23 +54,27 @@ export function HistoryScreen({ sessionId, language, question, redFlagActive, on
       setTextValue('');
       onAnswered(result);
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Something went wrong. Please try again.');
+      setError(toUserMessage(err, dictionaries[language]));
     } finally {
       setSubmitting(false);
     }
   }
 
-  async function handleListen() {
+  function handleListen() {
     if (!speechToText.isSupported()) return;
-    setListening(true);
-    try {
-      const result = await speechToText.listen({ lang: toSpeechLang(language) });
-      setTextValue((prev) => (prev ? `${prev} ${result.transcript}` : result.transcript));
-    } catch {
-      // Voice failed (denied mic, no speech, etc.) - touch input remains fully available.
-    } finally {
+    if (listening) {
+      speechToText.stop();
       setListening(false);
+      return;
     }
+    setListening(true);
+    speechToText
+      .listen({ lang: toSpeechLang(language) })
+      .then((result) => setTextValue((prev) => (prev ? `${prev} ${result.transcript}` : result.transcript)))
+      .catch(() => {
+        // Voice failed (denied mic, no speech, stopped early, etc.) - touch input remains fully available.
+      })
+      .finally(() => setListening(false));
   }
 
   function toggleMultiSelect(value: string) {
@@ -55,100 +82,106 @@ export function HistoryScreen({ sessionId, language, question, redFlagActive, on
   }
 
   return (
-    <KioskLayout>
-      <div className="flex flex-col items-center gap-6 text-center">
-        {redFlagActive && (
-          <div role="alert" className="w-full rounded-xl border-2 border-red-600 bg-red-50 px-4 py-3 text-lg font-semibold text-red-800">
-            ⚠️ {t.redFlagBanner}
-          </div>
-        )}
-
-        <div className="flex w-full items-start justify-between gap-3">
-          <h1 className="flex-1 text-left text-2xl font-bold text-slate-900 sm:text-3xl">
-            {question.questionText[langKey]}
-          </h1>
-          <button
-            type="button"
-            aria-label={tc.listen}
-            className="shrink-0 text-2xl"
-            onClick={() => textToSpeech.speak(question.questionText[langKey], { lang: toSpeechLang(language) })}
-          >
-            🔊
-          </button>
+    <div className="flex flex-col items-center gap-6 text-center">
+      {redFlagActive && (
+        <div role="alert" className="w-full rounded-xl border-2 border-danger-600 bg-danger-50 px-4 py-3 text-danger-800">
+          <p className="text-lg font-semibold">⚠️ {t.redFlagBanner}</p>
+          <p className="text-sm">{t.redFlagSubtext}</p>
         </div>
+      )}
 
-        {error && (
-          <div role="alert" className="w-full rounded-xl bg-red-50 px-4 py-3 text-lg text-red-800">
-            {error}
-          </div>
-        )}
+      <div className="flex w-full items-center gap-2">
+        {PHASE_ORDER.slice(0, totalPhases).map((_, i) => (
+          <span key={i} className={`h-1.5 flex-1 rounded-full ${i <= phaseIndex ? 'bg-primary-600' : 'bg-neutral-200'}`} />
+        ))}
+      </div>
+      <p className="-mt-4 text-xs font-medium uppercase tracking-wide text-neutral-400">{phaseLabel}</p>
 
-        {(question.type === 'SINGLE_SELECT' || question.type === 'BOOLEAN') && question.options && (
-          <div className="flex w-full flex-col gap-3">
-            {question.options.map((option) => (
-              <BigButton
+      <div className="flex w-full items-start justify-between gap-3">
+        <h1 className="flex-1 text-left text-2xl font-bold text-neutral-900 sm:text-3xl">
+          {question.questionText[langKey]}
+        </h1>
+        <button
+          type="button"
+          aria-label={tc.listen}
+          className="shrink-0 text-2xl"
+          onClick={() => textToSpeech.speak(question.questionText[langKey], { lang: toSpeechLang(language) })}
+        >
+          🔊
+        </button>
+      </div>
+
+      {error && (
+        <div role="alert" className="w-full rounded-xl bg-danger-50 px-4 py-3 text-lg text-danger-800">
+          {error}
+        </div>
+      )}
+
+      {(question.type === 'SINGLE_SELECT' || question.type === 'BOOLEAN') && question.options && (
+        <div className="flex w-full flex-col gap-3">
+          {question.options.map((option) => (
+            <BigButton
+              key={option.value}
+              variant="secondary"
+              disabled={submitting}
+              onClick={() => submit(option.value)}
+            >
+              {option.label[langKey]}
+            </BigButton>
+          ))}
+        </div>
+      )}
+
+      {question.type === 'MULTI_SELECT' && question.options && (
+        <div className="flex w-full flex-col gap-3">
+          {question.options.map((option) => {
+            const isChecked = selected.includes(option.value);
+            return (
+              <button
                 key={option.value}
-                variant="secondary"
-                disabled={submitting}
-                onClick={() => submit(option.value)}
+                type="button"
+                onClick={() => toggleMultiSelect(option.value)}
+                className={`flex min-h-[64px] items-center gap-4 rounded-2xl border-4 px-6 py-4 text-left text-xl font-medium transition-colors duration-150 ${
+                  isChecked ? 'border-primary-700 bg-primary-50 text-primary-900' : 'border-neutral-200 bg-white text-neutral-800'
+                }`}
               >
-                {option.label[langKey]}
-              </BigButton>
-            ))}
-          </div>
-        )}
-
-        {question.type === 'MULTI_SELECT' && question.options && (
-          <div className="flex w-full flex-col gap-3">
-            {question.options.map((option) => {
-              const isChecked = selected.includes(option.value);
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => toggleMultiSelect(option.value)}
-                  className={`flex min-h-[64px] items-center gap-4 rounded-2xl border-4 px-6 py-4 text-left text-xl font-medium transition-colors ${
-                    isChecked ? 'border-blue-700 bg-blue-50 text-blue-900' : 'border-slate-200 bg-white text-slate-800'
+                <span
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md border-2 ${
+                    isChecked ? 'border-primary-700 bg-primary-700 text-white' : 'border-neutral-400'
                   }`}
                 >
-                  <span
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md border-2 ${
-                      isChecked ? 'border-blue-700 bg-blue-700 text-white' : 'border-slate-400'
-                    }`}
-                  >
-                    {isChecked ? '✓' : ''}
-                  </span>
-                  {option.label[langKey]}
-                </button>
-              );
-            })}
-            <BigButton disabled={submitting || selected.length === 0} onClick={() => submit(selected)}>
-              {tc.continueButton}
-            </BigButton>
-          </div>
-        )}
+                  {isChecked ? '✓' : ''}
+                </span>
+                {option.label[langKey]}
+              </button>
+            );
+          })}
+          <BigButton disabled={submitting || selected.length === 0} onClick={() => submit(selected)}>
+            {tc.continueButton}
+          </BigButton>
+        </div>
+      )}
 
-        {(question.type === 'TEXT' || question.type === 'SCALE') && (
-          <div className="flex w-full flex-col gap-3">
-            <textarea
-              className="min-h-[120px] w-full rounded-2xl border-2 border-slate-300 p-4 text-xl"
-              placeholder={t.textPlaceholder}
-              value={textValue}
-              onChange={(e) => setTextValue(e.target.value)}
-            />
-            {speechToText.isSupported() ? (
-              <BigButton variant="secondary" disabled={listening} onClick={handleListen}>
-                🎙️ {listening ? t.listening : t.speak}
-              </BigButton>
-            ) : (
-              <p className="text-base italic text-slate-500">{t.voiceUnavailable}</p>
-            )}
-            <BigButton disabled={submitting || textValue.trim().length === 0} onClick={() => submit(textValue.trim())}>
-              {t.submit}
+      {(question.type === 'TEXT' || question.type === 'SCALE') && (
+        <div className="flex w-full flex-col gap-3">
+          <textarea
+            className="min-h-[120px] w-full rounded-2xl border-2 border-neutral-300 p-4 text-xl"
+            placeholder={t.textPlaceholder}
+            value={textValue}
+            onChange={(e) => setTextValue(e.target.value)}
+          />
+          {speechToText.isSupported() ? (
+            <BigButton variant={listening ? 'danger' : 'secondary'} onClick={handleListen}>
+              {listening ? <>🔴 {t.listening} · {t.tapToStop}</> : <>🎙️ {t.speak}</>}
             </BigButton>
-          </div>
-        )}
-      </div>
-    </KioskLayout>
+          ) : (
+            <p className="text-base italic text-neutral-500">{t.voiceUnavailable}</p>
+          )}
+          <BigButton disabled={submitting || textValue.trim().length === 0} onClick={() => submit(textValue.trim())}>
+            {t.submit}
+          </BigButton>
+        </div>
+      )}
+    </div>
   );
 }

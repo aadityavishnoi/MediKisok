@@ -31,10 +31,20 @@ vi.mock('../lib/authStore.js', () => ({
 const { DashboardScreen } = await import('./DashboardScreen.js');
 
 describe('DashboardScreen', () => {
-  it('loads and displays a patient session row with its alert severity', async () => {
-    render(<DashboardScreen onLoggedOut={vi.fn()} />);
+  it('loads and displays a patient session row with its alert severity and live stats', async () => {
+    render(<DashboardScreen onLoggedOut={vi.fn()} onOpenSession={vi.fn()} />);
     expect(await screen.findByText('Demo Patient 001')).toBeInTheDocument();
     expect(screen.getByText('Chest pain')).toBeInTheDocument();
     expect(screen.getByText(/HIGH/)).toBeInTheDocument();
+    expect(screen.getByText('Active Sessions')).toBeInTheDocument();
+    expect(screen.getByText('Red Flags')).toBeInTheDocument();
+  });
+
+  it('opens the session detail view when a row is clicked', async () => {
+    const onOpenSession = vi.fn();
+    render(<DashboardScreen onLoggedOut={vi.fn()} onOpenSession={onOpenSession} />);
+    const row = await screen.findByText('Demo Patient 001');
+    row.closest('tr')!.click();
+    expect(onOpenSession).toHaveBeenCalledWith('s1');
   });
 });

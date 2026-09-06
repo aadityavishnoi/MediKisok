@@ -18,6 +18,6 @@ describe('ChiefComplaintScreen', () => {
 
   it('renders Hindi labels when language is HI', () => {
     render(<ChiefComplaintScreen language="HI" onSelect={vi.fn()} />);
-    expect(screen.getByText(/सीने में दर्द/)).toBeInTheDocument();
+    expect(screen.getByText('सीने में दर्द')).toBeInTheDocument();
   });
 });

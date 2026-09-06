@@ -15,7 +15,7 @@ describe('IdentifyScreen', () => {
   it('shows the tap-card prompt and both demo simulate buttons', () => {
     render(<IdentifyScreen wsState="open" error={null} onError={vi.fn()} />);
     expect(screen.getByText(/Tap your patient card/)).toBeInTheDocument();
-    expect(screen.getByText('Waiting for card…')).toBeInTheDocument();
+    expect(screen.getByText('Connected')).toBeInTheDocument();
     expect(screen.getByText(/Demo Patient 001/)).toBeInTheDocument();
     expect(screen.getByText(/Demo Patient 002/)).toBeInTheDocument();
   });
@@ -29,5 +29,13 @@ describe('IdentifyScreen', () => {
   it('shows an error message when provided', () => {
     render(<IdentifyScreen wsState="open" error="Card not recognized." onError={vi.fn()} />);
     expect(screen.getByRole('alert')).toHaveTextContent('Card not recognized.');
+  });
+
+  it('reflects the real WebSocket state rather than always claiming to be connected', () => {
+    const { rerender } = render(<IdentifyScreen wsState="connecting" error={null} onError={vi.fn()} />);
+    expect(screen.getByText('Connecting…')).toBeInTheDocument();
+
+    rerender(<IdentifyScreen wsState="closed" error={null} onError={vi.fn()} />);
+    expect(screen.getByText('Reconnecting…')).toBeInTheDocument();
   });
 });

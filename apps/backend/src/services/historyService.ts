@@ -167,9 +167,12 @@ export async function answerHistory(input: {
   }
 
   if (result.historyComplete) {
+    // Document upload/OCR and AI summary generation are not implemented yet (see
+    // docs/architecture.md), so a completed history routes straight to the doctor's
+    // queue rather than parking at an intermediate status nothing can advance it past.
     await prisma.patientSession.update({
       where: { id: input.sessionId },
-      data: { status: SessionStatus.DOCUMENTS },
+      data: { status: SessionStatus.ROUTED },
     });
     await recordAudit({
       actorType: ActorType.PATIENT,
@@ -179,7 +182,7 @@ export async function answerHistory(input: {
     });
     wsHub.broadcast({
       type: 'SESSION_UPDATED',
-      payload: { sessionId: input.sessionId, status: SessionStatus.DOCUMENTS, timestamp: new Date().toISOString() },
+      payload: { sessionId: input.sessionId, status: SessionStatus.ROUTED, timestamp: new Date().toISOString() },
     });
   }
 

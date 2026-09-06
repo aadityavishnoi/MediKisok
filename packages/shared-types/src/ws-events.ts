@@ -23,6 +23,15 @@ export interface AlertRaisedEvent {
   };
 }
 
+export interface AlertAcknowledgedEvent {
+  type: 'ALERT_ACKNOWLEDGED';
+  payload: {
+    alertId: string;
+    sessionId: string;
+    timestamp: string;
+  };
+}
+
 export interface SessionUpdatedEvent {
   type: 'SESSION_UPDATED';
   payload: {
@@ -53,6 +62,7 @@ export interface HardwareStatusChangedEvent {
 export type WsEvent =
   | RfidScannedEvent
   | AlertRaisedEvent
+  | AlertAcknowledgedEvent
   | SessionUpdatedEvent
   | SummaryReadyEvent
   | HardwareStatusChangedEvent;

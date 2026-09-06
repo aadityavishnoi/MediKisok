@@ -1,10 +1,10 @@
 import type { AlertSeverity } from '@medikiosk/shared-types';
 
 const STYLES: Record<AlertSeverity, string> = {
-  LOW: 'bg-slate-100 text-slate-700',
-  MEDIUM: 'bg-amber-100 text-amber-800',
-  HIGH: 'bg-orange-100 text-orange-800',
-  CRITICAL: 'bg-red-100 text-red-800 animate-pulse',
+  LOW: 'bg-neutral-100 text-neutral-700',
+  MEDIUM: 'bg-warning-100 text-warning-800',
+  HIGH: 'bg-danger-100 text-danger-800',
+  CRITICAL: 'bg-danger-100 text-danger-800 motion-safe:animate-pulse',
 };
 
 export function SeverityBadge({ severity }: { severity: AlertSeverity }) {

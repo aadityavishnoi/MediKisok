@@ -5,6 +5,15 @@ export const ConsentStatus = {
 } as const;
 export type ConsentStatus = (typeof ConsentStatus)[keyof typeof ConsentStatus];
 
+export const ConsentScope = {
+  HISTORY: 'HISTORY',
+  DOCUMENTS: 'DOCUMENTS',
+  AI_SUMMARY: 'AI_SUMMARY',
+  ABDM: 'ABDM',
+  RESEARCH: 'RESEARCH',
+} as const;
+export type ConsentScope = (typeof ConsentScope)[keyof typeof ConsentScope];
+
 export const DocumentType = {
   PRESCRIPTION: 'PRESCRIPTION',
   LAB_REPORT: 'LAB_REPORT',
@@ -44,19 +53,35 @@ export type Mode = (typeof Mode)[keyof typeof Mode];
 export const Language = {
   EN: 'EN',
   HI: 'HI',
+  BN: 'BN',
+  MR: 'MR',
+  TA: 'TA',
+  TE: 'TE',
+  GU: 'GU',
+  KN: 'KN',
+  ML: 'ML',
+  PA: 'PA',
+  OR: 'OR',
+  AS: 'AS',
+  UR: 'UR',
 } as const;
 export type Language = (typeof Language)[keyof typeof Language];
 
-/**
- * Real, heartbeat-derived hardware connectivity state. CONNECTED/STALE/OFFLINE are
- * computed purely from RFIDDevice.lastHeartbeatAt - never set directly, and never
- * overridden by DEMO_MODE. See packages/shared-types/src/api.ts HardwareStatusResponse
- * for how "Demo Mode" is layered on top of this without faking it.
- */
+export const RFIDCardStatus = {
+  ACTIVE: 'ACTIVE',
+  SUSPENDED: 'SUSPENDED',
+  LOST: 'LOST',
+  STOLEN: 'STOLEN',
+  DEACTIVATED: 'DEACTIVATED',
+  EXPIRED: 'EXPIRED',
+} as const;
+export type RFIDCardStatus = (typeof RFIDCardStatus)[keyof typeof RFIDCardStatus];
+
 export const DeviceStatus = {
   CONNECTED: 'CONNECTED',
   STALE: 'STALE',
   OFFLINE: 'OFFLINE',
+  DEGRADED: 'DEGRADED',
 } as const;
 export type DeviceStatus = (typeof DeviceStatus)[keyof typeof DeviceStatus];
 
@@ -80,6 +105,8 @@ export const ActorType = {
   DOCTOR: 'DOCTOR',
   SYSTEM: 'SYSTEM',
   DEVICE: 'DEVICE',
+  RFID_OFFICER: 'RFID_OFFICER',
+  ADMIN: 'ADMIN',
 } as const;
 export type ActorType = (typeof ActorType)[keyof typeof ActorType];
 
@@ -103,6 +130,8 @@ export type QuestionType = (typeof QuestionType)[keyof typeof QuestionType];
 export const AISummaryStatus = {
   DRAFT: 'DRAFT',
   CONFIRMED: 'CONFIRMED',
+  EDITED: 'EDITED',
+  REJECTED: 'REJECTED',
 } as const;
 export type AISummaryStatus = (typeof AISummaryStatus)[keyof typeof AISummaryStatus];
 
@@ -113,7 +142,6 @@ export const ConsultationStatus = {
 } as const;
 export type ConsultationStatus = (typeof ConsultationStatus)[keyof typeof ConsultationStatus];
 
-/** How a given AI sub-service actually produced its result - always shown to users, never hidden. */
 export const AIResultOrigin = {
   REAL: 'REAL',
   LOCAL: 'LOCAL',
@@ -131,6 +159,10 @@ export type AIProviderMode = (typeof AIProviderMode)[keyof typeof AIProviderMode
 
 export const DoctorRole = {
   DOCTOR: 'DOCTOR',
+  RFID_OFFICER: 'RFID_OFFICER',
+  HOSPITAL_ADMIN: 'HOSPITAL_ADMIN',
+  CENTRAL_ADMIN: 'CENTRAL_ADMIN',
   ADMIN: 'ADMIN',
 } as const;
 export type DoctorRole = (typeof DoctorRole)[keyof typeof DoctorRole];
+

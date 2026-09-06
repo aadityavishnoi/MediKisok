@@ -9,6 +9,9 @@ import { consentRouter } from './routes/consent.js';
 import { historyRouter } from './routes/history.js';
 import { authRouter } from './routes/auth.js';
 import { doctorRouter } from './routes/doctor.js';
+import { documentsRouter } from './routes/documents.js';
+import { aiRouter } from './routes/ai.js';
+import { adminRouter } from './routes/admin.js';
 
 export function createApp() {
   const app = express();
@@ -27,6 +30,9 @@ export function createApp() {
   app.use('/api', historyRouter);
   app.use('/api', authRouter);
   app.use('/api', doctorRouter);
+  app.use('/api', documentsRouter);
+  app.use('/api', aiRouter);
+  app.use('/api', adminRouter);
 
   app.use((_req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Route not found' } });
@@ -36,3 +42,4 @@ export function createApp() {
 
   return app;
 }
+

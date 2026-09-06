@@ -2,12 +2,12 @@ import type { AlertSeverity, ConsentStatus, DeviceStatus, DocumentType, Identifi
 import type {
   Alert,
   AISummary,
+  ClinicalAnswer,
   ClinicalHistory,
   Consent,
   ExtractedMedicalData,
   HardwareDeviceState,
   LocalizedText,
-  MedicalDocument,
   MedicalTimelineEvent,
   Patient,
   PatientSession,
@@ -183,6 +183,21 @@ export interface DoctorDashboardResponse {
   sessions: DoctorDashboardSessionRow[];
 }
 
+/** Full clinical picture for one session - what the doctor sees on the detail screen. */
+export interface SessionDetailResponse {
+  sessionId: string;
+  status: PatientSession['status'];
+  mode: PatientSession['mode'];
+  language: PatientSession['language'];
+  isDemo: boolean;
+  createdAt: string;
+  updatedAt: string;
+  patient: Pick<Patient, 'id' | 'fullName' | 'dateOfBirth' | 'gender' | 'phone'>;
+  consent: Pick<Consent, 'status' | 'language' | 'grantedAt'> | null;
+  history: (ClinicalHistory & { answers: ClinicalAnswer[] }) | null;
+  alerts: Alert[];
+}
+
 export interface SummaryConfirmRequest {
   sessionId: string;
   editedContent: string;
@@ -207,6 +222,16 @@ export interface AlertCreateRequest {
 
 export interface AlertCreateResponse {
   alertId: string;
+}
+
+export interface AlertAcknowledgeRequest {
+  alertId: string;
+}
+
+export interface AlertAcknowledgeResponse {
+  alertId: string;
+  acknowledged: true;
+  acknowledgedAt: string;
 }
 
 // ---------------------------------------------------------------------------
