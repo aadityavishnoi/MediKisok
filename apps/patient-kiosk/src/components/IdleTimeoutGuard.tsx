@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { dictionaries } from '@medikiosk/ui';
+import { getDictionary } from '@medikiosk/ui';
 import type { Language } from '@medikiosk/shared-types';
 
 const WARN_AFTER_MS = 150_000; // 2.5 minutes of inactivity
@@ -13,11 +13,6 @@ export interface IdleTimeoutGuardProps {
   onTimeout: () => void;
 }
 
-/**
- * A public kiosk left mid-interview must not display one patient's answers to the next
- * person. After a period of inactivity we warn, then reset. Never silently discards data
- * without warning first - the patient always gets a chance to say "I'm still here".
- */
 export function IdleTimeoutGuard({ language, onTimeout }: IdleTimeoutGuardProps) {
   const [warning, setWarning] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_SECONDS);
@@ -47,7 +42,7 @@ export function IdleTimeoutGuard({ language, onTimeout }: IdleTimeoutGuardProps)
   }
 
   function resetActivity() {
-    if (warning) return; // once the modal is up, only the explicit button dismisses it
+    if (warning) return;
     clearTimers();
     armWarnTimer();
   }
@@ -70,7 +65,7 @@ export function IdleTimeoutGuard({ language, onTimeout }: IdleTimeoutGuardProps)
 
   if (!warning) return null;
 
-  const t = dictionaries[language].common;
+  const t = getDictionary(language).common;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-6" role="alertdialog" aria-modal="true">
       <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-xl">
@@ -90,3 +85,4 @@ export function IdleTimeoutGuard({ language, onTimeout }: IdleTimeoutGuardProps)
     </div>
   );
 }
+

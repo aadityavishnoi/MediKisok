@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { dictionaries } from '@medikiosk/ui';
+import { getDictionary } from '@medikiosk/ui';
 import { Language, Mode, type HistoryQuestion } from '@medikiosk/shared-types';
 import { startHistory, type WsConnectionState } from '@medikiosk/api-client';
 import type { ChiefComplaintCategory } from '@medikiosk/clinical-engine';
@@ -33,13 +33,6 @@ export interface PatientFlowProps {
   wsState: WsConnectionState;
 }
 
-/**
- * Everything after RFID identification: Language -> Consent -> Chief Complaint ->
- * adaptive clinical history. Mode is fixed to GENERAL here - AYUSH mode is exercised via
- * the clinical engine's own tests and the seeded demo data rather than a patient-facing
- * toggle. Language can still be switched mid-flow from the header - every question the
- * backend returns already carries both {en,hi} text, so this is a pure re-render.
- */
 export function PatientFlow({ sessionId, wsState }: PatientFlowProps) {
   const [stage, setStage] = useState<FlowStage>({ name: 'LANGUAGE' });
   const [language, setLanguage] = useState<Language>(Language.EN);
@@ -53,7 +46,7 @@ export function PatientFlow({ sessionId, wsState }: PatientFlowProps) {
         setStage({ name: 'HISTORY', question: result.question, redFlagActive: false });
       }
     } catch (err) {
-      setStartError(toUserMessage(err, dictionaries[language]));
+      setStartError(toUserMessage(err, getDictionary(language)));
     }
   }
 
@@ -76,7 +69,7 @@ export function PatientFlow({ sessionId, wsState }: PatientFlowProps) {
       />
     );
   } else if (stage.name === 'DECLINED') {
-    const t = dictionaries[language].consent;
+    const t = getDictionary(language).consent;
     content = (
       <div className="flex flex-col items-center gap-4 text-center">
         <div className="text-6xl">🙏</div>
@@ -112,7 +105,7 @@ export function PatientFlow({ sessionId, wsState }: PatientFlowProps) {
       />
     );
   } else {
-    const t = dictionaries[language].history;
+    const t = getDictionary(language).history;
     content = (
       <div className="flex flex-col items-center gap-4 text-center">
         <div className="text-6xl">✅</div>
@@ -139,3 +132,4 @@ export function PatientFlow({ sessionId, wsState }: PatientFlowProps) {
     </>
   );
 }
+
