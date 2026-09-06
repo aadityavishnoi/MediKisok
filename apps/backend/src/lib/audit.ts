@@ -16,7 +16,7 @@ export async function recordAudit(entry: {
 }): Promise<void> {
   await prisma.auditLog.create({
     data: {
-      actorType: entry.actorType,
+      actorType: entry.actorType as any,
       actorId: entry.actorId ?? null,
       action: entry.action,
       entityType: entry.entityType ?? null,
@@ -24,4 +24,5 @@ export async function recordAudit(entry: {
       metadata: entry.metadata ? (entry.metadata as Prisma.InputJsonValue) : undefined,
     },
   });
+
 }
