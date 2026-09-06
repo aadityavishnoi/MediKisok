@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BigButton, dictionaries } from '@medikiosk/ui';
+import { BigButton, getDictionary } from '@medikiosk/ui';
 import { answerHistory } from '@medikiosk/api-client';
 import type { HistoryAnswerResponse, HistoryQuestion, Language } from '@medikiosk/shared-types';
 import { speechToText, textToSpeech, toSpeechLang } from '../lib/speech.js';
@@ -31,8 +31,9 @@ const SECTION_PHASE: Record<string, Phase> = {
 };
 
 export function HistoryScreen({ sessionId, language, question, redFlagActive, onAnswered }: HistoryScreenProps) {
-  const t = dictionaries[language].history;
-  const tc = dictionaries[language].common;
+  const dict = getDictionary(language);
+  const t = dict.history;
+  const tc = dict.common;
   const langKey = language === 'HI' ? 'hi' : 'en';
   const [selected, setSelected] = useState<string[]>([]);
   const [textValue, setTextValue] = useState('');
@@ -54,11 +55,12 @@ export function HistoryScreen({ sessionId, language, question, redFlagActive, on
       setTextValue('');
       onAnswered(result);
     } catch (err) {
-      setError(toUserMessage(err, dictionaries[language]));
+      setError(toUserMessage(err, getDictionary(language)));
     } finally {
       setSubmitting(false);
     }
   }
+
 
   function handleListen() {
     if (!speechToText.isSupported()) return;

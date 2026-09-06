@@ -1,4 +1,4 @@
-import { dictionaries } from '@medikiosk/ui';
+import { getDictionary } from '@medikiosk/ui';
 import { CHIEF_COMPLAINT_CATEGORIES, CHIEF_COMPLAINT_LABELS, type ChiefComplaintCategory } from '@medikiosk/clinical-engine';
 import type { Language } from '@medikiosk/shared-types';
 
@@ -17,7 +17,8 @@ export interface ChiefComplaintScreenProps {
 }
 
 export function ChiefComplaintScreen({ language, onSelect }: ChiefComplaintScreenProps) {
-  const t = dictionaries[language].chiefComplaint;
+  const t = getDictionary(language).chiefComplaint;
+
   const langKey = language === 'HI' ? 'hi' : 'en';
 
   return (

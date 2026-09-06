@@ -53,19 +53,8 @@ export type Mode = (typeof Mode)[keyof typeof Mode];
 export const Language = {
   EN: 'EN',
   HI: 'HI',
-  BN: 'BN',
-  MR: 'MR',
-  TA: 'TA',
-  TE: 'TE',
-  GU: 'GU',
-  KN: 'KN',
-  ML: 'ML',
-  PA: 'PA',
-  OR: 'OR',
-  AS: 'AS',
-  UR: 'UR',
 } as const;
-export type Language = (typeof Language)[keyof typeof Language];
+export type Language = (typeof Language)[keyof typeof Language] | string;
 
 export const RFIDCardStatus = {
   ACTIVE: 'ACTIVE',
@@ -105,10 +94,9 @@ export const ActorType = {
   DOCTOR: 'DOCTOR',
   SYSTEM: 'SYSTEM',
   DEVICE: 'DEVICE',
-  RFID_OFFICER: 'RFID_OFFICER',
-  ADMIN: 'ADMIN',
 } as const;
-export type ActorType = (typeof ActorType)[keyof typeof ActorType];
+export type ActorType = (typeof ActorType)[keyof typeof ActorType] | string;
+
 
 export const IdentificationMethod = {
   RFID: 'RFID',

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BigButton, dictionaries } from '@medikiosk/ui';
+import { BigButton, getDictionary } from '@medikiosk/ui';
 import { submitConsent } from '@medikiosk/api-client';
 import type { Language } from '@medikiosk/shared-types';
 import { textToSpeech, toSpeechLang } from '../lib/speech.js';
@@ -12,8 +12,9 @@ export interface ConsentScreenProps {
 }
 
 export function ConsentScreen({ sessionId, language, onDecision }: ConsentScreenProps) {
-  const t = dictionaries[language].consent;
-  const tc = dictionaries[language].common;
+  const dict = getDictionary(language);
+  const t = dict.consent;
+  const tc = dict.common;
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [speaking, setSpeaking] = useState(false);
@@ -36,7 +37,7 @@ export function ConsentScreen({ sessionId, language, onDecision }: ConsentScreen
       await submitConsent({ sessionId, granted, language });
       onDecision(granted);
     } catch (err) {
-      setError(toUserMessage(err, dictionaries[language]));
+      setError(toUserMessage(err, getDictionary(language)));
     } finally {
       setSubmitting(false);
     }
@@ -47,7 +48,7 @@ export function ConsentScreen({ sessionId, language, onDecision }: ConsentScreen
       <h1 className="text-4xl font-bold text-neutral-900">{t.title}</h1>
 
       <ul className="w-full space-y-3 text-left">
-        {t.points.map((point, i) => (
+        {t.points.map((point: string, i: number) => (
           <li key={i} className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-sm">
             <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
               {i === t.points.length - 1 ? '⚠️' : '✓'}
@@ -92,3 +93,4 @@ export function ConsentScreen({ sessionId, language, onDecision }: ConsentScreen
     </div>
   );
 }
+

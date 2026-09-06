@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react';
-import { dictionaries, type Dictionary } from '@medikiosk/ui';
+import { getDictionary, type Dictionary } from '@medikiosk/ui';
 import type { Language } from '@medikiosk/shared-types';
 import type { WsConnectionState } from '@medikiosk/api-client';
+
 
 const STEP_ORDER = ['IDENTIFY', 'LANGUAGE', 'CONSENT', 'CHIEF_COMPLAINT', 'HISTORY', 'DONE'] as const;
 export type KioskStepId = (typeof STEP_ORDER)[number];
@@ -49,8 +50,9 @@ export interface KioskShellProps {
  */
 export function KioskShell({ step, language, onLanguageChange, wsState, sessionId, children }: KioskShellProps) {
   const [helpOpen, setHelpOpen] = useState(false);
-  const t = dictionaries[language ?? 'EN'];
+  const t = getDictionary(language);
   const stepIndex = STEP_ORDER.indexOf(step);
+
 
   return (
     <div className="flex min-h-screen flex-col bg-neutral-50">
