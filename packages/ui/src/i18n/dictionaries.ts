@@ -276,4 +276,11 @@ export const hi: Dictionary = {
   },
 };
 
-export const dictionaries = { EN: en, HI: hi } as const;
+export const dictionaries: Record<string, Dictionary> = { EN: en, HI: hi };
+
+export function getDictionary(lang: string | null | undefined): Dictionary {
+  if (!lang) return en;
+  const upper = lang.toUpperCase();
+  return dictionaries[upper] || en;
+}
+
