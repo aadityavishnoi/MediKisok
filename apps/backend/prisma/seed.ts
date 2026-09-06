@@ -38,7 +38,22 @@ async function main() {
     },
   });
 
+  const passwordHash = await bcrypt.hash(DEMO_DOCTOR_PASSWORD, 10);
+  await prisma.doctor.upsert({
+    where: { id: DEMO_DOCTOR_ID },
+    update: { passwordHash },
+    create: {
+      id: DEMO_DOCTOR_ID,
+      name: 'Dr. Demo',
+      email: DEMO_DOCTOR_EMAIL,
+      passwordHash,
+      role: 'DOCTOR',
+      department: 'General Medicine',
+    },
+  });
+
   console.log('Seed complete: Demo Patient 001 (RFID UID DEMO-RFID-001).');
+  console.log(`Demo doctor login: ${DEMO_DOCTOR_EMAIL} / ${DEMO_DOCTOR_PASSWORD}`);
 }
 
 main()
