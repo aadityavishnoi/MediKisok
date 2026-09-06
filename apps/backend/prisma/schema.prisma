@@ -193,6 +193,9 @@ model ClinicalHistory {
   patientId              String
   mode                   Mode
   chiefComplaint         String?
+  chiefComplaintCategory String?
+  currentTreeId          String?
+  currentNodeId          String?
   hpi                    Json?
   pastMedicalHistory     Json?
   pastSurgicalHistory    Json?

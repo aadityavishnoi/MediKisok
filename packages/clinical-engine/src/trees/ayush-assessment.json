@@ -1,0 +1,135 @@
+{
+  "id": "ayush-assessment",
+  "entryNodeId": "ay-1",
+  "nodes": [
+    {
+      "id": "ay-1",
+      "section": "ayush",
+      "ayushField": "Prakriti",
+      "type": "SINGLE_SELECT",
+      "questionText": { "en": "What is your predominant body constitution (Prakriti)?", "hi": "आपकी प्रमुख शारीरिक प्रकृति क्या है?" },
+      "options": [
+        { "value": "vata", "label": { "en": "Vata", "hi": "वात" }, "next": "ay-2" },
+        { "value": "pitta", "label": { "en": "Pitta", "hi": "पित्त" }, "next": "ay-2" },
+        { "value": "kapha", "label": { "en": "Kapha", "hi": "कफ" }, "next": "ay-2" },
+        { "value": "mixed", "label": { "en": "Mixed", "hi": "मिश्रित" }, "next": "ay-2" }
+      ]
+    },
+    {
+      "id": "ay-2",
+      "section": "ayush",
+      "ayushField": "Vikriti",
+      "type": "SINGLE_SELECT",
+      "questionText": { "en": "What is your current state of imbalance (Vikriti)?", "hi": "आपकी वर्तमान असंतुलन की स्थिति (विकृति) क्या है?" },
+      "options": [
+        { "value": "vata", "label": { "en": "Vata", "hi": "वात" }, "next": "ay-3" },
+        { "value": "pitta", "label": { "en": "Pitta", "hi": "पित्त" }, "next": "ay-3" },
+        { "value": "kapha", "label": { "en": "Kapha", "hi": "कफ" }, "next": "ay-3" },
+        { "value": "mixed", "label": { "en": "Mixed", "hi": "मिश्रित" }, "next": "ay-3" }
+      ]
+    },
+    {
+      "id": "ay-3",
+      "section": "ayush",
+      "ayushField": "Sara",
+      "type": "SINGLE_SELECT",
+      "questionText": { "en": "How would you rate your tissue quality / vitality (Sara)?", "hi": "आपकी धातु गुणवत्ता / सार कैसा है?" },
+      "options": [
+        { "value": "excellent", "label": { "en": "Excellent", "hi": "उत्कृष्ट" }, "next": "ay-4" },
+        { "value": "good", "label": { "en": "Good", "hi": "अच्छा" }, "next": "ay-4" },
+        { "value": "average", "label": { "en": "Average", "hi": "औसत" }, "next": "ay-4" },
+        { "value": "poor", "label": { "en": "Poor", "hi": "कमजोर" }, "next": "ay-4" }
+      ]
+    },
+    {
+      "id": "ay-4",
+      "section": "ayush",
+      "ayushField": "Samhanana",
+      "type": "SINGLE_SELECT",
+      "questionText": { "en": "How would you describe your body's compactness/build (Samhanana)?", "hi": "आपके शरीर की संहनन (बनावट) कैसी है?" },
+      "options": [
+        { "value": "strong", "label": { "en": "Strong / well-compacted", "hi": "मजबूत / सुगठित" }, "next": "ay-5" },
+        { "value": "moderate", "label": { "en": "Moderate", "hi": "मध्यम" }, "next": "ay-5" },
+        { "value": "weak", "label": { "en": "Weak / loosely built", "hi": "कमजोर" }, "next": "ay-5" }
+      ]
+    },
+    {
+      "id": "ay-5",
+      "section": "ayush",
+      "ayushField": "Pramana",
+      "type": "TEXT",
+      "questionText": { "en": "Please describe your height, weight, and general body measurements (Pramana).", "hi": "कृपया अपनी ऊंचाई, वजन और सामान्य शारीरिक माप बताएं (प्रमाण)।" },
+      "next": "ay-6"
+    },
+    {
+      "id": "ay-6",
+      "section": "ayush",
+      "ayushField": "Satmya",
+      "type": "SINGLE_SELECT",
+      "questionText": { "en": "Which diet suits you best (Satmya)?", "hi": "कौन सा आहार आपके लिए सबसे उपयुक्त है (सात्म्य)?" },
+      "options": [
+        { "value": "suits_all", "label": { "en": "Suits all types of food", "hi": "सभी प्रकार के भोजन के अनुकूल" }, "next": "ay-7" },
+        { "value": "milk_based", "label": { "en": "Milk-based diet", "hi": "दूध आधारित आहार" }, "next": "ay-7" },
+        { "value": "non_veg", "label": { "en": "Non-vegetarian diet", "hi": "मांसाहारी आहार" }, "next": "ay-7" },
+        { "value": "vegetarian", "label": { "en": "Vegetarian diet", "hi": "शाकाहारी आहार" }, "next": "ay-7" }
+      ]
+    },
+    {
+      "id": "ay-7",
+      "section": "ayush",
+      "ayushField": "Sattva",
+      "type": "SINGLE_SELECT",
+      "questionText": { "en": "How would you rate your mental strength/resilience (Sattva)?", "hi": "आपकी मानसिक शक्ति (सत्व) कैसी है?" },
+      "options": [
+        { "value": "high", "label": { "en": "High", "hi": "उच्च" }, "next": "ay-8" },
+        { "value": "moderate", "label": { "en": "Moderate", "hi": "मध्यम" }, "next": "ay-8" },
+        { "value": "low", "label": { "en": "Low", "hi": "कम" }, "next": "ay-8" }
+      ]
+    },
+    {
+      "id": "ay-8",
+      "section": "ayush",
+      "ayushField": "Ahara Shakti",
+      "type": "SINGLE_SELECT",
+      "questionText": { "en": "How would you describe your digestive capacity (Ahara Shakti)?", "hi": "आपकी पाचन शक्ति (आहार शक्ति) कैसी है?" },
+      "options": [
+        { "value": "strong", "label": { "en": "Strong digestion", "hi": "मजबूत पाचन" }, "next": "ay-9" },
+        { "value": "moderate", "label": { "en": "Moderate digestion", "hi": "मध्यम पाचन" }, "next": "ay-9" },
+        { "value": "weak", "label": { "en": "Weak digestion", "hi": "कमजोर पाचन" }, "next": "ay-9" }
+      ]
+    },
+    {
+      "id": "ay-9",
+      "section": "ayush",
+      "ayushField": "Vyayama Shakti",
+      "type": "SINGLE_SELECT",
+      "questionText": { "en": "What is your capacity for physical exercise (Vyayama Shakti)?", "hi": "आपकी व्यायाम शक्ति कैसी है?" },
+      "options": [
+        { "value": "high", "label": { "en": "High exercise capacity", "hi": "उच्च व्यायाम क्षमता" }, "next": "ay-10" },
+        { "value": "moderate", "label": { "en": "Moderate", "hi": "मध्यम" }, "next": "ay-10" },
+        { "value": "low", "label": { "en": "Low exercise capacity", "hi": "कम व्यायाम क्षमता" }, "next": "ay-10" }
+      ]
+    },
+    {
+      "id": "ay-10",
+      "section": "ayush",
+      "ayushField": "Vaya",
+      "type": "SINGLE_SELECT",
+      "questionText": { "en": "Which age group (Vaya) do you belong to?", "hi": "आप किस आयु वर्ग (वय) में आते हैं?" },
+      "options": [
+        { "value": "child", "label": { "en": "Child", "hi": "बालक" }, "next": "ay-11" },
+        { "value": "young_adult", "label": { "en": "Young adult", "hi": "युवा" }, "next": "ay-11" },
+        { "value": "middle_age", "label": { "en": "Middle age", "hi": "मध्यम आयु" }, "next": "ay-11" },
+        { "value": "elderly", "label": { "en": "Elderly", "hi": "वृद्ध" }, "next": "ay-11" }
+      ]
+    },
+    {
+      "id": "ay-11",
+      "section": "ayush",
+      "ayushField": "Ahara-Vihara",
+      "type": "TEXT",
+      "questionText": { "en": "Please describe your typical diet and daily lifestyle habits (Ahara-Vihara).", "hi": "कृपया अपने सामान्य आहार और दैनिक जीवनशैली की आदतें बताएं (आहार-विहार)।" },
+      "next": null
+    }
+  ]
+}

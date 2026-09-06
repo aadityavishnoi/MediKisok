@@ -1,0 +1,76 @@
+{
+  "id": "chest-pain",
+  "entryNodeId": "cp-1",
+  "nodes": [
+    {
+      "id": "cp-1",
+      "section": "hpi",
+      "type": "SINGLE_SELECT",
+      "questionText": { "en": "When did the chest pain start?", "hi": "सीने में दर्द कब शुरू हुआ?" },
+      "options": [
+        { "value": "under_1hr", "label": { "en": "Less than 1 hour ago", "hi": "1 घंटे से कम पहले" }, "next": "cp-2" },
+        { "value": "few_hours", "label": { "en": "A few hours ago", "hi": "कुछ घंटे पहले" }, "next": "cp-2" },
+        { "value": "1_2_days", "label": { "en": "1-2 days ago", "hi": "1-2 दिन पहले" }, "next": "cp-2" },
+        { "value": "over_week", "label": { "en": "Over a week ago", "hi": "एक सप्ताह से अधिक पहले" }, "next": "cp-2" }
+      ]
+    },
+    {
+      "id": "cp-2",
+      "section": "hpi",
+      "type": "SINGLE_SELECT",
+      "questionText": { "en": "Where exactly is the pain located?", "hi": "दर्द ठीक कहाँ है?" },
+      "options": [
+        { "value": "center", "label": { "en": "Center of chest", "hi": "सीने के बीच में" }, "next": "cp-3" },
+        { "value": "left", "label": { "en": "Left side", "hi": "बाईं ओर" }, "next": "cp-3" },
+        { "value": "right", "label": { "en": "Right side", "hi": "दाईं ओर" }, "next": "cp-3" },
+        { "value": "whole", "label": { "en": "Whole chest", "hi": "पूरे सीने में" }, "next": "cp-3" }
+      ]
+    },
+    {
+      "id": "cp-3",
+      "section": "hpi",
+      "type": "SINGLE_SELECT",
+      "questionText": { "en": "What does the pain feel like?", "hi": "दर्द कैसा महसूस होता है?" },
+      "options": [
+        { "value": "sharp", "label": { "en": "Sharp / stabbing", "hi": "तीखा / चुभने जैसा" }, "next": "cp-4" },
+        { "value": "burning", "label": { "en": "Burning", "hi": "जलन जैसा" }, "next": "cp-4" },
+        { "value": "pressure", "label": { "en": "Pressure / crushing", "hi": "दबाव / कुचलने जैसा" }, "next": "cp-4" },
+        { "value": "dull", "label": { "en": "Dull ache", "hi": "हल्का दर्द" }, "next": "cp-4" }
+      ]
+    },
+    {
+      "id": "cp-4",
+      "section": "hpi",
+      "type": "SINGLE_SELECT",
+      "questionText": { "en": "How severe is the pain, from 1 (mild) to 10 (worst)?", "hi": "दर्द कितना गंभीर है, 1 (हल्का) से 10 (सबसे तेज़) तक?" },
+      "options": [
+        { "value": "mild_1_3", "label": { "en": "Mild (1-3)", "hi": "हल्का (1-3)" }, "next": "cp-5" },
+        { "value": "moderate_4_6", "label": { "en": "Moderate (4-6)", "hi": "मध्यम (4-6)" }, "next": "cp-5" },
+        { "value": "severe_7_10", "label": { "en": "Severe (7-10)", "hi": "गंभीर (7-10)" }, "next": "cp-5", "redFlag": true }
+      ]
+    },
+    {
+      "id": "cp-5",
+      "section": "hpi",
+      "type": "BOOLEAN",
+      "questionText": { "en": "Does the pain spread to your arm, jaw, or back?", "hi": "क्या दर्द आपकी बांह, जबड़े या पीठ तक फैलता है?" },
+      "options": [
+        { "value": "yes", "label": { "en": "Yes", "hi": "हाँ" }, "next": "cp-6" },
+        { "value": "no", "label": { "en": "No", "hi": "नहीं" }, "next": "cp-6" }
+      ]
+    },
+    {
+      "id": "cp-6",
+      "section": "hpi",
+      "type": "MULTI_SELECT",
+      "questionText": { "en": "Do you have any of the following right now?", "hi": "क्या आपको अभी इनमें से कुछ है?" },
+      "options": [
+        { "value": "shortness_of_breath", "label": { "en": "Shortness of breath", "hi": "सांस लेने में तकलीफ" }, "next": null, "redFlag": true },
+        { "value": "sweating", "label": { "en": "Sweating", "hi": "पसीना आना" }, "next": null },
+        { "value": "dizziness", "label": { "en": "Dizziness", "hi": "चक्कर आना" }, "next": null, "redFlag": true },
+        { "value": "none", "label": { "en": "None of these", "hi": "इनमें से कोई नहीं" }, "next": null }
+      ],
+      "next": null
+    }
+  ]
+}

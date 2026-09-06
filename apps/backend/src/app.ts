@@ -5,6 +5,8 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { healthRouter } from './routes/health.js';
 import { rfidRouter } from './routes/rfid.js';
 import { sessionRouter } from './routes/session.js';
+import { consentRouter } from './routes/consent.js';
+import { historyRouter } from './routes/history.js';
 
 export function createApp() {
   const app = express();
@@ -19,6 +21,8 @@ export function createApp() {
   app.use('/api', healthRouter);
   app.use('/api', rfidRouter);
   app.use('/api', sessionRouter);
+  app.use('/api', consentRouter);
+  app.use('/api', historyRouter);
 
   app.use((_req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Route not found' } });

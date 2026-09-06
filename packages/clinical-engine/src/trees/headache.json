@@ -1,0 +1,41 @@
+{
+  "id": "headache",
+  "entryNodeId": "hd-1",
+  "nodes": [
+    {
+      "id": "hd-1",
+      "section": "hpi",
+      "type": "SINGLE_SELECT",
+      "questionText": { "en": "How did the headache start?", "hi": "सिरदर्द कैसे शुरू हुआ?" },
+      "options": [
+        { "value": "sudden_worst_ever", "label": { "en": "Suddenly - the worst headache of my life", "hi": "अचानक - मेरे जीवन का सबसे तेज़ सिरदर्द" }, "next": "hd-2", "redFlag": true },
+        { "value": "gradual", "label": { "en": "Gradually", "hi": "धीरे-धीरे" }, "next": "hd-2" }
+      ]
+    },
+    {
+      "id": "hd-2",
+      "section": "hpi",
+      "type": "SINGLE_SELECT",
+      "questionText": { "en": "How severe is the headache?", "hi": "सिरदर्द कितना गंभीर है?" },
+      "options": [
+        { "value": "mild", "label": { "en": "Mild", "hi": "हल्का" }, "next": "hd-3" },
+        { "value": "moderate", "label": { "en": "Moderate", "hi": "मध्यम" }, "next": "hd-3" },
+        { "value": "severe", "label": { "en": "Severe", "hi": "गंभीर" }, "next": "hd-3" }
+      ]
+    },
+    {
+      "id": "hd-3",
+      "section": "hpi",
+      "type": "MULTI_SELECT",
+      "questionText": { "en": "Do you have any of the following along with the headache?", "hi": "क्या सिरदर्द के साथ इनमें से कुछ है?" },
+      "options": [
+        { "value": "vision_changes", "label": { "en": "Vision changes", "hi": "नज़र में बदलाव" }, "next": null },
+        { "value": "weakness_one_side", "label": { "en": "Weakness on one side of the body", "hi": "शरीर के एक तरफ कमजोरी" }, "next": null, "redFlag": true },
+        { "value": "slurred_speech", "label": { "en": "Slurred speech", "hi": "बोलने में लड़खड़ाहट" }, "next": null, "redFlag": true },
+        { "value": "vomiting", "label": { "en": "Vomiting", "hi": "उल्टी" }, "next": null },
+        { "value": "none", "label": { "en": "None of these", "hi": "इनमें से कोई नहीं" }, "next": null }
+      ],
+      "next": null
+    }
+  ]
+}

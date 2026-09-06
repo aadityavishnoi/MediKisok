@@ -14,6 +14,9 @@ importers:
 
   apps/backend:
     dependencies:
+      '@medikiosk/clinical-engine':
+        specifier: workspace:*
+        version: link:../../packages/clinical-engine
       '@medikiosk/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
@@ -81,9 +84,15 @@ importers:
 
   apps/patient-kiosk:
     dependencies:
+      '@medikiosk/ai-service':
+        specifier: workspace:*
+        version: link:../../packages/ai-service
       '@medikiosk/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
+      '@medikiosk/clinical-engine':
+        specifier: workspace:*
+        version: link:../../packages/clinical-engine
       '@medikiosk/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
@@ -131,6 +140,12 @@ importers:
         specifier: ^2.1.2
         version: 2.1.9(@types/node@22.20.1)(jsdom@25.0.1)
 
+  packages/ai-service:
+    devDependencies:
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+
   packages/api-client:
     dependencies:
       '@medikiosk/shared-types':
@@ -140,6 +155,19 @@ importers:
       typescript:
         specifier: ^5.6.3
         version: 5.9.3
+
+  packages/clinical-engine:
+    dependencies:
+      '@medikiosk/shared-types':
+        specifier: workspace:*
+        version: link:../shared-types
+    devDependencies:
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.2
+        version: 2.1.9(@types/node@22.20.1)(jsdom@25.0.1)
 
   packages/shared-types:
     devDependencies:

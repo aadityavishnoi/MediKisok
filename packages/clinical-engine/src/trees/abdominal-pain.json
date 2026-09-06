@@ -1,0 +1,55 @@
+{
+  "id": "abdominal-pain",
+  "entryNodeId": "ap-1",
+  "nodes": [
+    {
+      "id": "ap-1",
+      "section": "hpi",
+      "type": "SINGLE_SELECT",
+      "questionText": { "en": "Where is the abdominal pain located?", "hi": "पेट में दर्द कहाँ है?" },
+      "options": [
+        { "value": "upper_right", "label": { "en": "Upper right", "hi": "ऊपर दाईं ओर" }, "next": "ap-2" },
+        { "value": "upper_left", "label": { "en": "Upper left", "hi": "ऊपर बाईं ओर" }, "next": "ap-2" },
+        { "value": "lower_right", "label": { "en": "Lower right", "hi": "नीचे दाईं ओर" }, "next": "ap-2" },
+        { "value": "lower_left", "label": { "en": "Lower left", "hi": "नीचे बाईं ओर" }, "next": "ap-2" },
+        { "value": "whole", "label": { "en": "Whole abdomen", "hi": "पूरे पेट में" }, "next": "ap-2" }
+      ]
+    },
+    {
+      "id": "ap-2",
+      "section": "hpi",
+      "type": "SINGLE_SELECT",
+      "questionText": { "en": "What does the pain feel like?", "hi": "दर्द कैसा महसूस होता है?" },
+      "options": [
+        { "value": "cramping", "label": { "en": "Cramping", "hi": "मरोड़ जैसा" }, "next": "ap-3" },
+        { "value": "sharp", "label": { "en": "Sharp", "hi": "तीखा" }, "next": "ap-3" },
+        { "value": "burning", "label": { "en": "Burning", "hi": "जलन जैसा" }, "next": "ap-3" },
+        { "value": "dull", "label": { "en": "Dull ache", "hi": "हल्का दर्द" }, "next": "ap-3" }
+      ]
+    },
+    {
+      "id": "ap-3",
+      "section": "hpi",
+      "type": "SINGLE_SELECT",
+      "questionText": { "en": "How severe is the pain?", "hi": "दर्द कितना गंभीर है?" },
+      "options": [
+        { "value": "mild", "label": { "en": "Mild", "hi": "हल्का" }, "next": "ap-4" },
+        { "value": "moderate", "label": { "en": "Moderate", "hi": "मध्यम" }, "next": "ap-4" },
+        { "value": "severe", "label": { "en": "Severe", "hi": "गंभीर" }, "next": "ap-4", "redFlag": true }
+      ]
+    },
+    {
+      "id": "ap-4",
+      "section": "hpi",
+      "type": "MULTI_SELECT",
+      "questionText": { "en": "Do you have any of the following?", "hi": "क्या आपको इनमें से कुछ है?" },
+      "options": [
+        { "value": "vomiting", "label": { "en": "Vomiting", "hi": "उल्टी" }, "next": null },
+        { "value": "fever", "label": { "en": "Fever", "hi": "बुखार" }, "next": null },
+        { "value": "blood_in_stool", "label": { "en": "Blood in stool or vomit", "hi": "मल या उल्टी में खून" }, "next": null, "redFlag": true },
+        { "value": "none", "label": { "en": "None of these", "hi": "इनमें से कोई नहीं" }, "next": null }
+      ],
+      "next": null
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "id": "fever",
+  "entryNodeId": "fv-1",
+  "nodes": [
+    {
+      "id": "fv-1",
+      "section": "hpi",
+      "type": "SINGLE_SELECT",
+      "questionText": { "en": "How long have you had the fever?", "hi": "आपको बुखार कब से है?" },
+      "options": [
+        { "value": "under_1_day", "label": { "en": "Less than a day", "hi": "एक दिन से कम" }, "next": "fv-2" },
+        { "value": "1_3_days", "label": { "en": "1-3 days", "hi": "1-3 दिन" }, "next": "fv-2" },
+        { "value": "over_3_days", "label": { "en": "More than 3 days", "hi": "3 दिन से अधिक" }, "next": "fv-2" }
+      ]
+    },
+    {
+      "id": "fv-2",
+      "section": "hpi",
+      "type": "SINGLE_SELECT",
+      "questionText": { "en": "Roughly how high has the fever been?", "hi": "बुखार लगभग कितना तेज़ रहा है?" },
+      "options": [
+        { "value": "under_38", "label": { "en": "Below 38°C (mild)", "hi": "38°C से कम (हल्का)" }, "next": "fv-3" },
+        { "value": "38_39", "label": { "en": "38-39°C", "hi": "38-39°C" }, "next": "fv-3" },
+        { "value": "over_39", "label": { "en": "Above 39°C (high)", "hi": "39°C से अधिक (तेज़)" }, "next": "fv-3" }
+      ]
+    },
+    {
+      "id": "fv-3",
+      "section": "hpi",
+      "type": "BOOLEAN",
+      "questionText": { "en": "Do you have a stiff neck or severe headache along with the fever?", "hi": "क्या बुखार के साथ गर्दन में अकड़न या तेज़ सिरदर्द है?" },
+      "options": [
+        { "value": "yes", "label": { "en": "Yes", "hi": "हाँ" }, "next": "fv-4", "redFlag": true },
+        { "value": "no", "label": { "en": "No", "hi": "नहीं" }, "next": "fv-4" }
+      ]
+    },
+    {
+      "id": "fv-4",
+      "section": "hpi",
+      "type": "MULTI_SELECT",
+      "questionText": { "en": "Do you have any of the following?", "hi": "क्या आपको इनमें से कुछ है?" },
+      "options": [
+        { "value": "chills", "label": { "en": "Chills / shivering", "hi": "ठंड लगना / कंपकंपी" }, "next": null },
+        { "value": "rash", "label": { "en": "Skin rash", "hi": "त्वचा पर चकत्ते" }, "next": null },
+        { "value": "cough", "label": { "en": "Cough", "hi": "खांसी" }, "next": null },
+        { "value": "none", "label": { "en": "None of these", "hi": "इनमें से कोई नहीं" }, "next": null }
+      ],
+      "next": null
+    }
+  ]
+}

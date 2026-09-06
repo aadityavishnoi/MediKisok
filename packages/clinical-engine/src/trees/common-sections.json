@@ -1,0 +1,88 @@
+{
+  "id": "common-sections",
+  "entryNodeId": "cs-1",
+  "nodes": [
+    {
+      "id": "cs-1",
+      "section": "pastMedicalHistory",
+      "type": "MULTI_SELECT",
+      "questionText": { "en": "Do you have any of these ongoing medical conditions?", "hi": "क्या आपको इनमें से कोई चल रही बीमारी है?" },
+      "options": [
+        { "value": "diabetes", "label": { "en": "Diabetes", "hi": "मधुमेह" }, "next": null },
+        { "value": "hypertension", "label": { "en": "High blood pressure", "hi": "उच्च रक्तचाप" }, "next": null },
+        { "value": "heart_disease", "label": { "en": "Heart disease", "hi": "हृदय रोग" }, "next": null },
+        { "value": "asthma", "label": { "en": "Asthma", "hi": "दमा" }, "next": null },
+        { "value": "thyroid", "label": { "en": "Thyroid disorder", "hi": "थायरॉइड विकार" }, "next": null },
+        { "value": "none", "label": { "en": "None of these", "hi": "इनमें से कोई नहीं" }, "next": null }
+      ],
+      "next": "cs-2"
+    },
+    {
+      "id": "cs-2",
+      "section": "pastSurgicalHistory",
+      "type": "TEXT",
+      "questionText": { "en": "Have you had any surgeries in the past? If none, type 'None'.", "hi": "क्या आपकी पहले कोई सर्जरी हुई है? यदि नहीं, तो 'कोई नहीं' लिखें।" },
+      "next": "cs-3"
+    },
+    {
+      "id": "cs-3",
+      "section": "currentMedications",
+      "type": "TEXT",
+      "questionText": { "en": "What medications are you currently taking? If none, type 'None'.", "hi": "आप वर्तमान में कौन सी दवाएं ले रहे हैं? यदि कोई नहीं, तो 'कोई नहीं' लिखें।" },
+      "next": "cs-4"
+    },
+    {
+      "id": "cs-4",
+      "section": "drugAllergies",
+      "type": "TEXT",
+      "questionText": { "en": "Do you have any drug allergies? If none, type 'None'.", "hi": "क्या आपको किसी दवा से एलर्जी है? यदि नहीं, तो 'कोई नहीं' लिखें।" },
+      "next": "cs-5"
+    },
+    {
+      "id": "cs-5",
+      "section": "familyHistory",
+      "type": "MULTI_SELECT",
+      "questionText": { "en": "Does anyone in your immediate family have these conditions?", "hi": "क्या आपके परिवार में किसी को इनमें से कोई बीमारी है?" },
+      "options": [
+        { "value": "diabetes", "label": { "en": "Diabetes", "hi": "मधुमेह" }, "next": null },
+        { "value": "heart_disease", "label": { "en": "Heart disease", "hi": "हृदय रोग" }, "next": null },
+        { "value": "cancer", "label": { "en": "Cancer", "hi": "कैंसर" }, "next": null },
+        { "value": "none", "label": { "en": "None of these", "hi": "इनमें से कोई नहीं" }, "next": null }
+      ],
+      "next": "cs-6"
+    },
+    {
+      "id": "cs-6",
+      "section": "personalHistory",
+      "type": "MULTI_SELECT",
+      "questionText": { "en": "Do any of these apply to you?", "hi": "क्या इनमें से कोई आप पर लागू होता है?" },
+      "options": [
+        { "value": "smoking", "label": { "en": "Smoking", "hi": "धूम्रपान" }, "next": null },
+        { "value": "alcohol", "label": { "en": "Alcohol use", "hi": "शराब का सेवन" }, "next": null },
+        { "value": "tobacco", "label": { "en": "Tobacco use", "hi": "तंबाकू का सेवन" }, "next": null },
+        { "value": "none", "label": { "en": "None of these", "hi": "इनमें से कोई नहीं" }, "next": null }
+      ],
+      "next": "cs-7"
+    },
+    {
+      "id": "cs-7",
+      "section": "reviewOfSystems",
+      "type": "MULTI_SELECT",
+      "questionText": { "en": "Have you noticed any of the following recently?", "hi": "क्या आपने हाल ही में इनमें से कुछ देखा है?" },
+      "options": [
+        { "value": "weight_loss", "label": { "en": "Unexplained weight loss", "hi": "अस्पष्ट वजन घटना" }, "next": null },
+        { "value": "night_sweats", "label": { "en": "Night sweats", "hi": "रात में पसीना आना" }, "next": null },
+        { "value": "fatigue", "label": { "en": "Ongoing fatigue", "hi": "लगातार थकान" }, "next": null },
+        { "value": "none", "label": { "en": "None of these", "hi": "इनमें से कोई नहीं" }, "next": null }
+      ],
+      "next": "cs-8"
+    },
+    {
+      "id": "cs-8",
+      "section": "previousInvestigations",
+      "type": "TEXT",
+      "questionText": { "en": "Any previous tests or reports relevant to this visit? If none, type 'None'.", "hi": "इस विजिट से संबंधित कोई पिछली जांच या रिपोर्ट? यदि नहीं, तो 'कोई नहीं' लिखें।" },
+      "next": null
+    }
+  ]
+}

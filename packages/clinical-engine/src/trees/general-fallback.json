@@ -1,0 +1,43 @@
+{
+  "id": "general-fallback",
+  "entryNodeId": "gf-1",
+  "nodes": [
+    {
+      "id": "gf-1",
+      "section": "chiefComplaint",
+      "type": "TEXT",
+      "questionText": { "en": "Please describe the main problem you are having today.", "hi": "कृपया आज आपको हो रही मुख्य समस्या बताएं।" },
+      "next": "gf-2"
+    },
+    {
+      "id": "gf-2",
+      "section": "hpi",
+      "type": "SINGLE_SELECT",
+      "questionText": { "en": "How long has this been going on?", "hi": "यह कब से हो रहा है?" },
+      "options": [
+        { "value": "today", "label": { "en": "Since today", "hi": "आज से" }, "next": "gf-3" },
+        { "value": "few_days", "label": { "en": "A few days", "hi": "कुछ दिनों से" }, "next": "gf-3" },
+        { "value": "weeks", "label": { "en": "A few weeks", "hi": "कुछ हफ्तों से" }, "next": "gf-3" },
+        { "value": "longer", "label": { "en": "Longer than that", "hi": "उससे भी अधिक समय से" }, "next": "gf-3" }
+      ]
+    },
+    {
+      "id": "gf-3",
+      "section": "hpi",
+      "type": "SINGLE_SELECT",
+      "questionText": { "en": "Overall, how severe would you say it is?", "hi": "कुल मिलाकर, आप इसे कितना गंभीर मानेंगे?" },
+      "options": [
+        { "value": "mild", "label": { "en": "Mild", "hi": "हल्का" }, "next": "gf-4" },
+        { "value": "moderate", "label": { "en": "Moderate", "hi": "मध्यम" }, "next": "gf-4" },
+        { "value": "severe", "label": { "en": "Severe", "hi": "गंभीर" }, "next": "gf-4" }
+      ]
+    },
+    {
+      "id": "gf-4",
+      "section": "hpi",
+      "type": "TEXT",
+      "questionText": { "en": "Is there anything else about your symptoms you'd like to mention?", "hi": "क्या आप अपने लक्षणों के बारे में कुछ और बताना चाहेंगे?" },
+      "next": null
+    }
+  ]
+}

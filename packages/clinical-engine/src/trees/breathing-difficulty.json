@@ -1,0 +1,50 @@
+{
+  "id": "breathing-difficulty",
+  "entryNodeId": "bd-1",
+  "nodes": [
+    {
+      "id": "bd-1",
+      "section": "hpi",
+      "type": "SINGLE_SELECT",
+      "questionText": { "en": "Did the breathing difficulty start suddenly or gradually?", "hi": "सांस की तकलीफ अचानक शुरू हुई या धीरे-धीरे?" },
+      "options": [
+        { "value": "sudden", "label": { "en": "Suddenly", "hi": "अचानक" }, "next": "bd-2" },
+        { "value": "gradual", "label": { "en": "Gradually", "hi": "धीरे-धीरे" }, "next": "bd-2" }
+      ]
+    },
+    {
+      "id": "bd-2",
+      "section": "hpi",
+      "type": "SINGLE_SELECT",
+      "questionText": { "en": "How severe is the breathing difficulty?", "hi": "सांस की तकलीफ कितनी गंभीर है?" },
+      "options": [
+        { "value": "mild", "label": { "en": "Mild - noticeable only on exertion", "hi": "हल्की - केवल मेहनत करने पर महसूस होती है" }, "next": "bd-3" },
+        { "value": "moderate", "label": { "en": "Moderate - noticeable at rest", "hi": "मध्यम - आराम करते समय भी महसूस होती है" }, "next": "bd-3" },
+        { "value": "severe", "label": { "en": "Severe - cannot complete a full sentence", "hi": "गंभीर - पूरा वाक्य नहीं बोल पा रहे" }, "next": "bd-3", "redFlag": true }
+      ]
+    },
+    {
+      "id": "bd-3",
+      "section": "hpi",
+      "type": "BOOLEAN",
+      "questionText": { "en": "Is there any chest pain along with the breathing difficulty?", "hi": "क्या सांस की तकलीफ के साथ सीने में दर्द भी है?" },
+      "options": [
+        { "value": "yes", "label": { "en": "Yes", "hi": "हाँ" }, "next": "bd-4" },
+        { "value": "no", "label": { "en": "No", "hi": "नहीं" }, "next": "bd-4" }
+      ]
+    },
+    {
+      "id": "bd-4",
+      "section": "hpi",
+      "type": "MULTI_SELECT",
+      "questionText": { "en": "Do you have any of the following?", "hi": "क्या आपको इनमें से कुछ है?" },
+      "options": [
+        { "value": "wheezing", "label": { "en": "Wheezing sound while breathing", "hi": "सांस लेते समय सीटी जैसी आवाज" }, "next": null },
+        { "value": "blue_lips", "label": { "en": "Bluish lips or face", "hi": "होंठ या चेहरा नीला पड़ना" }, "next": null, "redFlag": true },
+        { "value": "leg_swelling", "label": { "en": "Swelling in the legs", "hi": "पैरों में सूजन" }, "next": null },
+        { "value": "none", "label": { "en": "None of these", "hi": "इनमें से कोई नहीं" }, "next": null }
+      ],
+      "next": null
+    }
+  ]
+}
