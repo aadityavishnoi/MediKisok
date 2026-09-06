@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { acknowledgeAlert, ApiClientError, connectWs, getSessionDetail } from '@medikiosk/api-client';
+import { ArrowLeft } from 'lucide-react';
+import { acknowledgeAlert, ApiClientError, connectWs, getSessionDetail, type WsConnectionState } from '@medikiosk/api-client';
 import type { ClinicalHistory, HistorySectionEntry, SessionDetailResponse } from '@medikiosk/shared-types';
 import { SeverityBadge } from '@medikiosk/ui';
-import { clearSession } from '../lib/authStore.js';
+import { clearSession, getDoctorName } from '../lib/authStore.js';
 import { STATUS_DISPLAY } from '../lib/sessionStatus.js';
+import { DashboardShell } from '../components/DashboardShell.js';
+import { InitialsAvatar } from '../components/InitialsAvatar.js';
 
 export interface SessionDetailScreenProps {
   sessionId: string;
