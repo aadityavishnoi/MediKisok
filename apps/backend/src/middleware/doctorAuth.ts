@@ -9,11 +9,7 @@ export interface DoctorTokenPayload {
   name: string;
 }
 
-declare module 'express-serve-static-core' {
-  interface Request {
-    doctor?: DoctorTokenPayload;
-  }
-}
+export type RequestWithDoctor = Request & { doctor?: DoctorTokenPayload };
 
 export function requireDoctorAuth(req: Request, _res: Response, next: NextFunction) {
   const header = req.header('Authorization');
@@ -25,7 +21,7 @@ export function requireDoctorAuth(req: Request, _res: Response, next: NextFuncti
 
   try {
     const payload = jwt.verify(token, env.JWT_SECRET) as DoctorTokenPayload;
-    req.doctor = payload;
+    (req as RequestWithDoctor).doctor = payload;
     next();
   } catch {
     next(Errors.unauthorized('Invalid or expired token'));
