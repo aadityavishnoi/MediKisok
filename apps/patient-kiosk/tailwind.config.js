@@ -6,12 +6,22 @@ export default {
   content: ['./index.html', './src/**/*.{ts,tsx}', '../../packages/ui/src/**/*.{ts,tsx}'],
   theme: {
     extend: {
-      // Hindi (Devanagari) content shares the kiosk UI with English, so the font stack
-      // needs a Devanagari-capable fallback - Inter has no Devanagari glyphs at all.
+      // The kiosk ships UI text in 13 Indian languages across 9 different scripts.
+      // Inter only covers Latin, so every other script needs its own Noto Sans fallback
+      // - the browser picks whichever font in this stack actually has the glyph.
       fontFamily: {
         sans: [
           'Inter',
           'Noto Sans Devanagari',
+          'Noto Sans Bengali',
+          'Noto Sans Tamil',
+          'Noto Sans Telugu',
+          'Noto Sans Gujarati',
+          'Noto Sans Kannada',
+          'Noto Sans Malayalam',
+          'Noto Sans Gurmukhi',
+          'Noto Sans Oriya',
+          'Noto Sans Arabic',
           'ui-sans-serif',
           'system-ui',
           '-apple-system',

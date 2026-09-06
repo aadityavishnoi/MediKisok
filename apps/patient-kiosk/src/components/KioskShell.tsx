@@ -1,8 +1,6 @@
-import { useState, type ReactNode } from 'react';
-import { getDictionary, type Dictionary } from '@medikiosk/ui';
-import type { Language } from '@medikiosk/shared-types';
+import { useEffect, useState, type ReactNode } from 'react';
+import { getDictionary, SUPPORTED_LANGUAGES, type Dictionary } from '@medikiosk/ui';
 import type { WsConnectionState } from '@medikiosk/api-client';
-
 
 const STEP_ORDER = ['IDENTIFY', 'LANGUAGE', 'CONSENT', 'CHIEF_COMPLAINT', 'HISTORY', 'DONE'] as const;
 export type KioskStepId = (typeof STEP_ORDER)[number];
@@ -35,8 +33,8 @@ function ConnectionDot({ wsState, t }: { wsState: WsConnectionState; t: Dictiona
 
 export interface KioskShellProps {
   step: KioskStepId;
-  language: Language | null;
-  onLanguageChange?: (language: Language) => void;
+  language: string | null;
+  onLanguageChange?: (language: string) => void;
   wsState: WsConnectionState;
   sessionId?: string;
   children: ReactNode;
@@ -50,19 +48,28 @@ export interface KioskShellProps {
  */
 export function KioskShell({ step, language, onLanguageChange, wsState, sessionId, children }: KioskShellProps) {
   const [helpOpen, setHelpOpen] = useState(false);
-  const t = getDictionary(language);
+  const t = getDictionary(language ?? 'EN');
   const stepIndex = STEP_ORDER.indexOf(step);
+  const isRtl = SUPPORTED_LANGUAGES.find((l) => l.code === language)?.rtl === true;
 
+  // Urdu renders right-to-left - the whole document direction must follow it, not just
+  // individual text nodes, so layout (button order, icon placement) flips correctly too.
+  useEffect(() => {
+    document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
+    return () => {
+      document.documentElement.dir = 'ltr';
+    };
+  }, [isRtl]);
 
   return (
     <div className="flex min-h-screen flex-col bg-neutral-50">
-      <header className="flex items-center justify-between border-b border-neutral-200 bg-white px-6 py-4">
+      <header className="flex items-center justify-between gap-3 border-b border-neutral-200 bg-white px-6 py-4">
         <div className="flex items-center gap-2">
           <span className="text-2xl">🏥</span>
           <span className="text-lg font-bold text-neutral-900">MediKiosk</span>
         </div>
 
-        <ol className="hidden items-center gap-2 sm:flex" aria-label="Progress">
+        <ol className="hidden items-center gap-2 lg:flex" aria-label="Progress">
           {STEP_ORDER.map((id, i) => (
             <li key={id} className="flex items-center gap-2">
               <span
@@ -85,25 +92,21 @@ export function KioskShell({ step, language, onLanguageChange, wsState, sessionI
           ))}
         </ol>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <ConnectionDot wsState={wsState} t={t} />
           {language && onLanguageChange && (
-            <div className="flex overflow-hidden rounded-full border border-neutral-200 text-xs font-semibold">
-              <button
-                type="button"
-                onClick={() => onLanguageChange('EN')}
-                className={`px-2.5 py-1 ${language === 'EN' ? 'bg-primary-700 text-white' : 'text-neutral-500'}`}
-              >
-                EN
-              </button>
-              <button
-                type="button"
-                onClick={() => onLanguageChange('HI')}
-                className={`px-2.5 py-1 ${language === 'HI' ? 'bg-primary-700 text-white' : 'text-neutral-500'}`}
-              >
-                हि
-              </button>
-            </div>
+            <select
+              value={language}
+              onChange={(e) => onLanguageChange(e.target.value)}
+              aria-label={t.steps.language}
+              className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700"
+            >
+              {SUPPORTED_LANGUAGES.map((l) => (
+                <option key={l.code} value={l.code}>
+                  {l.nativeName}
+                </option>
+              ))}
+            </select>
           )}
         </div>
       </header>
