@@ -25,6 +25,8 @@ export function createApp() {
   app.use('/api', sessionRouter);
   app.use('/api', consentRouter);
   app.use('/api', historyRouter);
+  app.use('/api', authRouter);
+  app.use('/api', doctorRouter);
 
   app.use((_req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Route not found' } });
