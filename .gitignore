@@ -1,0 +1,12 @@
+node_modules/
+dist/
+build/
+.env
+!.env.example
+apps/backend/uploads/
+apps/backend/src/generated/
+*.log
+.DS_Store
+hardware/esp32-rfid/config.h
+.vite/
+coverage/

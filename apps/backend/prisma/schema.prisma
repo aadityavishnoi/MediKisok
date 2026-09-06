@@ -1,0 +1,344 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum ConsentStatus {
+  PENDING
+  GRANTED
+  DECLINED
+}
+
+enum DocumentType {
+  PRESCRIPTION
+  LAB_REPORT
+  DISCHARGE_SUMMARY
+  OTHER
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum SessionStatus {
+  CREATED
+  IDENTIFIED
+  CONSENTED
+  IN_HISTORY
+  DOCUMENTS
+  SUMMARY_READY
+  ROUTED
+  IN_CONSULT
+  COMPLETED
+  ABANDONED
+}
+
+enum Mode {
+  GENERAL
+  AYUSH
+}
+
+enum Language {
+  EN
+  HI
+}
+
+enum ExtractionFieldStatus {
+  VERIFIED
+  NEEDS_VERIFICATION
+}
+
+enum TimelineEventType {
+  DIAGNOSIS
+  MEDICATION
+  INVESTIGATION
+  PROCEDURE
+  VISIT
+}
+
+enum ActorType {
+  PATIENT
+  DOCTOR
+  SYSTEM
+  DEVICE
+}
+
+enum IdentificationMethod {
+  RFID
+  QR
+  MANUAL
+  DEMO
+}
+
+enum AISummaryStatus {
+  DRAFT
+  CONFIRMED
+}
+
+enum ConsultationStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum DoctorRole {
+  DOCTOR
+  ADMIN
+}
+
+// ---------------------------------------------------------------------------
+// Models
+// ---------------------------------------------------------------------------
+
+model Patient {
+  id                 String               @id @default(cuid())
+  fullName           String
+  dateOfBirth        DateTime?
+  gender             String?
+  phone              String?              @unique
+  abhaId             String?
+  registrationSource IdentificationMethod
+  isDemo             Boolean              @default(false)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  rfidCards         RFIDCard[]
+  sessions          PatientSession[]
+  clinicalHistories ClinicalHistory[]
+  documents         MedicalDocument[]
+  timelineEvents    MedicalTimelineEvent[]
+  consultations     Consultation[]
+  alerts            Alert[]
+  aiSummaries       AISummary[]
+}
+
+// Device row holds only connectivity metadata (deviceCode/location/heartbeat).
+// Connectivity state (CONNECTED/STALE/OFFLINE) is ALWAYS derived live from
+// lastHeartbeatAt by src/services/hardwareStatus.ts - it is never stored here,
+// so it can never go stale or be faked by DEMO_MODE.
+model RFIDDevice {
+  id               String    @id @default(cuid())
+  deviceCode       String    @unique
+  location         String?
+  lastHeartbeatAt  DateTime?
+  firmwareVersion  String?
+  ipAddress        String?
+  isDemo           Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+
+  sessions PatientSession[]
+}
+
+// Card stores ONLY a non-sensitive random UID - never medical/ABHA/Aadhaar data.
+model RFIDCard {
+  id        String   @id @default(cuid())
+  uid       String   @unique
+  patientId String?
+  isDemo    Boolean  @default(false)
+  active    Boolean  @default(true)
+  issuedAt  DateTime @default(now())
+
+  patient Patient? @relation(fields: [patientId], references: [id])
+}
+
+model PatientSession {
+  id            String               @id @default(cuid())
+  patientId     String?
+  deviceId      String?
+  status        SessionStatus        @default(CREATED)
+  mode          Mode                 @default(GENERAL)
+  language      Language             @default(EN)
+  isDemo        Boolean              @default(false)
+  identifiedVia IdentificationMethod?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  patient        Patient?         @relation(fields: [patientId], references: [id])
+  device         RFIDDevice?      @relation(fields: [deviceId], references: [id])
+  consent        Consent?
+  clinicalHistory ClinicalHistory?
+  documents      MedicalDocument[]
+  aiSummary      AISummary?
+  consultation   Consultation?
+  alerts         Alert[]
+}
+
+model Consent {
+  id                 String        @id @default(cuid())
+  sessionId          String        @unique
+  status             ConsentStatus @default(PENDING)
+  language           Language
+  consentTextVersion String
+  grantedAt          DateTime?
+  ipAddress          String?
+  createdAt          DateTime      @default(now())
+
+  session PatientSession @relation(fields: [sessionId], references: [id])
+}
+
+model ClinicalHistory {
+  id                     String    @id @default(cuid())
+  sessionId              String    @unique
+  patientId              String
+  mode                   Mode
+  chiefComplaint         String?
+  hpi                    Json?
+  pastMedicalHistory     Json?
+  pastSurgicalHistory    Json?
+  currentMedications     Json?
+  drugAllergies          Json?
+  familyHistory          Json?
+  personalHistory        Json?
+  reviewOfSystems        Json?
+  previousInvestigations Json?
+  ayushFields            Json?
+  completedAt            DateTime?
+  createdAt              DateTime  @default(now())
+
+  session PatientSession   @relation(fields: [sessionId], references: [id])
+  patient Patient          @relation(fields: [patientId], references: [id])
+  answers ClinicalAnswer[]
+}
+
+model ClinicalAnswer {
+  id                     String   @id @default(cuid())
+  clinicalHistoryId      String
+  nodeId                 String
+  section                String
+  questionText           String
+  questionTextLocalized  Json?
+  answerValue            Json
+  isRedFlagTrigger       Boolean  @default(false)
+  answeredAt             DateTime @default(now())
+
+  clinicalHistory ClinicalHistory @relation(fields: [clinicalHistoryId], references: [id])
+}
+
+model MedicalDocument {
+  id               String       @id @default(cuid())
+  sessionId        String
+  patientId        String
+  type             DocumentType
+  originalFilename String
+  storagePath      String
+  mimeType         String
+  ocrText          String?
+  ocrConfidence    Float?
+  processedAt      DateTime?
+  createdAt        DateTime     @default(now())
+
+  session       PatientSession          @relation(fields: [sessionId], references: [id])
+  patient       Patient                 @relation(fields: [patientId], references: [id])
+  extractedData ExtractedMedicalData[]
+  timelineEvents MedicalTimelineEvent[]
+}
+
+model ExtractedMedicalData {
+  id         String                @id @default(cuid())
+  documentId String
+  fieldType  String
+  fieldValue String
+  confidence Float
+  status     ExtractionFieldStatus @default(NEEDS_VERIFICATION)
+  verifiedBy String?
+  verifiedAt DateTime?
+
+  document MedicalDocument @relation(fields: [documentId], references: [id])
+}
+
+model MedicalTimelineEvent {
+  id               String            @id @default(cuid())
+  patientId        String
+  sourceDocumentId String?
+  eventType        TimelineEventType
+  eventDate        DateTime?
+  title            String
+  description      String?
+  metadata         Json?
+  createdAt        DateTime          @default(now())
+
+  patient        Patient          @relation(fields: [patientId], references: [id])
+  sourceDocument MedicalDocument? @relation(fields: [sourceDocumentId], references: [id])
+}
+
+model AISummary {
+  id                  String           @id @default(cuid())
+  sessionId           String           @unique
+  patientId           String
+  content             String
+  generatorType       String
+  status              AISummaryStatus  @default(DRAFT)
+  editedContent       String?
+  confirmedByDoctorId String?
+  confirmedAt         DateTime?
+  createdAt           DateTime         @default(now())
+
+  session PatientSession @relation(fields: [sessionId], references: [id])
+  patient Patient        @relation(fields: [patientId], references: [id])
+}
+
+model Doctor {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  role         DoctorRole @default(DOCTOR)
+  department   String?
+  createdAt    DateTime   @default(now())
+
+  consultations Consultation[]
+}
+
+model Consultation {
+  id          String             @id @default(cuid())
+  sessionId   String             @unique
+  patientId   String
+  doctorId    String?
+  status      ConsultationStatus @default(PENDING)
+  notes       String?
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  session PatientSession @relation(fields: [sessionId], references: [id])
+  patient Patient         @relation(fields: [patientId], references: [id])
+  doctor  Doctor?         @relation(fields: [doctorId], references: [id])
+}
+
+model Alert {
+  id                     String        @id @default(cuid())
+  sessionId              String
+  patientId              String
+  severity               AlertSeverity
+  triggerType            String
+  message                String
+  triggeredByAnswerId    String?
+  acknowledged           Boolean       @default(false)
+  acknowledgedByDoctorId String?
+  acknowledgedAt         DateTime?
+  createdAt              DateTime      @default(now())
+
+  session PatientSession @relation(fields: [sessionId], references: [id])
+  patient Patient        @relation(fields: [patientId], references: [id])
+}
+
+model AuditLog {
+  id         String    @id @default(cuid())
+  actorType  ActorType
+  actorId    String?
+  action     String
+  entityType String?
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime  @default(now())
+}
