@@ -141,8 +141,9 @@ documentsRouter.post('/documents/scan', async (req, res, next) => {
       engineUsed: result.engineUsed,
       imagekitUrl: imagekitUrl || undefined,
     });
-  } catch (err) {
-    next(err);
+  } catch (err: any) {
+    console.error('[documents/scan] Unhandled error during scan:', err);
+    res.status(500).json({ error: { code: 'SCAN_ERROR', message: err?.message || 'Error processing document scan' } });
   }
 });
 

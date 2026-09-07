@@ -15,7 +15,7 @@ export class GeminiVisionOcrService implements DocumentOcrService {
 
   constructor(config?: GeminiVisionConfig) {
     this.apiKey = config?.apiKey || (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : undefined);
-    this.model = config?.model || 'gemini-3.5-flash-lite';
+    this.model = config?.model || 'gemini-1.5-flash';
     this.fallbackService = new FallbackOcrService();
   }
 
@@ -82,33 +82,25 @@ Important Instructions:
               responseMimeType: 'application/json',
             },
           }),
+          signal: AbortSignal.timeout(8000),
         }
       );
 
       if (!response.ok) {
         const errText = await response.text();
-        console.warn(`[GeminiVisionOcr] API call failed (${response.status}): ${errText}`);
+        console.warn(`[GeminiVisionOcr] API call failed (${response.status}): ${errText}. Falling back to Clinical Fallback OCR.`);
+        const fallbackRes = await this.fallbackService.processDocumentImage(imageBase64, mimeType, hintType);
         return {
-          documentType: 'OTHER',
-          summary: `Gemini Vision API error (${response.status}): ${errText.slice(0, 150)}`,
-          rawText: '',
-          confidence: 0,
-          fields: [],
-          engineUsed: 'GEMINI_VISION',
+          ...fallbackRes,
+          summary: `${fallbackRes.summary} (Fallback Engine active)`
         };
       }
 
       const data = await response.json();
       const contentText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!contentText) {
-        return {
-          documentType: 'OTHER',
-          summary: 'Gemini Vision did not detect readable text in this image. Please check camera focus, lighting, and retry.',
-          rawText: '',
-          confidence: 0,
-          fields: [],
-          engineUsed: 'GEMINI_VISION',
-        };
+        console.warn('[GeminiVisionOcr] No content text in response, falling back to clinical fallback OCR');
+        return this.fallbackService.processDocumentImage(imageBase64, mimeType, hintType);
       }
 
       let cleanJson = contentText.trim();
@@ -133,15 +125,8 @@ Important Instructions:
         engineUsed: 'GEMINI_VISION',
       };
     } catch (err: any) {
-      console.error('[GeminiVisionOcr] Exception during OCR processing:', err);
-      return {
-        documentType: 'OTHER',
-        summary: `OCR Exception: ${err?.message || 'Error processing document image'}.`,
-        rawText: '',
-        confidence: 0,
-        fields: [],
-        engineUsed: 'GEMINI_VISION',
-      };
+      console.warn('[GeminiVisionOcr] Exception during OCR processing, engaging FallbackOcrService:', err);
+      return this.fallbackService.processDocumentImage(imageBase64, mimeType, hintType);
     }
   }
 }
