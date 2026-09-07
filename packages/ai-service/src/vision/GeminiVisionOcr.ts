@@ -15,7 +15,7 @@ export class GeminiVisionOcrService implements DocumentOcrService {
 
   constructor(config?: GeminiVisionConfig) {
     this.apiKey = config?.apiKey || (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : undefined);
-    this.model = config?.model || 'gemini-1.5-flash';
+    this.model = config?.model || 'gemini-3.5-flash-lite';
     this.fallbackService = new FallbackOcrService();
   }
 
@@ -58,72 +58,84 @@ Important Instructions:
 - For IDs/ABHA cards, extract 14-digit ABHA number or ID details.
 - Provide a confidence score between 0.80 and 0.99 based on legibility.`;
 
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  { text: prompt },
-                  {
-                    inlineData: {
-                      mimeType,
-                      data: cleanBase64,
-                    },
-                  },
-                ],
-              },
-            ],
-            generationConfig: {
-              temperature: 0.1,
-              responseMimeType: 'application/json',
-            },
-          }),
-          signal: AbortSignal.timeout(8000),
-        }
+      // Try primary model, fallback to gemini-3.5-flash if needed
+      const modelsToTry = [this.model, 'gemini-3.5-flash', 'gemini-flash-latest'].filter(
+        (m, idx, arr) => arr.indexOf(m) === idx
       );
 
-      if (!response.ok) {
-        const errText = await response.text();
-        console.warn(`[GeminiVisionOcr] API call failed (${response.status}): ${errText}. Falling back to Clinical Fallback OCR.`);
-        const fallbackRes = await this.fallbackService.processDocumentImage(imageBase64, mimeType, hintType);
-        return {
-          ...fallbackRes,
-          summary: `${fallbackRes.summary} (Fallback Engine active)`
-        };
+      let lastError = '';
+      for (const m of modelsToTry) {
+        try {
+          const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${this.apiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    parts: [
+                      { text: prompt },
+                      {
+                        inlineData: {
+                          mimeType,
+                          data: cleanBase64,
+                        },
+                      },
+                    ],
+                  },
+                ],
+                generationConfig: {
+                  temperature: 0.1,
+                  responseMimeType: 'application/json',
+                },
+              }),
+              signal: AbortSignal.timeout(15000),
+            }
+          );
+
+          if (!response.ok) {
+            lastError = await response.text();
+            console.warn(`[GeminiVisionOcr] Model ${m} returned (${response.status}): ${lastError.slice(0, 120)}`);
+            continue;
+          }
+
+          const data = await response.json();
+          const contentText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (!contentText) {
+            console.warn(`[GeminiVisionOcr] No content text from ${m}`);
+            continue;
+          }
+
+          let cleanJson = contentText.trim();
+          if (cleanJson.startsWith('```')) {
+            cleanJson = cleanJson.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+          }
+          const parsed = JSON.parse(cleanJson);
+          const fields: ExtractedField[] = Array.isArray(parsed.fields)
+            ? parsed.fields.map((f: any) => ({
+                fieldType: f.fieldType || 'OTHER',
+                fieldValue: String(f.fieldValue || ''),
+                confidence: Number(f.confidence) || 0.9,
+              }))
+            : [];
+
+          return {
+            documentType: parsed.documentType || (hintType.toUpperCase() as any) || 'PRESCRIPTION',
+            summary: parsed.summary || 'Document scanned successfully.',
+            rawText: parsed.rawText || '',
+            confidence: Number(parsed.confidence) || 0.95,
+            fields,
+            engineUsed: 'GEMINI_VISION',
+          };
+        } catch (modelErr: any) {
+          lastError = modelErr?.message || String(modelErr);
+          console.warn(`[GeminiVisionOcr] Error calling ${m}:`, lastError);
+        }
       }
 
-      const data = await response.json();
-      const contentText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!contentText) {
-        console.warn('[GeminiVisionOcr] No content text in response, falling back to clinical fallback OCR');
-        return this.fallbackService.processDocumentImage(imageBase64, mimeType, hintType);
-      }
-
-      let cleanJson = contentText.trim();
-      if (cleanJson.startsWith('```')) {
-        cleanJson = cleanJson.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
-      }
-      const parsed = JSON.parse(cleanJson);
-      const fields: ExtractedField[] = Array.isArray(parsed.fields)
-        ? parsed.fields.map((f: any) => ({
-            fieldType: f.fieldType || 'OTHER',
-            fieldValue: String(f.fieldValue || ''),
-            confidence: Number(f.confidence) || 0.9,
-          }))
-        : [];
-
-      return {
-        documentType: parsed.documentType || (hintType.toUpperCase() as any) || 'PRESCRIPTION',
-        summary: parsed.summary || 'Document scanned successfully.',
-        rawText: parsed.rawText || '',
-        confidence: Number(parsed.confidence) || 0.95,
-        fields,
-        engineUsed: 'GEMINI_VISION',
-      };
+      console.warn(`[GeminiVisionOcr] All Gemini vision models exhausted (${lastError}). Engaging FallbackOcrService.`);
+      return this.fallbackService.processDocumentImage(imageBase64, mimeType, hintType);
     } catch (err: any) {
       console.warn('[GeminiVisionOcr] Exception during OCR processing, engaging FallbackOcrService:', err);
       return this.fallbackService.processDocumentImage(imageBase64, mimeType, hintType);
