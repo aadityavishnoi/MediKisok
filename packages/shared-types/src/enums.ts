@@ -53,8 +53,20 @@ export type Mode = (typeof Mode)[keyof typeof Mode];
 export const Language = {
   EN: 'EN',
   HI: 'HI',
+  BN: 'BN',
+  MR: 'MR',
+  TE: 'TE',
+  TA: 'TA',
+  GU: 'GU',
+  KN: 'KN',
+  ML: 'ML',
+  PA: 'PA',
+  OR: 'OR',
+  AS: 'AS',
+  UR: 'UR',
 } as const;
-export type Language = (typeof Language)[keyof typeof Language] | string;
+export type Language = (typeof Language)[keyof typeof Language];
+
 
 export const RFIDCardStatus = {
   ACTIVE: 'ACTIVE',

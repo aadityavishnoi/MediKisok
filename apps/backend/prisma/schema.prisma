@@ -52,7 +52,19 @@ enum Mode {
 enum Language {
   EN
   HI
+  BN
+  MR
+  TE
+  TA
+  GU
+  KN
+  ML
+  PA
+  OR
+  AS
+  UR
 }
+
 
 enum ExtractionFieldStatus {
   VERIFIED

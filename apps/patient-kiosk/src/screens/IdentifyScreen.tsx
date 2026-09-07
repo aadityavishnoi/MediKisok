@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { en } from '@medikiosk/ui';
 import { simulateRfidScan, type WsConnectionState } from '@medikiosk/api-client';
-import { CreditCard, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { CreditCard, CheckCircle2, ShieldAlert, UserCheck, Sparkles, ArrowRight } from 'lucide-react';
 import { toUserMessage } from '../lib/errors.js';
 
-const t = en.identify;
 const tc = en.common;
 
 export interface IdentifyScreenProps {
@@ -14,70 +13,138 @@ export interface IdentifyScreenProps {
 }
 
 const CONNECTION_CONFIG: Record<WsConnectionState, { color: string; label: string }> = {
-  open: { color: 'bg-emerald-500', label: 'Connected' },
+  open: { color: 'bg-emerald-500', label: tc.connected },
   connecting: { color: 'bg-amber-400', label: tc.connecting },
   closed: { color: 'bg-red-500', label: tc.reconnecting },
 };
 
+const DEMO_PATIENTS = [
+  {
+    uid: 'DEMO-RFID-001',
+    name: 'Aarav Sharma',
+    label: 'Demo Patient 001',
+    age: 34,
+    gender: 'Male',
+    abhaId: '91-4820-9102-3819',
+    bloodGroup: 'O+',
+    lastVisit: 'Cardiology OPD',
+  },
+  {
+    uid: 'DEMO-RFID-002',
+    name: 'Priya Patel',
+    label: 'Demo Patient 002',
+    age: 28,
+    gender: 'Female',
+    abhaId: '91-1029-4829-5710',
+    bloodGroup: 'B+',
+    lastVisit: 'General Medicine',
+  },
+];
+
 export function IdentifyScreen({ wsState, error, onError }: IdentifyScreenProps) {
   const [simulating, setSimulating] = useState<string | null>(null);
+  const [lastScannedPatient, setLastScannedPatient] = useState<(typeof DEMO_PATIENTS)[0] | null>(null);
   const connection = CONNECTION_CONFIG[wsState];
 
-  async function simulate(uid: string) {
-    setSimulating(uid);
+  async function simulate(patient: (typeof DEMO_PATIENTS)[0]) {
+    setSimulating(patient.uid);
+    setLastScannedPatient(patient);
     try {
-      await simulateRfidScan({ uid });
+      await simulateRfidScan({ uid: patient.uid });
     } catch (err) {
       onError(toUserMessage(err, en));
+      setLastScannedPatient(null);
     } finally {
       setSimulating(null);
     }
   }
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 text-center max-w-xl mx-auto w-full">
-      <h1 className="text-4xl font-extrabold text-slate-900 mb-2 font-display">Welcome to MediKiosk</h1>
-      <p className="text-slate-500 mb-8 text-lg font-medium">Let's get your visit started</p>
-
-      {/* Pulsing RFID Card Icon Badge */}
-      <div className="w-28 h-28 rounded-full border-4 border-blue-500 flex items-center justify-center bg-blue-50 shadow-[0_0_0_12px_rgba(59,130,246,0.15)] animate-pulse mb-6">
-        <CreditCard size={48} className="text-blue-600" />
+    <div className="flex-1 flex flex-col items-center justify-center px-6 py-6 text-center max-w-lg mx-auto w-full">
+      <div className="mb-2">
+        <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100/80">
+          <Sparkles size={13} /> Quick Intake Terminal
+        </span>
       </div>
 
-      <p className="text-xl font-bold text-slate-800 mb-6">Tap your patient card on the reader</p>
+      <h1 className="text-4xl font-extrabold text-slate-900 mb-2 tracking-tight font-display">
+        Welcome to MediKiosk
+      </h1>
+      <p className="text-slate-500 mb-8 text-base font-medium leading-relaxed">
+        Tap your patient card on the reader to begin intake
+      </p>
 
-      <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-white border border-slate-200 shadow-sm text-emerald-700 mb-8">
-        <span className={`w-2.5 h-2.5 rounded-full ${connection.color} animate-pulse`} />
-        {connection.label}
-      </span>
+      {/* Serene Glowing RFID Tap Ring */}
+      <div className="relative mb-8 group cursor-pointer">
+        <div className="absolute -inset-2 rounded-full bg-blue-500/10 blur-xl group-hover:bg-blue-500/20 transition-all" />
+        <div className="relative w-36 h-36 rounded-full bg-gradient-to-tr from-blue-600 via-blue-600 to-indigo-600 shadow-xl shadow-blue-600/25 flex flex-col items-center justify-center text-white transition-transform duration-300 group-hover:scale-105">
+          <CreditCard size={44} className="drop-shadow-sm mb-1" />
+          <span className="text-[11px] font-bold uppercase tracking-wider text-blue-100">Tap Card</span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 mb-8">
+        <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white border border-slate-200/80 shadow-xs text-slate-700">
+          <span className={`w-2 h-2 rounded-full ${connection.color} animate-pulse`} />
+          {connection.label}
+        </span>
+      </div>
+
+      {/* Patient Profile Card Preview */}
+      {lastScannedPatient && (
+        <div className="w-full bg-white border border-emerald-200 rounded-3xl p-6 mb-8 text-left shadow-lg shadow-emerald-500/5 animate-fade-in space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5 text-emerald-800 font-bold text-base font-display">
+              <CheckCircle2 size={20} className="text-emerald-600" />
+              <span>Card Verified: {lastScannedPatient.name}</span>
+            </div>
+            <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-mono text-xs font-bold">
+              {lastScannedPatient.bloodGroup}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5 text-xs text-slate-600 bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+            <div><span className="font-semibold text-slate-400">ABHA:</span> {lastScannedPatient.abhaId}</div>
+            <div><span className="font-semibold text-slate-400">Age:</span> {lastScannedPatient.age}y ({lastScannedPatient.gender})</div>
+            <div className="col-span-2"><span className="font-semibold text-slate-400">Department:</span> {lastScannedPatient.lastVisit}</div>
+          </div>
+        </div>
+      )}
 
       {error && (
-        <div role="alert" className="w-full rounded-2xl bg-red-50 border border-red-200 px-4 py-3 text-sm font-bold text-red-800 mb-4">
+        <div role="alert" className="w-full rounded-2xl bg-red-50 border border-red-200 p-4 text-xs font-bold text-red-800 mb-6 flex items-center justify-center gap-2">
+          <ShieldAlert size={16} />
           {error}
         </div>
       )}
 
-      {/* Demo RFID Simulator Box */}
-      <div className="w-full bg-white rounded-2xl shadow-sm border border-dashed border-slate-300 p-6 text-center space-y-3">
-        <div className="text-xs font-bold tracking-wider text-slate-400 uppercase">NO CARD READER NEARBY? (DEMO)</div>
-        <p className="text-xs text-slate-500 mb-3">Physical RFID hardware is not connected yet — use a demo button below to continue.</p>
-        <button
-          type="button"
-          disabled={simulating !== null}
-          onClick={() => simulate('DEMO-RFID-001')}
-          className="w-full py-3.5 rounded-2xl border-2 border-blue-500 text-blue-600 font-bold text-base hover:bg-blue-50 transition-all disabled:opacity-50"
-        >
-          {simulating === 'DEMO-RFID-001' ? 'Simulating Scan...' : 'Simulate RFID Scan — Demo Patient 001'}
-        </button>
-        <button
-          type="button"
-          disabled={simulating !== null}
-          onClick={() => simulate('DEMO-RFID-002')}
-          className="w-full py-3.5 rounded-2xl border-2 border-slate-200 text-slate-600 font-bold text-base hover:bg-slate-50 transition-all disabled:opacity-50"
-        >
-          {simulating === 'DEMO-RFID-002' ? 'Simulating Scan...' : 'Simulate RFID Scan — Demo Patient 002'}
-        </button>
+      {/* Clean Demo Actions */}
+      <div className="w-full bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs text-center space-y-3">
+        <div className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+          Simulate RFID Card Reader (Demo)
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-2.5">
+          {DEMO_PATIENTS.map((p) => (
+            <button
+              key={p.uid}
+              type="button"
+              disabled={simulating !== null}
+              onClick={() => simulate(p)}
+              className="flex-1 py-3 px-4 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-blue-50/50 hover:border-blue-300 text-slate-800 font-semibold text-xs transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-between"
+            >
+              <div className="text-left">
+                <div className="font-bold text-slate-900">{p.name}</div>
+                <div className="text-[10px] text-slate-400">{p.lastVisit}</div>
+              </div>
+              <span className="text-[11px] font-bold text-blue-600">
+                {simulating === p.uid ? 'Scanning…' : `Simulate RFID Scan — ${p.label}`}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
+

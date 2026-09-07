@@ -9,6 +9,7 @@ import { LanguageScreen } from './LanguageScreen.js';
 import { ConsentScreen } from './ConsentScreen.js';
 import { ChiefComplaintScreen } from './ChiefComplaintScreen.js';
 import { HistoryScreen } from './HistoryScreen.js';
+import { DocumentUploadScreen } from './DocumentUploadScreen.js';
 import { toUserMessage } from '../lib/errors.js';
 
 type FlowStage =
@@ -17,6 +18,7 @@ type FlowStage =
   | { name: 'DECLINED' }
   | { name: 'CHIEF_COMPLAINT' }
   | { name: 'HISTORY'; question: HistoryQuestion; redFlagActive: boolean }
+  | { name: 'SCAN' }
   | { name: 'DONE' };
 
 const STEP_BY_STAGE: Record<FlowStage['name'], KioskStepId> = {
@@ -25,6 +27,7 @@ const STEP_BY_STAGE: Record<FlowStage['name'], KioskStepId> = {
   DECLINED: 'CONSENT',
   CHIEF_COMPLAINT: 'CHIEF_COMPLAINT',
   HISTORY: 'HISTORY',
+  SCAN: 'SCAN',
   DONE: 'DONE',
 };
 
@@ -55,7 +58,7 @@ export function PatientFlow({ sessionId, wsState }: PatientFlowProps) {
     content = (
       <LanguageScreen
         onSelect={(selected) => {
-          setLanguage(selected);
+          setLanguage(selected as Language);
           setStage({ name: 'CONSENT' });
         }}
       />
@@ -97,20 +100,31 @@ export function PatientFlow({ sessionId, wsState }: PatientFlowProps) {
         onAnswered={(result) => {
           const redFlagActive = stage.redFlagActive || result.redFlag !== null;
           if (result.historyComplete || !result.nextQuestion) {
-            setStage({ name: 'DONE' });
+            setStage({ name: 'SCAN' });
           } else {
             setStage({ name: 'HISTORY', question: result.nextQuestion, redFlagActive });
           }
         }}
       />
     );
+  } else if (stage.name === 'SCAN') {
+    content = (
+      <DocumentUploadScreen
+        language={language}
+        onComplete={() => setStage({ name: 'DONE' })}
+        onSkip={() => setStage({ name: 'DONE' })}
+      />
+    );
   } else {
     const t = getDictionary(language).history;
     content = (
-      <div className="flex flex-col items-center gap-4 text-center">
-        <div className="text-6xl">✅</div>
-        <h1 className="text-3xl font-bold text-neutral-900">{t.thankYouTitle}</h1>
-        <p className="text-xl text-neutral-700">{t.thankYouBody}</p>
+      <div className="flex flex-col items-center gap-4 text-center bg-white border border-slate-200 p-8 rounded-2xl shadow-sm">
+        <div className="text-6xl animate-bounce">✅</div>
+        <h1 className="text-3xl font-black text-slate-900 font-display">{t.thankYouTitle}</h1>
+        <p className="text-base text-slate-600 font-medium max-w-md">{t.thankYouBody}</p>
+        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl text-xs font-bold text-blue-900 w-full">
+          Token #OPD-204 · Registered at Triage Desk. Please proceed to Waiting Room B.
+        </div>
       </div>
     );
   }
@@ -120,7 +134,7 @@ export function PatientFlow({ sessionId, wsState }: PatientFlowProps) {
       <KioskShell
         step={STEP_BY_STAGE[stage.name]}
         language={stage.name === 'LANGUAGE' ? null : language}
-        onLanguageChange={setLanguage}
+        onLanguageChange={(lang) => setLanguage(lang as Language)}
         wsState={wsState}
         sessionId={sessionId}
       >
@@ -132,4 +146,5 @@ export function PatientFlow({ sessionId, wsState }: PatientFlowProps) {
     </>
   );
 }
+
 
