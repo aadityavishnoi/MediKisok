@@ -3,8 +3,28 @@ import { answerHistory } from '@medikiosk/api-client';
 import { getDictionary } from '@medikiosk/ui';
 import type { HistoryAnswerResponse, HistoryQuestion, Language } from '@medikiosk/shared-types';
 import { Volume2, Mic, ShieldAlert, Stethoscope, Leaf, ArrowRight } from 'lucide-react';
-import { speechToText, textToSpeech, toSpeechLang } from '../lib/speech.js';
+import { speechToText, toSpeechLang } from '../lib/speech.js';
 import { toUserMessage } from '../lib/errors.js';
+
+const GTTS_LANG: Record<string, string> = {
+  EN: 'en', HI: 'hi', BN: 'bn', MR: 'mr', TE: 'te', TA: 'ta',
+  GU: 'gu', KN: 'kn', ML: 'ml', PA: 'pa', OR: 'or', AS: 'as', UR: 'ur',
+};
+
+function speakText(text: string, language: Language) {
+  const gttsLang = GTTS_LANG[language] || 'en';
+  const encodedText = encodeURIComponent(text);
+  const audio = new Audio(`http://localhost:4000/api/tts?text=${encodedText}&lang=${gttsLang}`);
+  audio.play().catch(() => {
+    if ('speechSynthesis' in window) {
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = `${gttsLang}-IN`;
+      u.rate = 0.9;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+    }
+  });
+}
 
 export interface HistoryScreenProps {
   sessionId: string;
@@ -144,7 +164,7 @@ export function HistoryScreen({ sessionId, language, question, redFlagActive, on
           type="button"
           aria-label={tc.listen}
           className="shrink-0 p-2.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all"
-          onClick={() => textToSpeech.speak(question.questionText[langKey], { lang: toSpeechLang(language) })}
+          onClick={() => speakText(question.questionText[langKey], language)}
         >
           <Volume2 size={18} />
         </button>

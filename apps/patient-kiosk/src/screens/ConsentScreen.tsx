@@ -1,10 +1,15 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { submitConsent } from '@medikiosk/api-client';
 import { getDictionary } from '@medikiosk/ui';
 import type { Language } from '@medikiosk/shared-types';
 import { ShieldCheck, Volume2, Lock, Activity, FileText } from 'lucide-react';
-import { textToSpeech, toSpeechLang } from '../lib/speech.js';
 import { toUserMessage } from '../lib/errors.js';
+
+// BCP-47 → Google TTS lang code map
+const GTTS_LANG: Record<string, string> = {
+  EN: 'en', HI: 'hi', BN: 'bn', MR: 'mr', TE: 'te', TA: 'ta',
+  GU: 'gu', KN: 'kn', ML: 'ml', PA: 'pa', OR: 'or', AS: 'as', UR: 'ur',
+};
 
 export interface ConsentScreenProps {
   sessionId: string;
@@ -19,19 +24,46 @@ export function ConsentScreen({ sessionId, language, onDecision }: ConsentScreen
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [speaking, setSpeaking] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   function toggleListen() {
     if (speaking) {
-      textToSpeech.cancel();
+      // Stop currently playing audio
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      window.speechSynthesis?.cancel();
       setSpeaking(false);
       return;
     }
-    if (!textToSpeech.isSupported()) return;
+
     setSpeaking(true);
-    textToSpeech.speak(t.points.join('. '), { lang: toSpeechLang(language), onEnd: () => setSpeaking(false) });
+    const text = t.points.join('. ');
+    const gttsLang = GTTS_LANG[language] || 'en';
+    const encodedText = encodeURIComponent(text);
+    const proxyUrl = `http://localhost:4000/api/tts?text=${encodedText}&lang=${gttsLang}`;
+
+    const audio = new Audio(proxyUrl);
+    audioRef.current = audio;
+    audio.onended = () => setSpeaking(false);
+    audio.onerror = () => {
+      // Fallback: Web Speech API
+      if ('speechSynthesis' in window) {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = `${gttsLang}-IN`;
+        u.rate = 0.85;
+        u.onend = () => setSpeaking(false);
+        window.speechSynthesis.speak(u);
+      } else {
+        setSpeaking(false);
+      }
+    };
+    audio.play().catch(() => audio.dispatchEvent(new Event('error')));
   }
 
   async function decide(granted: boolean) {
+
     setSubmitting(true);
     setError(null);
     try {
@@ -69,16 +101,15 @@ export function ConsentScreen({ sessionId, language, onDecision }: ConsentScreen
         ))}
       </ul>
 
-      {textToSpeech.isSupported() && (
-        <button
-          type="button"
-          className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
-          onClick={toggleListen}
-        >
-          <Volume2 size={15} />
-          {speaking ? tc.stop : `${tc.listen} (Voice Consent Audio)`}
-        </button>
-      )}
+      <button
+        type="button"
+        className={`flex items-center gap-1.5 text-xs font-semibold transition-colors ${speaking ? 'text-red-500 hover:text-red-600' : 'text-blue-600 hover:text-blue-700'}`}
+        onClick={toggleListen}
+      >
+        <Volume2 size={15} />
+        {speaking ? tc.stop : `${tc.listen} (Voice Consent Audio)`}
+      </button>
+
 
       {error && (
         <div role="alert" className="w-full rounded-2xl bg-red-50 border border-red-200 p-4 text-xs font-bold text-red-800">

@@ -7,6 +7,7 @@ export interface SpeechToTextResult {
 export interface SpeechToText {
   /** Real, synchronous feature detection - never assume voice works everywhere. */
   isSupported(): boolean;
-  listen(options?: { lang?: 'en-IN' | 'hi-IN' }): Promise<SpeechToTextResult>;
+  listen(options?: { lang?: string }): Promise<SpeechToTextResult>;
   stop(): void;
 }
+

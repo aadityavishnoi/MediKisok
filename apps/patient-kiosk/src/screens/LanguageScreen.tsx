@@ -1,19 +1,115 @@
 import { en, SUPPORTED_LANGUAGES } from '@medikiosk/ui';
-import type { Language } from '@medikiosk/shared-types';
-import { Volume2, Languages, Sparkles } from 'lucide-react';
-import { textToSpeech, toSpeechLang } from '../lib/speech.js';
+import { Volume2, Languages } from 'lucide-react';
 
 const t = en.language;
+
+// Native-script welcome greetings for all 13 Indian languages
+const GREETINGS: Record<string, string> = {
+  EN: 'Welcome to MediKiosk. Please follow the instructions on screen.',
+  HI: 'मेडीकियोस्क में आपका स्वागत है। कृपया स्क्रीन पर दिए निर्देशों का पालन करें।',
+  BN: 'মেডিকিয়োস্কে আপনাকে স্বাগতম। অনুগ্রহ করে স্ক্রিনের নির্দেশ অনুসরণ করুন।',
+  MR: 'मेडीकियोस्कमध्ये आपले स्वागत आहे. कृपया स्क्रीनवरील सूचना पाळा.',
+  TE: 'మెడికియోస్క్‌కి స్వాగతం. దయచేసి స్క్రీన్‌లోని సూచనలను అనుసరించండి.',
+  TA: 'மெடிகியோஸ்கிற்கு நல்வரவு. திரையில் உள்ள வழிமுறைகளை பின்பற்றவும்.',
+  GU: 'મેડીકિયોસ્કમાં આપનું સ્વાગત છે. કૃપા કરી સ્ક્રીન પરની સૂચનાઓ અનુસરો.',
+  KN: 'ಮೆಡಿಕಿಯೋಸ್ಕ್ಗೆ ಸ್ವಾಗತ. ದಯವಿಟ್ಟು ಪರದೆಯ ಮೇಲಿನ ಸೂಚನೆಗಳನ್ನು ಅನುಸರಿಸಿ.',
+  ML: 'മെഡികിയോസ്കിലേക്ക് സ്വാഗതം. ദയവായി സ്ക്രീനിലെ നിർദ്ദേശങ്ങൾ പാലിക്കുക.',
+  PA: 'ਮੈਡੀਕਿਓਸਕ ਵਿੱਚ ਤੁਹਾਡਾ ਸੁਆਗਤ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ ਸਕ੍ਰੀਨ ਦੀਆਂ ਹਦਾਇਤਾਂ ਦੀ ਪਾਲਣਾ ਕਰੋ।',
+  OR: 'ମେଡିକିଓସ୍କକୁ ସ୍ୱାଗତ। ଦୟାକରି ସ୍କ୍ରିନ୍ ଉପରେ ଦିଆଯାଇଥିବା ନିର୍ଦ୍ଦେଶ ଅନୁସରଣ କରନ୍ତୁ।',
+  AS: 'মেডিকিয়স্কলৈ স্বাগতম। অনুগ্ৰহ কৰি পৰ্দাখনৰ নিৰ্দেশাৱলী অনুসৰণ কৰক।',
+  UR: 'میڈی کیوسک میں خوش آمدید۔ براہ کرم اسکرین پر دی گئی ہدایات پر عمل کریں۔',
+};
+
+// BCP-47 lang tags for all 13 languages
+const LANG_TAGS: Record<string, string> = {
+  EN: 'en-IN', HI: 'hi-IN', BN: 'bn-IN', MR: 'mr-IN',
+  TE: 'te-IN', TA: 'ta-IN', GU: 'gu-IN', KN: 'kn-IN',
+  ML: 'ml-IN', PA: 'pa-IN', OR: 'or-IN', AS: 'as-IN', UR: 'ur-IN',
+};
+
+// Google Translate language codes for all 13 Indian languages
+const GTTS_LANG: Record<string, string> = {
+  EN: 'en', HI: 'hi', BN: 'bn', MR: 'mr',
+  TE: 'te', TA: 'ta', GU: 'gu', KN: 'kn',
+  ML: 'ml', PA: 'pa', OR: 'or', AS: 'as', UR: 'ur',
+};
+
+// Singleton audio element to avoid overlapping
+let currentAudio: HTMLAudioElement | null = null;
+
+function speakNow(code: string) {
+  const text = GREETINGS[code] || GREETINGS['EN'];
+  const langTag = LANG_TAGS[code] || 'en-IN';
+  const gttsLang = GTTS_LANG[code] || 'en';
+
+  // Stop any currently playing audio
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio = null;
+  }
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+
+  // Method 1: Backend TTS proxy (fetches Google TTS server-side, no CORS issues)
+  const encodedText = encodeURIComponent(text);
+  const proxyUrl = `http://localhost:4000/api/tts?text=${encodedText}&lang=${gttsLang}`;
+
+  const audio = new Audio(proxyUrl);
+  audio.volume = 1;
+  currentAudio = audio;
+
+  audio.play().catch(() => {
+    // Method 2: Web Speech API fallback (works for EN + HI on Windows)
+    speakWebAPI(text, langTag);
+  });
+}
+
+
+function speakWebAPI(text: string, langTag: string) {
+  if (!('speechSynthesis' in window)) return;
+
+  const trySpeak = () => {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = langTag;
+    u.rate = 0.9;
+    u.pitch = 1;
+    u.volume = 1;
+    const voices = window.speechSynthesis.getVoices();
+    const prefix = langTag.split('-')[0];
+    const best = voices.find(v => v.lang === langTag) || voices.find(v => v.lang.startsWith(prefix));
+    if (best) u.voice = best;
+    window.speechSynthesis.speak(u);
+  };
+
+
+
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length > 0) {
+    trySpeak();
+  } else {
+    // Voices not loaded yet — wait for the event
+    const handler = () => {
+      window.speechSynthesis.removeEventListener('voiceschanged', handler);
+      trySpeak();
+    };
+    window.speechSynthesis.addEventListener('voiceschanged', handler);
+    // Hard timeout fallback after 500ms
+    setTimeout(() => {
+      window.speechSynthesis.removeEventListener('voiceschanged', handler);
+      trySpeak();
+    }, 500);
+  }
+}
 
 export interface LanguageScreenProps {
   onSelect: (language: string) => void;
 }
 
 export function LanguageScreen({ onSelect }: LanguageScreenProps) {
-  const playAudioGreeting = (code: string, nativeName: string) => {
-    if (textToSpeech.isSupported()) {
-      textToSpeech.speak(`Welcome in ${nativeName}`, { lang: toSpeechLang(code as Language) });
-    }
+  const handleSelect = (code: string) => {
+    // Speak FIRST, then navigate after a short delay so audio has time to start
+    speakNow(code);
+    setTimeout(() => onSelect(code), 300);
   };
 
   return (
@@ -31,10 +127,7 @@ export function LanguageScreen({ onSelect }: LanguageScreenProps) {
           <button
             key={code}
             type="button"
-            onClick={() => {
-              playAudioGreeting(code, nativeName);
-              onSelect(code);
-            }}
+            onClick={() => handleSelect(code)}
             style={{ animationDelay: `${i * 30}ms` }}
             className="group relative flex flex-col items-center justify-center gap-1 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition-all duration-200 hover:border-blue-500 hover:bg-blue-50/40 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-100 animate-slide-up stagger-item"
           >
@@ -53,5 +146,6 @@ export function LanguageScreen({ onSelect }: LanguageScreenProps) {
     </div>
   );
 }
+
 
 

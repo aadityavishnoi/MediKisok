@@ -30,7 +30,7 @@ export class BrowserSpeechToText implements SpeechToText {
     return getRecognitionCtor() !== null;
   }
 
-  listen(options?: { lang?: 'en-IN' | 'hi-IN' }): Promise<SpeechToTextResult> {
+  listen(options?: { lang?: string }): Promise<SpeechToTextResult> {
     const Ctor = getRecognitionCtor();
     if (!Ctor) {
       return Promise.reject(new Error('Speech recognition is not supported in this browser'));
