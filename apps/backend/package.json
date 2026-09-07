@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "test": "vitest run",
+    "rfid:bridge": "tsx src/scripts/runSerialBridge.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts"
@@ -18,15 +19,17 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@medikiosk/shared-types": "workspace:*",
     "@medikiosk/clinical-engine": "workspace:*",
+    "@medikiosk/shared-types": "workspace:*",
     "@prisma/client": "^5.20.0",
+    "@serialport/parser-readline": "^13.0.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
+    "serialport": "^13.0.0",
     "ws": "^8.18.0",
     "zod": "^3.23.8"
   },
@@ -37,10 +40,11 @@
     "@types/jsonwebtoken": "^9.0.7",
     "@types/multer": "^1.4.12",
     "@types/node": "^22.7.5",
+    "@types/serialport": "^10.2.0",
+    "@types/supertest": "^6.0.2",
     "@types/ws": "^8.5.12",
     "prisma": "^5.20.0",
     "supertest": "^7.0.0",
-    "@types/supertest": "^6.0.2",
     "tsx": "^4.19.1",
     "typescript": "^5.6.3",
     "vitest": "^2.1.2"

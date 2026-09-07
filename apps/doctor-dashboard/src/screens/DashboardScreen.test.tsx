@@ -18,6 +18,22 @@ const connectWs = vi.fn().mockReturnValue(() => {});
 vi.mock('@medikiosk/api-client', () => ({
   getDoctorDashboard: () => getDoctorDashboard(),
   connectWs: (...args: unknown[]) => connectWs(...args),
+  getRfidReaderStatus: vi.fn().mockResolvedValue({
+    connected: true,
+    state: 'CONNECTED',
+    port: 'COM3',
+    baudRate: 9600,
+    enabled: true,
+  }),
+  lookupRfidPatient: vi.fn().mockResolvedValue({
+    success: true,
+    patient: { id: 'p1', fullName: 'Demo Patient 001' },
+    encounter: { id: 's1' },
+  }),
+  simulateRfidScan: vi.fn().mockResolvedValue({
+    sessionId: 's1',
+    patientId: 'p1',
+  }),
   ApiClientError: class ApiClientError extends Error {
     status = 500;
   },

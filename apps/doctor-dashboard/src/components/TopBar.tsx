@@ -1,6 +1,7 @@
 import { Bell, Search } from 'lucide-react';
 import type { WsConnectionState } from '@medikiosk/api-client';
 import { InitialsAvatar } from './InitialsAvatar.js';
+import { RfidIntakeListener } from './RfidIntakeListener.js';
 
 const CONNECTION_DOT: Record<WsConnectionState, string> = {
   open: 'bg-success-500',
@@ -23,9 +24,20 @@ export interface TopBarProps {
   alertCount: number;
   onBellClick: () => void;
   doctorName: string;
+  onOpenSession?: (sessionId: string) => void;
 }
 
-export function TopBar({ title, subtitle, search, onSearchChange, wsState, alertCount, onBellClick, doctorName }: TopBarProps) {
+export function TopBar({
+  title,
+  subtitle,
+  search,
+  onSearchChange,
+  wsState,
+  alertCount,
+  onBellClick,
+  doctorName,
+  onOpenSession,
+}: TopBarProps) {
   return (
     <header className="flex items-center justify-between gap-4 border-b border-neutral-200 bg-white px-8 py-4">
       <div>
@@ -44,11 +56,14 @@ export function TopBar({ title, subtitle, search, onSearchChange, wsState, alert
         />
       </div>
 
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-4">
+        {onOpenSession && <RfidIntakeListener onOpenSession={onOpenSession} />}
+
         <span className="hidden items-center gap-1.5 text-xs font-medium text-neutral-500 sm:flex">
           <span className={`h-2 w-2 rounded-full ${CONNECTION_DOT[wsState]} ${wsState !== 'open' ? 'motion-safe:animate-pulse' : ''}`} />
           {CONNECTION_LABEL[wsState]}
         </span>
+
 
         <button type="button" onClick={onBellClick} className="relative text-neutral-500 hover:text-neutral-800">
           <Bell size={20} />

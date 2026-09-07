@@ -19,6 +19,7 @@ export function App() {
       <SessionDetailScreen
         sessionId={view.sessionId}
         onBack={() => setView({ name: 'DASHBOARD' })}
+        onOpenSession={(sessionId) => setView({ name: 'SESSION_DETAIL', sessionId })}
         onLoggedOut={() => {
           setLoggedIn(false);
           setView({ name: 'DASHBOARD' });

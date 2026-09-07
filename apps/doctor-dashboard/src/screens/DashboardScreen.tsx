@@ -126,6 +126,7 @@ export function DashboardScreen({ onLoggedOut, onOpenSession }: DashboardScreenP
       onSearchChange={setSearch}
       wsState={wsState}
       doctorName={doctorName}
+      onOpenSession={onOpenSession}
     >
       {/* Top Banner Row: Greeting + AI Clinical Assistant BETA */}
       <div className="mb-6 grid grid-cols-1 gap-5 lg:grid-cols-12">
