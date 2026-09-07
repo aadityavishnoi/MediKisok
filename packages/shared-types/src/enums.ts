@@ -2,6 +2,7 @@ export const ConsentStatus = {
   PENDING: 'PENDING',
   GRANTED: 'GRANTED',
   DECLINED: 'DECLINED',
+  REVOKED: 'REVOKED',
 } as const;
 export type ConsentStatus = (typeof ConsentStatus)[keyof typeof ConsentStatus];
 

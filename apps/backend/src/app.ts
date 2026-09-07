@@ -16,6 +16,10 @@ import { ttsRouter } from './routes/tts.js';
 import { otpRouter } from './routes/otp.js';
 import { patientRegistrationRouter } from './routes/patientRegistration.js';
 import { discoveryRouter } from './routes/discovery.js';
+import { hospitalRouter } from './routes/hospital.js';
+import { queueRouter } from './routes/queue.js';
+import { prescriptionsRouter } from './routes/prescriptions.js';
+import { surveillanceRouter } from './routes/surveillance.js';
 
 export function createApp() {
   const app = express();
@@ -42,6 +46,10 @@ export function createApp() {
   app.use('/api', otpRouter);
   app.use('/api', patientRegistrationRouter);
   app.use('/api', discoveryRouter);
+  app.use('/api', hospitalRouter);
+  app.use('/api', queueRouter);
+  app.use('/api', prescriptionsRouter);
+  app.use('/api', surveillanceRouter);
 
   app.use((_req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Route not found' } });
