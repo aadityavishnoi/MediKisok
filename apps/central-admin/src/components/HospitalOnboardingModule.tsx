@@ -121,11 +121,11 @@ export function HospitalOnboardingModule() {
 
   const statusBadgeColor = (status: HospitalFacility['status']) => {
     switch (status) {
-      case 'Operational': return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
-      case 'Provisioned': return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
-      case 'Approved': return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30';
-      case 'Under Verification': return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
-      case 'Pending': return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
+      case 'Operational': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      case 'Provisioned': return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'Approved': return 'bg-cyan-50 text-cyan-700 border-cyan-200';
+      case 'Under Verification': return 'bg-amber-50 text-amber-700 border-amber-200';
+      case 'Pending': return 'bg-purple-50 text-purple-700 border-purple-200';
     }
   };
 
@@ -134,18 +134,18 @@ export function HospitalOnboardingModule() {
       {/* Module Title */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-3">
-            <Building2 className="text-blue-400" />
+          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3 font-display">
+            <Building2 className="text-blue-600" />
             Hospital & Facility Registry (National Onboarding)
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Central Authority Governance • 5-Stage Approval Pipeline (`Pending` → `Under Verification` → `Approved` → `Provisioned` → `Operational`)
           </p>
         </div>
         <button
           type="button"
           onClick={() => setShowNewModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/30 transition-all"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-500/20 transition-all duration-200"
         >
           <Plus size={16} />
           Register New Facility
@@ -155,14 +155,18 @@ export function HospitalOnboardingModule() {
       {/* Onboarding Lifecycle Pipeline Stats */}
       <div className="grid grid-cols-5 gap-4">
         {[
-          { label: 'Pending Request', count: facilities.filter(f => f.status === 'Pending').length, color: 'border-purple-500/40 bg-purple-500/10 text-purple-300' },
-          { label: 'Under Verification', count: facilities.filter(f => f.status === 'Under Verification').length, color: 'border-amber-500/40 bg-amber-500/10 text-amber-300' },
-          { label: 'Approved', count: facilities.filter(f => f.status === 'Approved').length, color: 'border-cyan-500/40 bg-cyan-500/10 text-cyan-300' },
-          { label: 'Provisioned', count: facilities.filter(f => f.status === 'Provisioned').length, color: 'border-blue-500/40 bg-blue-500/10 text-blue-300' },
-          { label: 'Operational', count: facilities.filter(f => f.status === 'Operational').length, color: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300' },
+          { label: 'Pending Request', count: facilities.filter(f => f.status === 'Pending').length, color: 'border-purple-200 bg-purple-50 text-purple-700' },
+          { label: 'Under Verification', count: facilities.filter(f => f.status === 'Under Verification').length, color: 'border-amber-200 bg-amber-50 text-amber-700' },
+          { label: 'Approved', count: facilities.filter(f => f.status === 'Approved').length, color: 'border-cyan-200 bg-cyan-50 text-cyan-700' },
+          { label: 'Provisioned', count: facilities.filter(f => f.status === 'Provisioned').length, color: 'border-blue-200 bg-blue-50 text-blue-700' },
+          { label: 'Operational', count: facilities.filter(f => f.status === 'Operational').length, color: 'border-emerald-200 bg-emerald-50 text-emerald-700' },
         ].map((item, idx) => (
-          <div key={idx} className={`p-4 rounded-2xl border ${item.color} backdrop-blur-md flex flex-col justify-between`}>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">{item.label}</span>
+          <div
+            key={idx}
+            className={`p-4 rounded-2xl border ${item.color} flex flex-col justify-between animate-slide-up stagger-item transition-all duration-200 hover:shadow-md`}
+            style={{ animationDelay: `${idx * 40}ms` }}
+          >
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{item.label}</span>
             <div className="text-3xl font-extrabold font-mono mt-2">{item.count}</div>
           </div>
         ))}
@@ -171,20 +175,20 @@ export function HospitalOnboardingModule() {
       {/* Main Grid: List + Detail View */}
       <div className="grid grid-cols-12 gap-6">
         {/* Left Column: Facility List */}
-        <div className="col-span-7 bg-white/[0.03] border border-white/10 rounded-2xl p-5 backdrop-blur-md space-y-4">
+        <div className="col-span-7 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
           <div className="flex items-center justify-between gap-4">
             <div className="relative flex-1">
               <Search size={14} className="absolute left-3 top-3 text-slate-400" />
               <input
                 type="text"
                 placeholder="Filter by hospital name, facility code, or state..."
-                className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+                className="w-full bg-slate-100 border border-transparent rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 transition-all duration-200 focus:outline-none focus:bg-white focus:border-blue-400"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+              className="bg-slate-100 border border-transparent rounded-xl px-3 py-2 text-xs text-slate-700 transition-all duration-200 focus:outline-none focus:bg-white focus:border-blue-400"
             >
               <option value="All">All Pipeline Stages</option>
               <option value="Pending">Pending</option>
@@ -196,24 +200,25 @@ export function HospitalOnboardingModule() {
           </div>
 
           <div className="space-y-3 overflow-y-auto max-h-[520px] pr-1">
-            {filteredFacilities.map((fac) => (
+            {filteredFacilities.map((fac, idx) => (
               <div
                 key={fac.id}
                 onClick={() => setSelectedFacility(fac)}
-                className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                className={`p-4 rounded-xl border cursor-pointer animate-slide-up stagger-item transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
                   selectedFacility?.id === fac.id
-                    ? 'bg-blue-600/15 border-blue-500/50 shadow-md shadow-blue-500/10'
-                    : 'bg-white/5 border-white/10 hover:bg-white/10'
+                    ? 'bg-blue-50 border-blue-300 shadow-sm'
+                    : 'bg-slate-50 border-slate-200 hover:bg-white'
                 }`}
+                style={{ animationDelay: `${idx * 40}ms` }}
               >
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-sm text-white">{fac.name}</span>
-                      <span className="text-[10px] font-mono text-slate-400 bg-white/10 px-1.5 py-0.5 rounded">{fac.code}</span>
+                      <span className="font-extrabold text-sm text-slate-900">{fac.name}</span>
+                      <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{fac.code}</span>
                     </div>
-                    <div className="text-xs text-slate-400 mt-1">
-                      {fac.district}, {fac.state} • <span className="text-blue-300 font-medium">{fac.type}</span>
+                    <div className="text-xs text-slate-500 mt-1">
+                      {fac.district}, {fac.state} • <span className="text-blue-600 font-medium">{fac.type}</span>
                     </div>
                   </div>
                   <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border ${statusBadgeColor(fac.status)}`}>
@@ -221,9 +226,9 @@ export function HospitalOnboardingModule() {
                   </span>
                 </div>
 
-                <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400">
-                  <span>Kiosks Allocated: <strong className="text-white font-mono">{fac.kiosksCount}</strong></span>
-                  <span>ABDM: <strong className={fac.abdmStatus === 'Connected' ? 'text-emerald-400' : 'text-amber-400'}>{fac.abdmStatus}</strong></span>
+                <div className="mt-3 pt-3 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500">
+                  <span>Kiosks Allocated: <strong className="text-slate-900 font-mono">{fac.kiosksCount}</strong></span>
+                  <span>ABDM: <strong className={fac.abdmStatus === 'Connected' ? 'text-emerald-600' : 'text-amber-600'}>{fac.abdmStatus}</strong></span>
                 </div>
               </div>
             ))}
@@ -231,51 +236,51 @@ export function HospitalOnboardingModule() {
         </div>
 
         {/* Right Column: Selected Facility Deep Governance */}
-        <div className="col-span-5 bg-white/[0.03] border border-white/10 rounded-2xl p-5 backdrop-blur-md space-y-5">
+        <div className="col-span-5 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-5 animate-fade-in">
           {selectedFacility ? (
             <>
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
+                  <span className="text-[10px] font-mono text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
                     {selectedFacility.id}
                   </span>
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${statusBadgeColor(selectedFacility.status)}`}>
                     {selectedFacility.status}
                   </span>
                 </div>
-                <h3 className="text-lg font-bold text-white mt-2 leading-tight">{selectedFacility.name}</h3>
-                <p className="text-xs text-slate-400 mt-1">{selectedFacility.type} • {selectedFacility.state}</p>
+                <h3 className="text-lg font-bold text-slate-900 mt-2 leading-tight">{selectedFacility.name}</h3>
+                <p className="text-xs text-slate-500 mt-1">{selectedFacility.type} • {selectedFacility.state}</p>
               </div>
 
               {/* Workflow State Advance Actions */}
-              <div className="p-3 bg-white/5 border border-white/10 rounded-xl space-y-2">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Central Authority Pipeline Control</span>
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Central Authority Pipeline Control</span>
                 <div className="flex flex-wrap gap-1.5">
                   <button
                     type="button"
                     onClick={() => updateStatus(selectedFacility.id, 'Under Verification')}
-                    className="px-2.5 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold rounded-lg hover:bg-amber-500/30 transition-all"
+                    className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold rounded-lg hover:bg-amber-100 transition-all duration-200"
                   >
                     Verify Documents
                   </button>
                   <button
                     type="button"
                     onClick={() => updateStatus(selectedFacility.id, 'Approved')}
-                    className="px-2.5 py-1 bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[10px] font-bold rounded-lg hover:bg-cyan-500/30 transition-all"
+                    className="px-2.5 py-1 bg-cyan-50 text-cyan-700 border border-cyan-200 text-[10px] font-bold rounded-lg hover:bg-cyan-100 transition-all duration-200"
                   >
                     Approve Facility
                   </button>
                   <button
                     type="button"
                     onClick={() => updateStatus(selectedFacility.id, 'Provisioned')}
-                    className="px-2.5 py-1 bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-bold rounded-lg hover:bg-blue-500/30 transition-all"
+                    className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold rounded-lg hover:bg-blue-100 transition-all duration-200"
                   >
                     Provision Endpoints
                   </button>
                   <button
                     type="button"
                     onClick={() => updateStatus(selectedFacility.id, 'Operational')}
-                    className="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold rounded-lg hover:bg-emerald-500/30 transition-all"
+                    className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold rounded-lg hover:bg-emerald-100 transition-all duration-200"
                   >
                     Set Operational
                   </button>
@@ -284,32 +289,32 @@ export function HospitalOnboardingModule() {
 
               {/* Technical Infrastructure Settings */}
               <div className="space-y-3 text-xs">
-                <div className="p-3 bg-white/5 rounded-xl space-y-2 border border-white/10">
-                  <div className="text-[11px] font-bold text-slate-300 flex items-center gap-2">
-                    <Server size={14} className="text-blue-400" />
+                <div className="p-3 bg-slate-50 rounded-xl space-y-2 border border-slate-200">
+                  <div className="text-[11px] font-bold text-slate-700 flex items-center gap-2">
+                    <Server size={14} className="text-blue-600" />
                     FHIR R4 Gateway Endpoint
                   </div>
-                  <div className="font-mono text-[11px] text-blue-300 bg-black/30 p-2 rounded-lg break-all">
+                  <div className="font-mono text-[11px] text-blue-700 bg-slate-100 p-2 rounded-lg break-all">
                     {selectedFacility.fhirEndpoint}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 bg-white/5 rounded-xl border border-white/10">
-                    <span className="text-[10px] text-slate-400 block">Doctor Capacity</span>
-                    <span className="text-sm font-bold text-white font-mono">{selectedFacility.doctorCapacity} On Duty</span>
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <span className="text-[10px] text-slate-500 block">Doctor Capacity</span>
+                    <span className="text-sm font-bold text-slate-900 font-mono">{selectedFacility.doctorCapacity} On Duty</span>
                   </div>
-                  <div className="p-3 bg-white/5 rounded-xl border border-white/10">
-                    <span className="text-[10px] text-slate-400 block">Kiosk Fleet</span>
-                    <span className="text-sm font-bold text-white font-mono">{selectedFacility.kiosksCount} Terminals</span>
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <span className="text-[10px] text-slate-500 block">Kiosk Fleet</span>
+                    <span className="text-sm font-bold text-slate-900 font-mono">{selectedFacility.kiosksCount} Terminals</span>
                   </div>
                 </div>
 
-                <div className="p-3 bg-white/5 rounded-xl border border-white/10 space-y-1">
-                  <span className="text-[10px] text-slate-400 block">Supported Native Languages</span>
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                  <span className="text-[10px] text-slate-500 block">Supported Native Languages</span>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {selectedFacility.languages.map((lang) => (
-                      <span key={lang} className="px-2 py-0.5 bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-semibold rounded-md">
+                      <span key={lang} className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-semibold rounded-md">
                         {lang}
                       </span>
                     ))}
@@ -317,7 +322,7 @@ export function HospitalOnboardingModule() {
                 </div>
               </div>
 
-              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-[11px] text-emerald-300 flex items-center gap-2">
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-700 flex items-center gap-2">
                 <CheckCircle2 size={16} />
                 <span>ABDM Health Facility Registry (HFR) Id Linked</span>
               </div>

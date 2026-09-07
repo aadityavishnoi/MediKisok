@@ -18,7 +18,7 @@ export function LanguageScreen({ onSelect }: LanguageScreenProps) {
 
   return (
     <div className="flex flex-col items-center gap-6 text-center w-full max-w-xl mx-auto">
-      <div>
+      <div className="animate-slide-up">
         <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100/80 mb-2">
           <Languages size={13} /> Select Preferred Language
         </span>
@@ -27,7 +27,7 @@ export function LanguageScreen({ onSelect }: LanguageScreenProps) {
       </div>
 
       <div className="grid w-full grid-cols-2 sm:grid-cols-3 gap-3">
-        {SUPPORTED_LANGUAGES.map(({ code, nativeName, englishName }) => (
+        {SUPPORTED_LANGUAGES.map(({ code, nativeName, englishName }, i) => (
           <button
             key={code}
             type="button"
@@ -35,7 +35,8 @@ export function LanguageScreen({ onSelect }: LanguageScreenProps) {
               playAudioGreeting(code, nativeName);
               onSelect(code);
             }}
-            className="group relative flex flex-col items-center justify-center gap-1 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition-all duration-200 hover:border-blue-500 hover:bg-blue-50/40 hover:shadow-md active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-100"
+            style={{ animationDelay: `${i * 30}ms` }}
+            className="group relative flex flex-col items-center justify-center gap-1 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition-all duration-200 hover:border-blue-500 hover:bg-blue-50/40 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-100 animate-slide-up stagger-item"
           >
             <span className="text-2xl font-bold text-slate-900 font-display group-hover:text-blue-700 transition-colors">
               {nativeName}

@@ -142,8 +142,8 @@ export function KioskShell({ step, language, onLanguageChange, wsState, sessionI
 
       {/* Clean Assistance Modal */}
       {helpOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs px-6" role="dialog" aria-modal="true">
-          <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl border border-slate-100 text-center space-y-5 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs px-6 animate-fade-in" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl border border-slate-100 text-center space-y-5 animate-scale-in">
             <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 mx-auto flex items-center justify-center shadow-inner">
               <PhoneCall size={32} />
             </div>

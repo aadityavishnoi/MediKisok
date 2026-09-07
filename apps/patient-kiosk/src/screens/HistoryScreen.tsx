@@ -159,13 +159,14 @@ export function HistoryScreen({ sessionId, language, question, redFlagActive, on
       {/* SINGLE_SELECT or BOOLEAN */}
       {(question.type === 'SINGLE_SELECT' || question.type === 'BOOLEAN') && question.options && (
         <div className="flex w-full flex-col gap-2.5">
-          {question.options.map((option) => (
+          {question.options.map((option, i) => (
             <button
               key={option.value}
               type="button"
               disabled={submitting}
               onClick={() => submit(option.value)}
-              className="w-full py-4 px-6 rounded-2xl bg-white border border-slate-200/80 hover:border-blue-500 hover:bg-blue-50/40 text-slate-900 font-semibold text-base text-left shadow-xs transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-between"
+              style={{ animationDelay: `${i * 40}ms` }}
+              className="w-full py-4 px-6 rounded-2xl bg-white border border-slate-200/80 hover:border-blue-500 hover:bg-blue-50/40 text-slate-900 font-semibold text-base text-left shadow-xs transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-between animate-slide-up stagger-item"
             >
               <span>{option.label[langKey]}</span>
               <ArrowRight size={16} className="text-slate-400" />

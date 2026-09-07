@@ -95,7 +95,7 @@ export function DocumentUploadScreen({ language, onComplete, onSkip }: DocumentU
             <span className="text-sm font-bold text-blue-200">AI Document Scanner Active…</span>
           </div>
         ) : scannedDoc ? (
-          <div className="flex flex-col items-center gap-2 text-center bg-slate-800/90 backdrop-blur p-4 rounded-2xl border border-slate-700 max-w-sm">
+          <div className="flex flex-col items-center gap-2 text-center bg-slate-800/90 backdrop-blur p-4 rounded-2xl border border-slate-700 max-w-sm animate-scale-in">
             <CheckCircle2 size={32} className="text-emerald-400" />
             <span className="text-xs font-bold text-emerald-300">{scannedDoc.type} Scanned ({scannedDoc.confidence}%)</span>
             <p className="text-xs text-slate-300 font-mono bg-slate-950 p-2 rounded-xl border border-slate-800 text-left">

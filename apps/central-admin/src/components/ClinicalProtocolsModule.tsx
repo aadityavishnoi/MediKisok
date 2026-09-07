@@ -29,17 +29,17 @@ export function ClinicalProtocolsModule() {
       {/* Title */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-3">
-            <FileText className="text-blue-400" />
+          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
+            <FileText className="text-blue-600" />
             National Clinical Protocol Governance
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Central Standardization of Kiosk Intake Trees, Red-Flag Rules, and Mandatory Clinical Questions
           </p>
         </div>
         <button
           type="button"
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/30 transition-all"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/30 transition-all duration-200 hover:-translate-y-0.5"
         >
           <Plus size={16} />
           Create Protocol Version
@@ -48,31 +48,32 @@ export function ClinicalProtocolsModule() {
 
       {/* Protocol List & Tree Inspector */}
       <div className="grid grid-cols-12 gap-6">
-        <div className="col-span-6 bg-white/[0.03] border border-white/10 rounded-2xl p-5 backdrop-blur-md space-y-3">
-          <h3 className="text-sm font-bold text-white">Active Protocol Registry</h3>
+        <div className="col-span-6 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3 animate-slide-up" style={{ animationDelay: '0ms' }}>
+          <h3 className="text-sm font-bold text-slate-900">Active Protocol Registry</h3>
           <div className="space-y-2">
-            {protocols.map((p) => (
+            {protocols.map((p, idx) => (
               <div
                 key={p.id}
                 onClick={() => setSelectedProtocol(p)}
-                className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
-                  selectedProtocol.id === p.id ? 'bg-blue-600/20 border-blue-500/50' : 'bg-white/5 border-white/10 hover:bg-white/10'
+                className={`p-3.5 rounded-xl border transition-all duration-200 cursor-pointer animate-slide-up stagger-item hover:-translate-y-0.5 hover:shadow-md ${
+                  selectedProtocol.id === p.id ? 'bg-blue-50 border-blue-300' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
                 }`}
+                style={{ animationDelay: `${idx * 40}ms` }}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm text-white">{p.name}</span>
-                    <span className="font-mono text-xs text-blue-300 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
+                    <span className="font-bold text-sm text-slate-900">{p.name}</span>
+                    <span className="font-mono text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
                       {p.version}
                     </span>
                   </div>
                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                    p.status === 'ACTIVE' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'
+                    p.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
                   }`}>
                     {p.status}
                   </span>
                 </div>
-                <div className="text-[11px] text-slate-400 mt-2 font-mono flex items-center justify-between">
+                <div className="text-[11px] text-slate-500 mt-2 font-mono flex items-center justify-between">
                   <span>Scope: {p.jurisdiction}</span>
                   <span>Updated: {p.lastUpdated}</span>
                 </div>
@@ -82,43 +83,43 @@ export function ClinicalProtocolsModule() {
         </div>
 
         {/* Tree & Red Flag Rule Inspector */}
-        <div className="col-span-6 bg-white/[0.03] border border-white/10 rounded-2xl p-5 backdrop-blur-md space-y-4">
+        <div className="col-span-6 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4 animate-slide-up" style={{ animationDelay: '60ms' }}>
           <div>
             <div className="flex items-center justify-between">
-              <span className="font-mono text-xs text-blue-400 font-bold">{selectedProtocol.id}</span>
-              <span className="text-xs text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+              <span className="font-mono text-xs text-blue-600 font-bold">{selectedProtocol.id}</span>
+              <span className="text-xs text-emerald-700 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                 Central Approved
               </span>
             </div>
-            <h3 className="text-lg font-bold text-white mt-1">{selectedProtocol.name} ({selectedProtocol.version})</h3>
-            <p className="text-xs text-slate-400">Jurisdiction Scope: {selectedProtocol.jurisdiction}</p>
+            <h3 className="text-lg font-bold text-slate-900 mt-1">{selectedProtocol.name} ({selectedProtocol.version})</h3>
+            <p className="text-xs text-slate-500">Jurisdiction Scope: {selectedProtocol.jurisdiction}</p>
           </div>
 
           <div className="space-y-3 text-xs">
-            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl space-y-2">
-              <span className="font-bold text-red-300 flex items-center gap-2">
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl space-y-2">
+              <span className="font-bold text-red-700 flex items-center gap-2">
                 <AlertTriangle size={14} />
                 Mandatory Red-Flag Triage Triggers
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {selectedProtocol.redFlagTriggers.map((rf, idx) => (
-                  <span key={idx} className="px-2.5 py-1 bg-red-600/30 text-red-200 border border-red-500/40 text-[10px] font-bold rounded-md">
+                  <span key={idx} className="px-2.5 py-1 bg-red-100 text-red-700 border border-red-200 text-[10px] font-bold rounded-md">
                     ⚡ {rf}
                   </span>
                 ))}
               </div>
             </div>
 
-            <div className="p-3 bg-white/5 border border-white/10 rounded-xl space-y-2">
-              <span className="font-bold text-slate-300 flex items-center gap-2">
-                <GitBranch size={14} className="text-blue-400" />
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+              <span className="font-bold text-slate-600 flex items-center gap-2">
+                <GitBranch size={14} className="text-blue-600" />
                 Intake Question Sequence Matrix
               </span>
-              <div className="space-y-1.5 text-[11px] text-slate-300 font-mono">
-                <div className="p-2 bg-black/30 rounded">1. Chief Complaint & Duration Selection</div>
-                <div className="p-2 bg-black/30 rounded">2. Severity Scale (1-10) & Onset Mode</div>
-                <div className="p-2 bg-black/30 rounded">3. High-Risk Comorbidities (Diabetes, Hypertension, CKD)</div>
-                <div className="p-2 bg-black/30 rounded">4. Multilingual OCR Prescription & Lab Scan</div>
+              <div className="space-y-1.5 text-[11px] text-slate-600 font-mono">
+                <div className="p-2 bg-white border border-slate-200 rounded">1. Chief Complaint & Duration Selection</div>
+                <div className="p-2 bg-white border border-slate-200 rounded">2. Severity Scale (1-10) & Onset Mode</div>
+                <div className="p-2 bg-white border border-slate-200 rounded">3. High-Risk Comorbidities (Diabetes, Hypertension, CKD)</div>
+                <div className="p-2 bg-white border border-slate-200 rounded">4. Multilingual OCR Prescription & Lab Scan</div>
               </div>
             </div>
           </div>

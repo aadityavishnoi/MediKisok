@@ -46,11 +46,11 @@ export function KioskFleetCommandModule() {
       {/* Title */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-3">
-            <Cpu className="text-blue-400" />
+          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3 font-display">
+            <Cpu className="text-blue-600" />
             National Kiosk Fleet Command & Telemetry
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Real-Time Diagnostic Control for 1,240 Hardware Terminals Across All 36 States & UTs
           </p>
         </div>
@@ -58,7 +58,7 @@ export function KioskFleetCommandModule() {
           type="button"
           onClick={handleTriggerOtaUpdate}
           disabled={firmwareRollingOut}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/30 transition-all disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-500/20 transition-all duration-200 disabled:opacity-50"
         >
           <Download size={16} />
           {firmwareRollingOut ? 'Broadcasting OTA v4.2.0...' : 'Deploy Fleet Firmware OTA v4.2.0'}
@@ -67,55 +67,55 @@ export function KioskFleetCommandModule() {
 
       {/* Fleet Availability Cards */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl backdrop-blur-md">
-          <div className="flex items-center justify-between text-xs text-emerald-400 font-semibold">
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl animate-slide-up stagger-item transition-all duration-200 hover:shadow-md" style={{ animationDelay: '0ms' }}>
+          <div className="flex items-center justify-between text-xs text-emerald-700 font-semibold">
             <span>Online Terminals</span>
             <Wifi size={16} />
           </div>
-          <div className="text-3xl font-extrabold text-white font-mono mt-2">1,184</div>
-          <div className="text-[10px] text-emerald-300 mt-1">95.4% Fleet Online</div>
+          <div className="text-3xl font-extrabold text-slate-900 font-mono mt-2">1,184</div>
+          <div className="text-[10px] text-emerald-600 mt-1">95.4% Fleet Online</div>
         </div>
 
-        <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl backdrop-blur-md">
-          <div className="flex items-center justify-between text-xs text-amber-400 font-semibold">
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl animate-slide-up stagger-item transition-all duration-200 hover:shadow-md" style={{ animationDelay: '40ms' }}>
+          <div className="flex items-center justify-between text-xs text-amber-700 font-semibold">
             <span>Degraded Hardware</span>
             <AlertTriangle size={16} />
           </div>
-          <div className="text-3xl font-extrabold text-white font-mono mt-2">32</div>
-          <div className="text-[10px] text-amber-300 mt-1">Camera/Printer warning</div>
+          <div className="text-3xl font-extrabold text-slate-900 font-mono mt-2">32</div>
+          <div className="text-[10px] text-amber-600 mt-1">Camera/Printer warning</div>
         </div>
 
-        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl backdrop-blur-md">
-          <div className="flex items-center justify-between text-xs text-red-400 font-semibold">
+        <div className="p-4 bg-red-50 border border-red-200 rounded-2xl animate-slide-up stagger-item transition-all duration-200 hover:shadow-md" style={{ animationDelay: '80ms' }}>
+          <div className="flex items-center justify-between text-xs text-red-700 font-semibold">
             <span>Offline Terminals</span>
             <WifiOff size={16} />
           </div>
-          <div className="text-3xl font-extrabold text-white font-mono mt-2">24</div>
-          <div className="text-[10px] text-red-300 mt-1">Technicians Dispatched</div>
+          <div className="text-3xl font-extrabold text-slate-900 font-mono mt-2">24</div>
+          <div className="text-[10px] text-red-600 mt-1">Technicians Dispatched</div>
         </div>
 
-        <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl backdrop-blur-md">
-          <div className="flex items-center justify-between text-xs text-blue-400 font-semibold">
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl animate-slide-up stagger-item transition-all duration-200 hover:shadow-md" style={{ animationDelay: '120ms' }}>
+          <div className="flex items-center justify-between text-xs text-blue-700 font-semibold">
             <span>Firmware v4.2.0 Fleet Adoption</span>
             <Server size={16} />
           </div>
-          <div className="text-3xl font-extrabold text-white font-mono mt-2">98.2%</div>
-          <div className="text-[10px] text-blue-300 mt-1">1,218 / 1,240 Updated</div>
+          <div className="text-3xl font-extrabold text-slate-900 font-mono mt-2">98.2%</div>
+          <div className="text-[10px] text-blue-600 mt-1">1,218 / 1,240 Updated</div>
         </div>
       </div>
 
       {/* Fleet Table + Device Inspector */}
       <div className="grid grid-cols-12 gap-6">
         {/* Left Column: Device List */}
-        <div className="col-span-8 bg-white/[0.03] border border-white/10 rounded-2xl p-5 backdrop-blur-md space-y-4">
+        <div className="col-span-8 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-white">Device Registry Telemetry Grid</h3>
-            <span className="text-xs font-mono text-slate-400">WebSocket Ping: 12ms</span>
+            <h3 className="text-sm font-bold text-slate-900">Device Registry Telemetry Grid</h3>
+            <span className="text-xs font-mono text-slate-500">WebSocket Ping: 12ms</span>
           </div>
 
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-white/10 text-slate-400 font-semibold">
+              <tr className="border-b border-slate-200 text-slate-500 font-semibold">
                 <th className="pb-3">Device ID</th>
                 <th className="pb-3">Facility Location</th>
                 <th className="pb-3">State</th>
@@ -125,33 +125,34 @@ export function KioskFleetCommandModule() {
                 <th className="pb-3 text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
-              {kiosks.map((k) => (
+            <tbody className="divide-y divide-slate-100">
+              {kiosks.map((k, idx) => (
                 <tr
                   key={k.deviceId}
                   onClick={() => setSelectedDevice(k)}
-                  className={`cursor-pointer transition-all ${
-                    selectedDevice?.deviceId === k.deviceId ? 'bg-blue-600/20' : 'hover:bg-white/5'
+                  className={`cursor-pointer transition-all duration-200 animate-slide-up stagger-item ${
+                    selectedDevice?.deviceId === k.deviceId ? 'bg-blue-50' : 'hover:bg-slate-50'
                   }`}
+                  style={{ animationDelay: `${idx * 40}ms` }}
                 >
-                  <td className="py-3 font-mono text-blue-300 font-bold">{k.deviceId}</td>
-                  <td className="py-3 text-slate-200 font-medium">{k.facilityName}</td>
-                  <td className="py-3 text-slate-400">{k.state}</td>
+                  <td className="py-3 font-mono text-blue-700 font-bold">{k.deviceId}</td>
+                  <td className="py-3 text-slate-700 font-medium">{k.facilityName}</td>
+                  <td className="py-3 text-slate-500">{k.state}</td>
                   <td className="py-3">
                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      k.status === 'Online' ? 'bg-emerald-500/20 text-emerald-300' :
-                      k.status === 'Degraded' ? 'bg-amber-500/20 text-amber-300' : 'bg-red-500/20 text-red-300'
+                      k.status === 'Online' ? 'bg-emerald-50 text-emerald-700' :
+                      k.status === 'Degraded' ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700'
                     }`}>
                       {k.status}
                     </span>
                   </td>
-                  <td className="py-3 font-mono text-slate-300">{k.firmwareVersion}</td>
-                  <td className="py-3 text-slate-400">{k.lastHeartbeat}</td>
+                  <td className="py-3 font-mono text-slate-600">{k.firmwareVersion}</td>
+                  <td className="py-3 text-slate-500">{k.lastHeartbeat}</td>
                   <td className="py-3 text-right">
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); handleRemoteRestart(k.deviceId); }}
-                      className="px-2 py-1 bg-white/10 hover:bg-white/20 text-white rounded text-[10px] font-bold"
+                      className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[10px] font-bold transition-all duration-200"
                     >
                       Restart
                     </button>
@@ -163,38 +164,38 @@ export function KioskFleetCommandModule() {
         </div>
 
         {/* Right Column: Device Hardware Component Inspector */}
-        <div className="col-span-4 bg-white/[0.03] border border-white/10 rounded-2xl p-5 backdrop-blur-md space-y-4">
+        <div className="col-span-4 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4 animate-fade-in">
           {selectedDevice ? (
             <>
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
+                  <span className="font-mono text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
                     {selectedDevice.deviceId}
                   </span>
                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                    selectedDevice.status === 'Online' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300'
+                    selectedDevice.status === 'Online' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
                   }`}>
                     {selectedDevice.status}
                   </span>
                 </div>
-                <h4 className="text-base font-bold text-white mt-2">{selectedDevice.facilityName}</h4>
-                <p className="text-xs text-slate-400">{selectedDevice.state} • Firmware {selectedDevice.firmwareVersion}</p>
+                <h4 className="text-base font-bold text-slate-900 mt-2">{selectedDevice.facilityName}</h4>
+                <p className="text-xs text-slate-500">{selectedDevice.state} • Firmware {selectedDevice.firmwareVersion}</p>
               </div>
 
               {/* Hardware Sensors Diagnostics */}
               <div className="space-y-2 text-xs">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Hardware Peripherals Diagnostic</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Hardware Peripherals Diagnostic</span>
                 {[
                   { sensor: '13.56MHz RFID Reader', status: selectedDevice.rfidReaderStatus },
                   { sensor: 'Prescription OCR Camera', status: selectedDevice.ocrCameraStatus },
                   { sensor: 'Multilingual Microphone', status: selectedDevice.audioMicStatus },
                   { sensor: 'Thermal Receipt Printer', status: selectedDevice.printerStatus },
                 ].map((item, idx) => (
-                  <div key={idx} className="p-2.5 bg-white/5 border border-white/10 rounded-xl flex items-center justify-between">
-                    <span className="text-slate-300 font-medium">{item.sensor}</span>
+                  <div key={idx} className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                    <span className="text-slate-700 font-medium">{item.sensor}</span>
                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      item.status === 'Healthy' ? 'bg-emerald-500/20 text-emerald-300' :
-                      item.status === 'Degraded' || item.status === 'Paper Out' ? 'bg-amber-500/20 text-amber-300' : 'bg-red-500/20 text-red-300'
+                      item.status === 'Healthy' ? 'bg-emerald-50 text-emerald-700' :
+                      item.status === 'Degraded' || item.status === 'Paper Out' ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700'
                     }`}>
                       {item.status}
                     </span>
@@ -203,12 +204,12 @@ export function KioskFleetCommandModule() {
               </div>
 
               {/* System Load */}
-              <div className="space-y-2 text-xs pt-2 border-t border-white/10">
-                <div className="flex justify-between text-slate-400">
+              <div className="space-y-2 text-xs pt-2 border-t border-slate-200">
+                <div className="flex justify-between text-slate-500">
                   <span>CPU Load ({selectedDevice.cpuLoad}%)</span>
                   <span>RAM Usage ({selectedDevice.ramUsage}%)</span>
                 </div>
-                <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden flex">
+                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden flex">
                   <div className="bg-blue-500 h-full" style={{ width: `${selectedDevice.cpuLoad}%` }} />
                 </div>
               </div>
@@ -217,14 +218,14 @@ export function KioskFleetCommandModule() {
                 <button
                   type="button"
                   onClick={() => handleRemoteRestart(selectedDevice.deviceId)}
-                  className="flex-1 py-2 bg-red-600/30 hover:bg-red-600/50 border border-red-500/40 text-red-200 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5"
+                  className="flex-1 py-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold text-xs rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5"
                 >
                   <Power size={14} />
                   Remote Reboot
                 </button>
                 <button
                   type="button"
-                  className="flex-1 py-2 bg-amber-600/30 hover:bg-amber-600/50 border border-amber-500/40 text-amber-200 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5"
+                  className="flex-1 py-2 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 font-bold text-xs rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5"
                 >
                   <Wrench size={14} />
                   Quarantine

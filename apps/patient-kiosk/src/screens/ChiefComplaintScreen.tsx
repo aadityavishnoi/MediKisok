@@ -111,17 +111,18 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
 
         {/* Symptom Touch Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {CHIEF_COMPLAINT_CATEGORIES.map((category) => {
+          {CHIEF_COMPLAINT_CATEGORIES.map((category, i) => {
             const isSel = selectedCategory === category;
             return (
               <button
                 key={category}
                 type="button"
                 onClick={() => handleTileClick(category)}
-                className={`group flex min-h-[96px] flex-col items-center justify-center gap-2 rounded-2xl border p-4 text-center transition-all duration-200 active:scale-[0.98] ${
+                style={{ animationDelay: `${i * 40}ms` }}
+                className={`group flex min-h-[96px] flex-col items-center justify-center gap-2 rounded-2xl border p-4 text-center transition-all duration-200 active:scale-[0.98] animate-slide-up stagger-item ${
                   isSel
                     ? 'border-blue-600 bg-blue-50/70 ring-2 ring-blue-100 shadow-xs'
-                    : 'border-slate-200/80 bg-slate-50/40 hover:border-blue-400 hover:bg-white hover:shadow-xs'
+                    : 'border-slate-200/80 bg-slate-50/40 hover:border-blue-400 hover:bg-white hover:shadow-xs hover:-translate-y-0.5'
                 }`}
               >
                 <div className="p-2 rounded-xl bg-blue-50/80 border border-blue-100/60 group-hover:bg-blue-100/60 transition-colors">
@@ -137,7 +138,7 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
 
         {/* Emergency Alert Card */}
         {isEmergencySelected && (
-          <div className="mt-4 bg-red-50/80 border border-red-200 rounded-2xl p-4.5 flex items-center justify-between gap-3 text-left shadow-xs">
+          <div className="mt-4 bg-red-50/80 border border-red-200 rounded-2xl p-4.5 flex items-center justify-between gap-3 text-left shadow-xs animate-scale-in">
             <div className="flex items-center gap-3">
               <AlertTriangle className="text-red-600 shrink-0" size={22} />
               <div>

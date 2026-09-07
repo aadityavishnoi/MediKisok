@@ -96,19 +96,19 @@ export default function App() {
   ];
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[#090D16] text-slate-100 font-sans flex selection:bg-blue-600 selection:text-white antialiased">
+    <div className="h-screen w-screen overflow-hidden bg-appbg text-slate-900 font-sans flex selection:bg-blue-600 selection:text-white antialiased">
       {/* Sidebar Navigation */}
-      <aside className="w-80 h-full bg-white/[0.03] border-r border-white/10 backdrop-blur-md flex flex-col shrink-0 overflow-hidden">
+      <aside className="w-80 h-full bg-white border-r border-slate-200 flex flex-col shrink-0 overflow-hidden">
         {/* Header */}
-        <div className="px-5 py-4 flex items-center gap-3 border-b border-white/10 shrink-0">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-extrabold text-lg shadow-[0_0_20px_rgba(59,130,246,0.5)]">
+        <div className="px-5 py-4 flex items-center gap-3 border-b border-slate-200 shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-extrabold text-lg shadow-lg shadow-blue-500/25 transition-transform duration-300 hover:scale-105">
             🏛️
           </div>
           <div>
-            <div className="font-extrabold text-white leading-none text-xs font-display tracking-tight">
+            <div className="font-extrabold text-slate-900 leading-none text-xs font-display tracking-tight">
               MediKiosk National Platform
             </div>
-            <div className="text-[10px] text-blue-400 font-semibold leading-none mt-1 font-mono">
+            <div className="text-[10px] text-blue-600 font-semibold leading-none mt-1 font-mono">
               National Health Authority (NHA)
             </div>
           </div>
@@ -117,8 +117,8 @@ export default function App() {
         {/* Navigation Items grouped by Master Categories */}
         <nav className="flex-1 px-3 py-3 space-y-3 text-xs font-medium overflow-y-auto">
           {SIDEBAR_GROUPS.map((group, idx) => (
-            <div key={idx} className="space-y-1">
-              <div className="px-3 pb-1 text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">
+            <div key={idx} className="space-y-1 animate-slide-up stagger-item" style={{ animationDelay: `${idx * 40}ms` }}>
+              <div className="px-3 pb-1 text-[9px] font-bold text-slate-400 uppercase tracking-wider font-mono">
                 {group.group}
               </div>
               {group.items.map((item) => {
@@ -129,10 +129,10 @@ export default function App() {
                     key={item.id}
                     type="button"
                     onClick={() => setActiveNav(item.id)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all ${
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 ${
                       active
-                        ? 'bg-blue-600 text-white font-bold shadow-[0_0_16px_rgba(59,130,246,0.4)]'
-                        : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                        ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-500/30'
+                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0 pr-2">
@@ -145,8 +145,10 @@ export default function App() {
                           item.id === 'emergency'
                             ? 'bg-red-500 text-white animate-pulse'
                             : item.id === 'incidents'
-                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                            : 'bg-emerald-500/20 text-emerald-300'
+                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                            : active
+                            ? 'bg-white/20 text-white'
+                            : 'bg-emerald-50 text-emerald-700'
                         }`}
                       >
                         {item.badge}
@@ -160,13 +162,13 @@ export default function App() {
         </nav>
 
         {/* System Health Status Footer */}
-        <div className="p-3 border-t border-white/10 shrink-0">
-          <div className="flex items-center justify-between text-xs font-semibold text-emerald-400 bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/20">
+        <div className="p-3 border-t border-slate-200 shrink-0">
+          <div className="flex items-center justify-between text-xs font-semibold text-emerald-700 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-[11px]">36 States & UTs Live</span>
             </div>
-            <span className="font-mono text-[10px] text-emerald-300">100% Online</span>
+            <span className="font-mono text-[10px] text-emerald-600">100% Online</span>
           </div>
         </div>
       </aside>
@@ -174,13 +176,13 @@ export default function App() {
       {/* Main Content Viewport */}
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
         {/* Top Command Bar */}
-        <header className="h-16 bg-white/[0.03] border-b border-white/10 backdrop-blur-md flex items-center justify-between px-8 shrink-0 z-30">
+        <header className="h-16 bg-white/80 border-b border-slate-200 backdrop-blur-md flex items-center justify-between px-8 shrink-0 z-30">
           <div className="w-96 max-w-full relative">
             <Search size={16} className="absolute left-3.5 top-3.5 text-slate-400" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500/50"
+              className="w-full bg-slate-100 border border-transparent rounded-xl pl-10 pr-4 py-2 text-xs text-slate-900 placeholder:text-slate-400 transition-all duration-200 focus:outline-none focus:bg-white focus:border-blue-400 focus:shadow-sm"
               placeholder="Search states, hospitals, RFID devices, AI models, protocols..."
             />
           </div>
@@ -189,18 +191,18 @@ export default function App() {
             <button
               type="button"
               onClick={() => setNotificationsOpen(!notificationsOpen)}
-              className="relative w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 hover:bg-white/10 transition-colors"
+              className="relative w-9 h-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-all duration-200 active:scale-95"
             >
               <Bell size={18} />
               <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping" />
             </button>
 
-            <div className="flex items-center gap-3 border-l border-white/10 pl-4">
-              <div className="w-9 h-9 rounded-xl bg-blue-600/30 border border-blue-500/40 flex items-center justify-center font-bold text-blue-300 text-xs shadow-inner font-mono">
+            <div className="flex items-center gap-3 border-l border-slate-200 pl-4">
+              <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center font-bold text-blue-700 text-xs shadow-inner font-mono">
                 NHA
               </div>
               <div className="text-xs">
-                <div className="font-bold leading-none text-white font-display">Ministry of Health</div>
+                <div className="font-bold leading-none text-slate-900 font-display">Ministry of Health</div>
                 <div className="text-[10px] text-slate-400 leading-none mt-1 font-mono">ID: NHA-GOVT-001</div>
               </div>
             </div>
@@ -209,26 +211,26 @@ export default function App() {
 
         {/* Notifications Modal */}
         {notificationsOpen && (
-          <div className="absolute top-16 right-8 z-40 w-80 bg-slate-900 border border-white/15 rounded-2xl shadow-2xl p-4 text-xs space-y-3 animate-fade-in">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2">
-              <span className="font-bold text-white">Central System Alerts</span>
-              <span className="text-[10px] font-mono text-blue-400">3 New</span>
+          <div className="absolute top-16 right-8 z-40 w-80 bg-white border border-slate-200 rounded-2xl shadow-2xl ring-1 ring-slate-900/5 p-4 text-xs space-y-3 animate-scale-in origin-top-right">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+              <span className="font-bold text-slate-900">Central System Alerts</span>
+              <span className="text-[10px] font-mono text-blue-600">3 New</span>
             </div>
             <div className="space-y-2">
-              <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-300">
+              <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-700">
                 <span className="font-bold block">Hospital Registration Request</span>
-                <span className="text-[10px] text-slate-400">Government Rajaji Hospital Madurai submitted</span>
+                <span className="text-[10px] text-slate-500">Government Rajaji Hospital Madurai submitted</span>
               </div>
-              <div className="p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-300">
+              <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-xl text-blue-700">
                 <span className="font-bold block">OTA Firmware v4.2.0 Pushed</span>
-                <span className="text-[10px] text-slate-400">1,218 RFID readers updated successfully</span>
+                <span className="text-[10px] text-slate-500">1,218 RFID readers updated successfully</span>
               </div>
             </div>
           </div>
         )}
 
         {/* Dynamic Module Content Viewport */}
-        <main className="p-6 space-y-6 max-w-7xl mx-auto w-full flex-1 overflow-y-auto">
+        <main key={activeNav} className="p-6 space-y-6 max-w-7xl mx-auto w-full flex-1 overflow-y-auto animate-fade-in">
           {activeNav === 'overview' && <NationalOverviewModule searchQuery={search} />}
           {activeNav === 'digital_twin' && <NationalDigitalTwinMapModule />}
           {activeNav === 'incidents' && <IncidentsOperationsModule />}

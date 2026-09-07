@@ -138,7 +138,9 @@ export function PatientFlow({ sessionId, wsState }: PatientFlowProps) {
         wsState={wsState}
         sessionId={sessionId}
       >
-        {content}
+        <div key={stage.name} className="w-full animate-fade-in">
+          {content}
+        </div>
       </KioskShell>
       {stage.name !== 'DONE' && (
         <IdleTimeoutGuard language={language} onTimeout={() => window.location.reload()} />

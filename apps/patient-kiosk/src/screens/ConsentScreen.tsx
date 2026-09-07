@@ -56,7 +56,11 @@ export function ConsentScreen({ sessionId, language, onDecision }: ConsentScreen
 
       <ul className="w-full space-y-3 text-left">
         {t.points.map((point: string, i: number) => (
-          <li key={i} className="flex items-start gap-3.5 rounded-2xl border border-slate-200/80 bg-white p-4.5 shadow-xs">
+          <li
+            key={i}
+            style={{ animationDelay: `${i * 50}ms` }}
+            className="flex items-start gap-3.5 rounded-2xl border border-slate-200/80 bg-white p-4.5 shadow-xs animate-slide-up stagger-item"
+          >
             <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 font-bold text-blue-600 text-xs border border-blue-100">
               {i === t.points.length - 1 ? '🔒' : '✓'}
             </span>

@@ -11,20 +11,20 @@ export function EmergencyOverrideModule() {
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="bg-red-500/10 border border-red-500/30 backdrop-blur-md rounded-2xl p-6 space-y-4">
+      <div className="bg-red-50 border border-red-200 rounded-2xl p-6 space-y-4 animate-slide-up">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0">
-              <Siren size={24} className="animate-bounce text-red-500" />
+            <div className="w-12 h-12 rounded-2xl bg-red-100 border border-red-200 flex items-center justify-center text-red-600 shrink-0">
+              <Siren size={24} className="animate-bounce text-red-600" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="font-extrabold text-xl text-white font-display">National Emergency Override & Disaster Response</h2>
+                <h2 className="font-extrabold text-xl text-slate-900 font-display">National Emergency Override & Disaster Response</h2>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-red-600 text-white">
                   SUPREME COMMAND
                 </span>
               </div>
-              <p className="text-xs text-slate-300 mt-1 max-w-2xl">
+              <p className="text-xs text-slate-600 mt-1 max-w-2xl">
                 Executive override panel for central health ministry officials to declare national/regional health emergencies, enforce priority kiosk triage, and initiate emergency bed diversion.
               </p>
             </div>
@@ -33,7 +33,7 @@ export function EmergencyOverrideModule() {
       </div>
 
       {activeEmergency && (
-        <div role="alert" className="p-5 bg-red-600 border-2 border-red-400 rounded-2xl text-white font-extrabold text-base flex items-center justify-between shadow-[0_0_30px_rgba(220,38,38,0.5)] animate-pulse">
+        <div role="alert" className="p-5 bg-red-600 border-2 border-red-400 rounded-2xl text-white font-extrabold text-base flex items-center justify-between shadow-lg animate-fade-in animate-pulse">
           <div className="flex items-center gap-3">
             <AlertOctagon size={28} />
             <div>
@@ -53,13 +53,13 @@ export function EmergencyOverrideModule() {
 
       {/* Emergency Protocol Trigger Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="bg-white/[0.04] border border-white/10 backdrop-blur-md rounded-2xl p-6 space-y-4 hover:border-red-500/40 transition-all">
-          <div className="w-10 h-10 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-400">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-red-300 animate-slide-up stagger-item" style={{ animationDelay: '0ms' }}>
+          <div className="w-10 h-10 rounded-xl bg-red-100 border border-red-200 flex items-center justify-center text-red-600">
             <Radio size={20} />
           </div>
           <div>
-            <h3 className="font-extrabold text-base text-white font-display">Level 3 National Disaster Protocol</h3>
-            <p className="text-xs text-slate-400 mt-1">For mass casualty events, natural disasters, or major epidemic outbreaks.</p>
+            <h3 className="font-extrabold text-base text-slate-900 font-display">Level 3 National Disaster Protocol</h3>
+            <p className="text-xs text-slate-500 mt-1">For mass casualty events, natural disasters, or major epidemic outbreaks.</p>
           </div>
           <button
             type="button"
@@ -70,13 +70,13 @@ export function EmergencyOverrideModule() {
           </button>
         </div>
 
-        <div className="bg-white/[0.04] border border-white/10 backdrop-blur-md rounded-2xl p-6 space-y-4 hover:border-amber-500/40 transition-all">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-amber-300 animate-slide-up stagger-item" style={{ animationDelay: '60ms' }}>
+          <div className="w-10 h-10 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-600">
             <Zap size={20} />
           </div>
           <div>
-            <h3 className="font-extrabold text-base text-white font-display">Regional ICU Diversion Override</h3>
-            <p className="text-xs text-slate-400 mt-1">Automatically reroute incoming ambulance & kiosk triage from overloaded tertiary hospitals.</p>
+            <h3 className="font-extrabold text-base text-slate-900 font-display">Regional ICU Diversion Override</h3>
+            <p className="text-xs text-slate-500 mt-1">Automatically reroute incoming ambulance & kiosk triage from overloaded tertiary hospitals.</p>
           </div>
           <button
             type="button"
@@ -87,13 +87,13 @@ export function EmergencyOverrideModule() {
           </button>
         </div>
 
-        <div className="bg-white/[0.04] border border-white/10 backdrop-blur-md rounded-2xl p-6 space-y-4 hover:border-blue-500/40 transition-all">
-          <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-blue-300 animate-slide-up stagger-item" style={{ animationDelay: '120ms' }}>
+          <div className="w-10 h-10 rounded-xl bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-600">
             <PhoneCall size={20} />
           </div>
           <div>
-            <h3 className="font-extrabold text-base text-white font-display">Rapid Staff Mobilization Dispatch</h3>
-            <p className="text-xs text-slate-400 mt-1">Notify duty nursing officers & medical officers across state networks for emergency intake backup.</p>
+            <h3 className="font-extrabold text-base text-slate-900 font-display">Rapid Staff Mobilization Dispatch</h3>
+            <p className="text-xs text-slate-500 mt-1">Notify duty nursing officers & medical officers across state networks for emergency intake backup.</p>
           </div>
           <button
             type="button"

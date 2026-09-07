@@ -61,22 +61,22 @@ export function IdentifyScreen({ wsState, error, onError }: IdentifyScreenProps)
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6 py-6 text-center max-w-lg mx-auto w-full">
-      <div className="mb-2">
+      <div className="mb-2 animate-slide-up">
         <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100/80">
           <Sparkles size={13} /> Quick Intake Terminal
         </span>
       </div>
 
-      <h1 className="text-4xl font-extrabold text-slate-900 mb-2 tracking-tight font-display">
+      <h1 className="text-4xl font-extrabold text-slate-900 mb-2 tracking-tight font-display animate-slide-up stagger-item" style={{ animationDelay: '40ms' }}>
         Welcome to MediKiosk
       </h1>
-      <p className="text-slate-500 mb-8 text-base font-medium leading-relaxed">
+      <p className="text-slate-500 mb-8 text-base font-medium leading-relaxed animate-slide-up stagger-item" style={{ animationDelay: '80ms' }}>
         Tap your patient card on the reader to begin intake
       </p>
 
       {/* Serene Glowing RFID Tap Ring */}
-      <div className="relative mb-8 group cursor-pointer">
-        <div className="absolute -inset-2 rounded-full bg-blue-500/10 blur-xl group-hover:bg-blue-500/20 transition-all" />
+      <div className="relative mb-8 group cursor-pointer animate-slide-up">
+        <div className="absolute -inset-2 rounded-full bg-blue-500/10 blur-xl group-hover:bg-blue-500/20 transition-all animate-pulse-subtle" />
         <div className="relative w-36 h-36 rounded-full bg-gradient-to-tr from-blue-600 via-blue-600 to-indigo-600 shadow-xl shadow-blue-600/25 flex flex-col items-center justify-center text-white transition-transform duration-300 group-hover:scale-105">
           <CreditCard size={44} className="drop-shadow-sm mb-1" />
           <span className="text-[11px] font-bold uppercase tracking-wider text-blue-100">Tap Card</span>
@@ -119,7 +119,7 @@ export function IdentifyScreen({ wsState, error, onError }: IdentifyScreenProps)
       )}
 
       {/* Clean Demo Actions */}
-      <div className="w-full bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs text-center space-y-3">
+      <div className="w-full bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs text-center space-y-3 animate-slide-up stagger-item" style={{ animationDelay: '120ms' }}>
         <div className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
           Simulate RFID Card Reader (Demo)
         </div>

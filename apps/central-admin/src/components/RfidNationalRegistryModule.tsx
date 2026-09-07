@@ -36,35 +36,35 @@ export function RfidNationalRegistryModule() {
       {/* Title */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-3">
-            <Cpu className="text-blue-400" />
+          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3 font-display">
+            <Cpu className="text-blue-600" />
             RFID National Token Registry & Inventory
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Tokenized Session Identifiers • Strict Security Audit (Zero PHI / Aadhaar stored on chip)
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-xl text-xs font-bold font-mono">
+          <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold font-mono">
             Total Cards: {totalCardsInCirculation.toLocaleString()}
           </span>
         </div>
       </div>
 
       {/* Security Banner: RFID Token Privacy Rule */}
-      <div className="p-4 bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border border-blue-500/30 rounded-2xl flex items-center justify-between text-xs backdrop-blur-md">
+      <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl flex items-center justify-between text-xs shadow-sm animate-fade-in">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-blue-600/30 border border-blue-500/40 flex items-center justify-center text-blue-300">
+          <div className="w-9 h-9 rounded-xl bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-700">
             <Lock size={18} />
           </div>
           <div>
-            <div className="font-bold text-white">NHA Security Spec: RFID Card ≠ Patient EHR</div>
-            <div className="text-[11px] text-slate-400">
+            <div className="font-bold text-slate-900">NHA Security Spec: RFID Card ≠ Patient EHR</div>
+            <div className="text-[11px] text-slate-500">
               Cards contain only encrypted 13.56MHz UID tokens (`04:A7:XX:XX`). Clinical diagnoses, prescriptions, and identity tokens are stored exclusively in ABDM-backed encrypted databases.
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-emerald-400 font-mono text-xs font-bold bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20">
+        <div className="flex items-center gap-2 text-emerald-700 font-mono text-xs font-bold bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
           <ShieldCheck size={16} />
           <span>DPDP 2023 Compliant</span>
         </div>
@@ -73,14 +73,18 @@ export function RfidNationalRegistryModule() {
       {/* Card Status Lifecycle Distribution */}
       <div className="grid grid-cols-6 gap-3">
         {[
-          { label: 'Available Stock', val: '45,000', color: 'border-slate-500/30 bg-slate-500/10 text-slate-300' },
-          { label: 'Assigned', val: '35,000', color: 'border-blue-500/30 bg-blue-500/10 text-blue-300' },
-          { label: 'Active Sessions', val: '18,420', color: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' },
-          { label: 'Suspended', val: '412', color: 'border-amber-500/30 bg-amber-500/10 text-amber-300' },
-          { label: 'Damaged / Lost', val: '188', color: 'border-red-500/30 bg-red-500/10 text-red-300' },
-          { label: 'Retired', val: '1,200', color: 'border-purple-500/30 bg-purple-500/10 text-purple-300' },
+          { label: 'Available Stock', val: '45,000', color: 'border-slate-200 bg-slate-50 text-slate-700' },
+          { label: 'Assigned', val: '35,000', color: 'border-blue-200 bg-blue-50 text-blue-700' },
+          { label: 'Active Sessions', val: '18,420', color: 'border-emerald-200 bg-emerald-50 text-emerald-700' },
+          { label: 'Suspended', val: '412', color: 'border-amber-200 bg-amber-50 text-amber-700' },
+          { label: 'Damaged / Lost', val: '188', color: 'border-red-200 bg-red-50 text-red-700' },
+          { label: 'Retired', val: '1,200', color: 'border-purple-200 bg-purple-50 text-purple-700' },
         ].map((item, idx) => (
-          <div key={idx} className={`p-3 rounded-2xl border ${item.color} backdrop-blur-md text-center`}>
+          <div
+            key={idx}
+            className={`p-3 rounded-2xl border ${item.color} text-center animate-slide-up stagger-item transition-all duration-200 hover:shadow-md`}
+            style={{ animationDelay: `${idx * 40}ms` }}
+          >
             <span className="text-[10px] font-bold uppercase tracking-wider block opacity-70">{item.label}</span>
             <span className="text-xl font-extrabold font-mono mt-1 block">{item.val}</span>
           </div>
@@ -90,9 +94,9 @@ export function RfidNationalRegistryModule() {
       {/* Scanner & Duplicate UID Sentinel */}
       <div className="grid grid-cols-12 gap-6">
         {/* Token Verification Console */}
-        <div className="col-span-6 bg-white/[0.03] border border-white/10 rounded-2xl p-5 backdrop-blur-md space-y-4">
-          <h3 className="text-sm font-bold text-white flex items-center gap-2">
-            <Key size={16} className="text-blue-400" />
+        <div className="col-span-6 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <Key size={16} className="text-blue-600" />
             Live RFID UID Security Verification Tool
           </h3>
           <div className="flex gap-2">
@@ -101,52 +105,52 @@ export function RfidNationalRegistryModule() {
               value={scanUid}
               onChange={(e) => setScanUid(e.target.value)}
               placeholder="Enter UID e.g. 04:A7:89:BC:D1..."
-              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs font-mono text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+              className="flex-1 bg-slate-100 border border-transparent rounded-xl px-3 py-2 text-xs font-mono text-slate-900 placeholder:text-slate-400 transition-all duration-200 focus:outline-none focus:bg-white focus:border-blue-400"
             />
             <button
               type="button"
               onClick={handleSimulateScan}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all duration-200"
             >
               Verify Token
             </button>
           </div>
           {scanResult && (
-            <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl text-xs text-blue-300 font-mono">
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-700 font-mono animate-fade-in">
               {scanResult}
             </div>
           )}
         </div>
 
         {/* Security Alerts: Duplicate/Cloned UID Sentinel */}
-        <div className="col-span-6 bg-white/[0.03] border border-white/10 rounded-2xl p-5 backdrop-blur-md space-y-3">
+        <div className="col-span-6 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <ShieldAlert size={16} className="text-amber-400" />
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <ShieldAlert size={16} className="text-amber-600" />
               Duplicate & Cloned UID Security Sentinel
             </h3>
-            <span className="text-[10px] font-mono text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30">
+            <span className="text-[10px] font-mono text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
               5 Anomalies Flagged
             </span>
           </div>
 
           <div className="space-y-2 text-xs">
-            <div className="p-2.5 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-between text-red-300">
+            <div className="p-2.5 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between text-red-700 animate-slide-up stagger-item" style={{ animationDelay: '0ms' }}>
               <div>
                 <span className="font-bold block">UID Clone Attempt Blocked</span>
-                <span className="text-[10px] text-slate-400 font-mono">UID: 04:A7:99:FF • Hospital: KEM Mumbai</span>
+                <span className="text-[10px] text-slate-500 font-mono">UID: 04:A7:99:FF • Hospital: KEM Mumbai</span>
               </div>
-              <button type="button" className="px-2.5 py-1 bg-red-600 text-white font-bold text-[10px] rounded-lg">
+              <button type="button" className="px-2.5 py-1 bg-red-600 text-white font-bold text-[10px] rounded-lg transition-all duration-200 hover:bg-red-500">
                 Revoke Token
               </button>
             </div>
 
-            <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between text-amber-300">
+            <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between text-amber-700 animate-slide-up stagger-item" style={{ animationDelay: '40ms' }}>
               <div>
                 <span className="font-bold block">Rapid Re-tap Anomaly</span>
-                <span className="text-[10px] text-slate-400 font-mono">UID: 04:B2:11:09 • 12 taps in 30 seconds</span>
+                <span className="text-[10px] text-slate-500 font-mono">UID: 04:B2:11:09 • 12 taps in 30 seconds</span>
               </div>
-              <button type="button" className="px-2.5 py-1 bg-amber-600 text-white font-bold text-[10px] rounded-lg">
+              <button type="button" className="px-2.5 py-1 bg-amber-600 text-white font-bold text-[10px] rounded-lg transition-all duration-200 hover:bg-amber-500">
                 Quarantine
               </button>
             </div>
@@ -155,11 +159,11 @@ export function RfidNationalRegistryModule() {
       </div>
 
       {/* Batch Allocation Table */}
-      <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 backdrop-blur-md space-y-4">
-        <h3 className="text-sm font-bold text-white">National RFID Batch Allocation & Audit Trail</h3>
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+        <h3 className="text-sm font-bold text-slate-900">National RFID Batch Allocation & Audit Trail</h3>
         <table className="w-full text-left text-xs">
           <thead>
-            <tr className="border-b border-white/10 text-slate-400 font-semibold">
+            <tr className="border-b border-slate-200 text-slate-500 font-semibold">
               <th className="pb-3">Batch ID</th>
               <th className="pb-3">Manufactured</th>
               <th className="pb-3">Card Count</th>
@@ -169,23 +173,23 @@ export function RfidNationalRegistryModule() {
               <th className="pb-3 text-right">Cryptographic Hash</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
-            {batches.map((b) => (
-              <tr key={b.batchId} className="hover:bg-white/5">
-                <td className="py-3 font-mono text-blue-300 font-bold">{b.batchId}</td>
-                <td className="py-3 text-slate-300">{b.manufacturedDate}</td>
-                <td className="py-3 font-mono text-white">{b.totalCards.toLocaleString()}</td>
-                <td className="py-3 text-slate-200">{b.assignedState}</td>
+          <tbody className="divide-y divide-slate-100">
+            {batches.map((b, idx) => (
+              <tr key={b.batchId} className="hover:bg-slate-50 transition-all duration-200 animate-slide-up stagger-item" style={{ animationDelay: `${idx * 40}ms` }}>
+                <td className="py-3 font-mono text-blue-700 font-bold">{b.batchId}</td>
+                <td className="py-3 text-slate-600">{b.manufacturedDate}</td>
+                <td className="py-3 font-mono text-slate-900">{b.totalCards.toLocaleString()}</td>
+                <td className="py-3 text-slate-700">{b.assignedState}</td>
                 <td className="py-3">
                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                    b.status === 'Active' ? 'bg-emerald-500/20 text-emerald-300' :
-                    b.status === 'Suspended' ? 'bg-red-500/20 text-red-300' : 'bg-blue-500/20 text-blue-300'
+                    b.status === 'Active' ? 'bg-emerald-50 text-emerald-700' :
+                    b.status === 'Suspended' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'
                   }`}>
                     {b.status}
                   </span>
                 </td>
-                <td className="py-3 font-mono font-bold text-amber-400">{b.clonedAlerts}</td>
-                <td className="py-3 text-right font-mono text-[10px] text-slate-500">{b.securityHash.slice(0, 24)}...</td>
+                <td className="py-3 font-mono font-bold text-amber-600">{b.clonedAlerts}</td>
+                <td className="py-3 text-right font-mono text-[10px] text-slate-400">{b.securityHash.slice(0, 24)}...</td>
               </tr>
             ))}
           </tbody>

@@ -4,10 +4,32 @@
 
 @layer base {
   html {
-    font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    /* Must match the tailwind.config.js font-sans stack: Inter + a Noto Sans fallback
+       per script so all 13 supported languages render with real glyphs instead of
+       falling through to whatever sans-serif the OS happens to ship. */
+    font-family:
+      'Inter',
+      'Noto Sans Devanagari',
+      'Noto Sans Bengali',
+      'Noto Sans Tamil',
+      'Noto Sans Telugu',
+      'Noto Sans Gujarati',
+      'Noto Sans Kannada',
+      'Noto Sans Malayalam',
+      'Noto Sans Gurmukhi',
+      'Noto Sans Oriya',
+      'Noto Sans Arabic',
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      'Segoe UI',
+      Roboto,
+      'Helvetica Neue',
+      Arial,
+      sans-serif;
     -webkit-tap-highlight-color: transparent;
   }
-  
+
   body {
     @apply bg-slate-50 text-slate-900 antialiased selection:bg-blue-600 selection:text-white;
   }
@@ -26,6 +48,54 @@
 
 .animate-pulse-subtle {
   animation: pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out both;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Stagger helper: pair with animate-slide-up and an inline animationDelay */
+.stagger-item {
+  animation-fill-mode: both;
 }
 
 .glass-card {
