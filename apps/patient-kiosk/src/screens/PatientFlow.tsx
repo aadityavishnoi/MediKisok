@@ -110,6 +110,7 @@ export function PatientFlow({ sessionId, wsState }: PatientFlowProps) {
   } else if (stage.name === 'SCAN') {
     content = (
       <DocumentUploadScreen
+        sessionId={sessionId}
         language={language}
         onComplete={() => setStage({ name: 'DONE' })}
         onSkip={() => setStage({ name: 'DONE' })}

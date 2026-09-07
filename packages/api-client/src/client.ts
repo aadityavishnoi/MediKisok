@@ -42,8 +42,12 @@ export async function apiFetch<T>(
 
   let body: BodyInit | undefined;
   if (options.body !== undefined) {
-    headers['Content-Type'] = 'application/json';
-    body = JSON.stringify(options.body);
+    if (typeof FormData !== 'undefined' && options.body instanceof FormData) {
+      body = options.body;
+    } else {
+      headers['Content-Type'] = 'application/json';
+      body = JSON.stringify(options.body);
+    }
   }
 
   const res = await fetch(`${config.baseUrl}${path}`, {

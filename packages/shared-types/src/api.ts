@@ -8,6 +8,7 @@ import type {
   ExtractedMedicalData,
   HardwareDeviceState,
   LocalizedText,
+  MedicalDocument,
   MedicalTimelineEvent,
   Patient,
   PatientSession,
@@ -241,6 +242,7 @@ export interface SessionDetailResponse {
   history: (ClinicalHistory & { answers: ClinicalAnswer[] }) | null;
   summary?: AISummary | null;
   alerts: Alert[];
+  documents?: (MedicalDocument & { extractedData?: ExtractedMedicalData[] })[];
 }
 
 export interface SummaryConfirmRequest {

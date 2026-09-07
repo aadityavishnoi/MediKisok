@@ -1,130 +1,217 @@
-import React, { useState } from 'react';
-import { Camera, CheckCircle2, RefreshCw, ArrowRight, ShieldCheck, FileText } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Camera, CheckCircle2, RefreshCw, ArrowRight, Upload, Cloud, ExternalLink, FileText, AlertCircle } from 'lucide-react';
 import type { Language } from '@medikiosk/shared-types';
+import { uploadDocument, type DocumentUploadResponse } from '@medikiosk/api-client';
 
 export interface DocumentUploadScreenProps {
+  sessionId?: string;
+  patientId?: string;
   language: Language;
   onComplete: (docData?: { type: string; summary: string }) => void;
   onSkip: () => void;
 }
 
-export function DocumentUploadScreen({ language, onComplete, onSkip }: DocumentUploadScreenProps) {
-  const [scanning, setScanning] = useState(false);
-  const [scannedDoc, setScannedDoc] = useState<{ type: string; summary: string; confidence: number } | null>(null);
-  const [docType, setDocType] = useState<'prescription' | 'lab' | 'id'>('prescription');
+export function DocumentUploadScreen({ sessionId, patientId, language, onComplete, onSkip }: DocumentUploadScreenProps) {
+  const [uploading, setUploading] = useState(false);
+  const [docType, setDocType] = useState<'PRESCRIPTION' | 'LAB_REPORT' | 'ID_CARD'>('PRESCRIPTION');
+  const [uploadedDoc, setUploadedDoc] = useState<DocumentUploadResponse | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleScanSimulation = () => {
-    setScanning(true);
-    setTimeout(() => {
-      setScanning(false);
-      if (docType === 'prescription') {
-        setScannedDoc({
-          type: 'Prescription Document',
-          summary: 'Rx Detected: Tab. Paracetamol 500mg BD, Tab. Pantoprazole 40mg OD.',
-          confidence: 98.4,
-        });
-      } else if (docType === 'lab') {
-        setScannedDoc({
-          type: 'Diagnostic Report',
-          summary: 'CBC Report: Hb 13.8 g/dL, Platelets 240,000 /mcL.',
-          confidence: 96.8,
-        });
-      } else {
-        setScannedDoc({
-          type: 'ABHA / Govt ID Card',
-          summary: 'ABHA Card Scanned: 91-8472-9102-4819.',
-          confidence: 99.2,
-        });
-      }
-    }, 1800);
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setErrorMessage(null);
+    try {
+      const res = await uploadDocument({
+        sessionId,
+        patientId,
+        type: docType,
+        filename: file.name,
+        file,
+      });
+      setUploadedDoc(res);
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to upload document to ImageKit');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSimulateCapture = async () => {
+    setUploading(true);
+    setErrorMessage(null);
+    try {
+      const res = await uploadDocument({
+        sessionId,
+        patientId,
+        type: docType,
+        filename: `${docType.toLowerCase()}_sample_${Date.now()}.png`,
+      });
+      setUploadedDoc(res);
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to process document');
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
     <div className="flex flex-col items-center gap-5 text-center w-full max-w-xl mx-auto">
       <div>
         <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100 mb-2">
-          <Camera size={13} /> Optional Document Scanner
+          <Cloud size={13} className="text-blue-500" /> ImageKit Cloud Medical Ingestion
         </span>
         <h1 className="text-3xl font-extrabold text-slate-900 font-display tracking-tight">Scan Prescription or Reports</h1>
         <p className="mt-1 text-sm text-slate-500 font-medium">
-          Hold paper prescription or lab report in front of the kiosk camera
+          Upload or scan paper prescriptions, lab reports, or ABHA cards for doctor review
         </p>
       </div>
+
+      {/* Hidden File Input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,application/pdf"
+        className="hidden"
+        onChange={handleFileUpload}
+      />
 
       {/* Selector */}
       <div className="flex gap-2 p-1.5 bg-slate-100/80 rounded-2xl w-full border border-slate-200/60">
         <button
           type="button"
-          onClick={() => { setDocType('prescription'); setScannedDoc(null); }}
+          onClick={() => { setDocType('PRESCRIPTION'); setUploadedDoc(null); }}
           className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
-            docType === 'prescription' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+            docType === 'PRESCRIPTION' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
           }`}
         >
           📄 Prescription
         </button>
         <button
           type="button"
-          onClick={() => { setDocType('lab'); setScannedDoc(null); }}
+          onClick={() => { setDocType('LAB_REPORT'); setUploadedDoc(null); }}
           className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
-            docType === 'lab' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+            docType === 'LAB_REPORT' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
           }`}
         >
           🧪 Lab Report
         </button>
         <button
           type="button"
-          onClick={() => { setDocType('id'); setScannedDoc(null); }}
+          onClick={() => { setDocType('ID_CARD'); setUploadedDoc(null); }}
           className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
-            docType === 'id' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+            docType === 'ID_CARD' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
           }`}
         >
           🆔 ABHA / ID Card
         </button>
       </div>
 
-      {/* Viewfinder Frame */}
-      <div className="relative w-full h-56 bg-slate-900 rounded-3xl overflow-hidden border border-slate-800 shadow-inner flex flex-col items-center justify-center p-6 text-white">
+      {/* Viewfinder Frame / Document Preview */}
+      <div className="relative w-full min-h-[230px] bg-slate-900 rounded-3xl overflow-hidden border border-slate-800 shadow-inner flex flex-col items-center justify-center p-5 text-white">
         <div className="absolute top-4 left-4 w-6 h-6 border-t-2 border-l-2 border-blue-500 rounded-tl" />
         <div className="absolute top-4 right-4 w-6 h-6 border-t-2 border-r-2 border-blue-500 rounded-tr" />
         <div className="absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-blue-500 rounded-bl" />
         <div className="absolute bottom-4 right-4 w-6 h-6 border-b-2 border-r-2 border-blue-500 rounded-br" />
 
-        {scanning ? (
-          <div className="flex flex-col items-center gap-2 animate-pulse">
+        {uploading ? (
+          <div className="flex flex-col items-center gap-3 animate-pulse">
             <RefreshCw size={36} className="text-blue-400 animate-spin" />
-            <span className="text-sm font-bold text-blue-200">AI Document Scanner Active…</span>
+            <div className="text-center">
+              <span className="text-sm font-bold text-blue-200 block">Uploading to ImageKit Cloud CDN…</span>
+              <span className="text-xs text-slate-400">Extracting OCR entities & saving to database</span>
+            </div>
           </div>
-        ) : scannedDoc ? (
-          <div className="flex flex-col items-center gap-2 text-center bg-slate-800/90 backdrop-blur p-4 rounded-2xl border border-slate-700 max-w-sm animate-scale-in">
-            <CheckCircle2 size={32} className="text-emerald-400" />
-            <span className="text-xs font-bold text-emerald-300">{scannedDoc.type} Scanned ({scannedDoc.confidence}%)</span>
-            <p className="text-xs text-slate-300 font-mono bg-slate-950 p-2 rounded-xl border border-slate-800 text-left">
-              {scannedDoc.summary}
+        ) : uploadedDoc ? (
+          <div className="flex flex-col items-center gap-3 text-center bg-slate-800/95 backdrop-blur p-4 rounded-2xl border border-slate-700 w-full max-w-md animate-scale-in">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 size={24} className="text-emerald-400 shrink-0" />
+              <div className="text-left">
+                <span className="text-xs font-bold text-emerald-300 block">
+                  Cloud OCR Verified ({Math.round(uploadedDoc.document.ocrConfidence * 100)}%)
+                </span>
+                <span className="text-[10px] text-slate-400 font-mono truncate max-w-[220px] block">
+                  {uploadedDoc.imagekit.url}
+                </span>
+              </div>
+            </div>
+
+            {/* OCR Extracted Text Preview */}
+            <p className="text-xs text-slate-200 font-mono bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-left w-full line-clamp-3">
+              {uploadedDoc.document.ocrText}
             </p>
+
+            {/* Extracted Clinical Tags */}
+            {uploadedDoc.document.extractedData && uploadedDoc.document.extractedData.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 w-full justify-start">
+                {uploadedDoc.document.extractedData.map((item, idx) => (
+                  <span key={idx} className="px-2 py-0.5 rounded-md bg-blue-900/60 border border-blue-700/60 text-blue-200 text-[10px] font-semibold">
+                    💊 {item.fieldValue}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div className="flex items-center justify-between w-full pt-2 border-t border-slate-700/60 text-[11px]">
+              <span className="text-slate-400">Stored on ImageKit CDN</span>
+              <a
+                href={uploadedDoc.imagekit.url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-blue-400 hover:text-blue-300 flex items-center gap-1 font-semibold"
+              >
+                View Cloud Asset <ExternalLink size={11} />
+              </a>
+            </div>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 text-slate-400">
             <Camera size={40} className="text-slate-500" />
-            <span className="text-xs font-semibold">Center document in viewfinder</span>
+            <span className="text-xs font-semibold">Position paper document or tap upload below</span>
           </div>
         )}
       </div>
 
+      {errorMessage && (
+        <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 p-3 rounded-xl border border-red-200 w-full text-left">
+          <AlertCircle size={16} className="shrink-0" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
+
       {/* Buttons */}
       <div className="flex flex-col sm:flex-row gap-2.5 w-full">
-        {!scannedDoc ? (
-          <button
-            type="button"
-            disabled={scanning}
-            onClick={handleScanSimulation}
-            className="flex-1 py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-blue-500/20 transition-all active:scale-[0.98] disabled:opacity-50"
-          >
-            <Camera size={18} /> Simulate Document Capture
-          </button>
+        {!uploadedDoc ? (
+          <>
+            <button
+              type="button"
+              disabled={uploading}
+              onClick={() => fileInputRef.current?.click()}
+              className="flex-1 py-3.5 px-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
+            >
+              <Upload size={16} /> Choose File / Camera
+            </button>
+            <button
+              type="button"
+              disabled={uploading}
+              onClick={handleSimulateCapture}
+              className="flex-1 py-3.5 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-blue-500/20 transition-all active:scale-[0.98] disabled:opacity-50"
+            >
+              <Camera size={16} /> Simulate AI OCR Capture
+            </button>
+          </>
         ) : (
           <button
             type="button"
-            onClick={() => onComplete(scannedDoc)}
+            onClick={() =>
+              onComplete({
+                type: uploadedDoc.document.type,
+                summary: uploadedDoc.document.ocrText,
+              })
+            }
             className="flex-1 py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-[0.98]"
           >
             <CheckCircle2 size={18} /> Complete Intake <ArrowRight size={16} />
@@ -136,7 +223,7 @@ export function DocumentUploadScreen({ language, onComplete, onSkip }: DocumentU
           onClick={onSkip}
           className="py-3.5 px-6 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-all"
         >
-          Skip
+          {uploadedDoc ? 'Skip Next' : 'Skip'}
         </button>
       </div>
     </div>

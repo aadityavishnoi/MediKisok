@@ -118,5 +118,36 @@ export async function getSessionDetail(sessionId: string): Promise<SessionDetail
       acknowledgedAt: a.acknowledgedAt?.toISOString() ?? null,
       createdAt: a.createdAt.toISOString(),
     })),
+    documents: (
+      await prisma.medicalDocument.findMany({
+        where: {
+          OR: [{ sessionId: session.id }, { patientId: session.patient.id }],
+        },
+        include: { extractedData: true },
+        orderBy: { createdAt: 'desc' },
+      })
+    ).map((d) => ({
+      id: d.id,
+      sessionId: d.sessionId,
+      patientId: d.patientId,
+      type: d.type as any,
+      originalFilename: d.originalFilename,
+      storagePath: d.storagePath,
+      mimeType: d.mimeType,
+      ocrText: d.ocrText,
+      ocrConfidence: d.ocrConfidence,
+      processedAt: d.processedAt?.toISOString() ?? null,
+      createdAt: d.createdAt.toISOString(),
+      extractedData: d.extractedData.map((e) => ({
+        id: e.id,
+        documentId: e.documentId,
+        fieldType: e.fieldType,
+        fieldValue: e.fieldValue,
+        confidence: e.confidence,
+        status: e.status as any,
+        verifiedBy: e.verifiedBy,
+        verifiedAt: e.verifiedAt?.toISOString() ?? null,
+      })),
+    })),
   };
 }
