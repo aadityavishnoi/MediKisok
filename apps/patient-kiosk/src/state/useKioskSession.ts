@@ -10,20 +10,21 @@ interface UseKioskSessionResult {
   stage: KioskStage;
   wsState: WsConnectionState;
   identifyError: string | null;
+  blankCardUid: string | null;
   clearIdentifyError: () => void;
   reportIdentifyError: (message: string) => void;
 }
 
 /**
- * The kiosk transitions off the Identify screen only in response to the real
- * RFID_SCANNED WebSocket event - the same event a physical ESP32 card tap produces -
- * so the "Simulate RFID Scan" button in demo mode exercises the identical live path a
- * real hardware scan would.
+ * The kiosk transitions off the Identify screen only in response to a real
+ * registered RFID card scan or completed registration.
+ * Blank/unregistered cards are captured and forwarded to the registration flow.
  */
 export function useKioskSession(): UseKioskSessionResult {
   const [stage, setStage] = useState<KioskStage>({ name: 'IDENTIFY' });
   const [wsState, setWsState] = useState<WsConnectionState>('connecting');
   const [identifyError, setIdentifyError] = useState<string | null>(null);
+  const [blankCardUid, setBlankCardUid] = useState<string | null>(null);
   const stageRef = useRef(stage);
   stageRef.current = stage;
 
@@ -32,6 +33,13 @@ export function useKioskSession(): UseKioskSessionResult {
       onStateChange: setWsState,
       onEvent: (event: WsEvent) => {
         if (event.type === 'RFID_SCANNED' && stageRef.current.name === 'IDENTIFY') {
+          // If this is a blank / unregistered physical card (no sessionId or marked unverified)
+          if (!event.payload.sessionId || (event.payload as any).isRegistered === false) {
+            setBlankCardUid(event.payload.uid);
+            setIdentifyError(null);
+            return;
+          }
+
           setIdentifyError(null);
           setStage({
             name: 'IDENTIFIED',
@@ -49,6 +57,7 @@ export function useKioskSession(): UseKioskSessionResult {
     stage,
     wsState,
     identifyError,
+    blankCardUid,
     clearIdentifyError: useCallback(() => setIdentifyError(null), []),
     reportIdentifyError: useCallback((message: string) => setIdentifyError(message), []),
   };

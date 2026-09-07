@@ -1,29 +1,34 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 
 const simulateRfidScan = vi.fn().mockResolvedValue({ sessionId: 's1', patientId: 'p1' });
 
 vi.mock('@medikiosk/api-client', () => ({
   simulateRfidScan: (...args: unknown[]) => simulateRfidScan(...args),
+  sendOtp: vi.fn().mockResolvedValue({ devOtp: '123456', expiresInSeconds: 300 }),
+  verifyOtp: vi.fn().mockResolvedValue({ verified: true }),
+  registerKioskPatient: vi.fn().mockResolvedValue({
+    patient: { fullName: 'Test Patient' },
+    sessionId: 'session-123',
+  }),
   ApiClientError: class ApiClientError extends Error {},
 }));
 
 const { IdentifyScreen } = await import('./IdentifyScreen.js');
 
 describe('IdentifyScreen', () => {
-  it('shows the tap-card prompt and both demo simulate buttons', () => {
+  it('shows the tap-card prompt and physical RFID hardware scanner active status', () => {
     render(<IdentifyScreen wsState="open" error={null} onError={vi.fn()} />);
     expect(screen.getAllByText(/Tap Card/).length).toBeGreaterThan(0);
     expect(screen.getByText('Connected')).toBeInTheDocument();
-    expect(screen.getByText(/Demo Patient 001/)).toBeInTheDocument();
-    expect(screen.getByText(/Demo Patient 002/)).toBeInTheDocument();
+    expect(screen.getByText(/Physical RFID Hardware Scanner Active/)).toBeInTheDocument();
+    expect(screen.getByText(/Live Reader/)).toBeInTheDocument();
   });
 
-  it('calls simulateRfidScan with the correct UID when a demo button is clicked', async () => {
-    render(<IdentifyScreen wsState="open" error={null} onError={vi.fn()} />);
-    await userEvent.click(screen.getByText(/Demo Patient 001/));
-    expect(simulateRfidScan).toHaveBeenCalledWith({ uid: 'DEMO-RFID-001' });
+  it('switches to registration mode and pre-fills card UID when a blank card is detected', () => {
+    render(<IdentifyScreen wsState="open" error={null} onError={vi.fn()} detectedCardUid="82:12:68:E9" />);
+    expect(screen.getByText(/Blank Card Detected \(82:12:68:E9\)/)).toBeInTheDocument();
+    expect(screen.getByDisplayValue('82:12:68:E9')).toBeInTheDocument();
   });
 
   it('shows an error message when provided', () => {

@@ -32,6 +32,7 @@ export interface IdentifyScreenProps {
   wsState: WsConnectionState;
   error: string | null;
   onError: (message: string) => void;
+  detectedCardUid?: string | null;
 }
 
 const CONNECTION_CONFIG: Record<WsConnectionState, { color: string; label: string }> = {
@@ -40,38 +41,13 @@ const CONNECTION_CONFIG: Record<WsConnectionState, { color: string; label: strin
   closed: { color: 'bg-red-500', label: tc.reconnecting },
 };
 
-const DEMO_PATIENTS = [
-  {
-    uid: 'DEMO-RFID-001',
-    name: 'Aarav Sharma',
-    label: 'Demo Patient 001',
-    age: 34,
-    gender: 'Male',
-    abhaId: '91-4820-9102-3819',
-    bloodGroup: 'O+',
-    lastVisit: 'Cardiology OPD',
-  },
-  {
-    uid: 'DEMO-RFID-002',
-    name: 'Priya Patel',
-    label: 'Demo Patient 002',
-    age: 28,
-    gender: 'Female',
-    abhaId: '91-1029-4829-5710',
-    bloodGroup: 'B+',
-    lastVisit: 'General Medicine',
-  },
-];
-
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 
-export function IdentifyScreen({ wsState, error, onError }: IdentifyScreenProps) {
+export function IdentifyScreen({ wsState, error, onError, detectedCardUid }: IdentifyScreenProps) {
   // Mode: 'TAP' | 'REGISTER'
   const [activeTab, setActiveTab] = useState<'TAP' | 'REGISTER'>('TAP');
+  const [blankCardNotice, setBlankCardNotice] = useState<string | null>(null);
 
-  // Existing Patient Simulation
-  const [simulating, setSimulating] = useState<string | null>(null);
-  const [lastScannedPatient, setLastScannedPatient] = useState<(typeof DEMO_PATIENTS)[0] | null>(null);
   const connection = CONNECTION_CONFIG[wsState];
 
   // Registration Form State
@@ -83,6 +59,16 @@ export function IdentifyScreen({ wsState, error, onError }: IdentifyScreenProps)
   const [bloodGroup, setBloodGroup] = useState('O+');
   const [abhaId, setAbhaId] = useState('');
   const [cardUid, setCardUid] = useState('');
+
+  // Auto-switch to register when a blank card is tapped on the reader
+  useEffect(() => {
+    if (detectedCardUid) {
+      setCardUid(detectedCardUid);
+      setActiveTab('REGISTER');
+      setRegStep('DETAILS');
+      setBlankCardNotice(`Blank Card Detected (${detectedCardUid}). Complete details below to feed data and link this card.`);
+    }
+  }, [detectedCardUid]);
 
   // OTP State
   const [otpCode, setOtpCode] = useState('');
@@ -100,19 +86,6 @@ export function IdentifyScreen({ wsState, error, onError }: IdentifyScreenProps)
     }
     return () => clearInterval(interval);
   }, [regStep, timer]);
-
-  async function simulate(patient: (typeof DEMO_PATIENTS)[0]) {
-    setSimulating(patient.uid);
-    setLastScannedPatient(patient);
-    try {
-      await simulateRfidScan({ uid: patient.uid });
-    } catch (err) {
-      onError(toUserMessage(err, en));
-      setLastScannedPatient(null);
-    } finally {
-      setSimulating(null);
-    }
-  }
 
   // Handle Send Real OTP via TextBee SMS Gateway
   async function handleSendOtp(e?: React.FormEvent) {
@@ -134,7 +107,9 @@ export function IdentifyScreen({ wsState, error, onError }: IdentifyScreenProps)
       const res = await sendOtp({ phone: cleanPhone });
       setDevOtp(res.devOtp || '123456');
       setTimer(res.expiresInSeconds || 300);
-      setCardUid(`RFID-${Math.random().toString(36).substring(2, 7).toUpperCase()}-${cleanPhone.slice(-4)}`);
+      if (!cardUid) {
+        setCardUid(`RFID-${Math.random().toString(36).substring(2, 7).toUpperCase()}-${cleanPhone.slice(-4)}`);
+      }
       setRegStep('OTP');
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Failed to send OTP');
@@ -244,27 +219,6 @@ export function IdentifyScreen({ wsState, error, onError }: IdentifyScreenProps)
             </span>
           </div>
 
-          {/* Patient Profile Card Preview */}
-          {lastScannedPatient && (
-            <div className="w-full bg-white border border-emerald-200 rounded-3xl p-5 mb-6 text-left shadow-lg shadow-emerald-500/5 animate-fade-in space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5 text-emerald-800 font-bold text-sm font-display">
-                  <CheckCircle2 size={18} className="text-emerald-600" />
-                  <span>Card Verified: {lastScannedPatient.name}</span>
-                </div>
-                <span className="px-2.5 py-0.5 rounded-lg bg-emerald-100 text-emerald-800 font-mono text-xs font-bold">
-                  {lastScannedPatient.bloodGroup}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                <div><span className="font-semibold text-slate-400">ABHA:</span> {lastScannedPatient.abhaId}</div>
-                <div><span className="font-semibold text-slate-400">Age:</span> {lastScannedPatient.age}y ({lastScannedPatient.gender})</div>
-                <div className="col-span-2"><span className="font-semibold text-slate-400">Department:</span> {lastScannedPatient.lastVisit}</div>
-              </div>
-            </div>
-          )}
-
           {error && (
             <div role="alert" className="w-full rounded-2xl bg-red-50 border border-red-200 p-3.5 text-xs font-bold text-red-800 mb-6 flex items-center justify-center gap-2">
               <ShieldAlert size={16} />
@@ -272,30 +226,41 @@ export function IdentifyScreen({ wsState, error, onError }: IdentifyScreenProps)
             </div>
           )}
 
-          {/* Clean Demo Actions */}
-          <div className="w-full bg-white rounded-3xl border border-slate-200/80 p-4 shadow-xs text-center space-y-2.5">
-            <div className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-              Simulate RFID Card Reader (Demo)
+          {/* Production Hardware Reader Status Card */}
+          <div className="w-full bg-slate-900 text-white rounded-3xl border border-slate-800 p-5 shadow-xl text-left space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                </span>
+                <span className="text-xs font-bold text-slate-100 uppercase tracking-wider">
+                  Physical RFID Hardware Scanner Active
+                </span>
+              </div>
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-mono font-bold border border-emerald-500/30">
+                Live Reader
+              </span>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2">
-              {DEMO_PATIENTS.map((p) => (
-                <button
-                  key={p.uid}
-                  type="button"
-                  disabled={simulating !== null}
-                  onClick={() => simulate(p)}
-                  className="flex-1 py-2.5 px-3.5 rounded-2xl border border-slate-200 bg-slate-50/60 hover:bg-blue-50/60 hover:border-blue-300 text-slate-800 font-semibold text-xs transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-between"
-                >
-                  <div className="text-left">
-                    <div className="font-bold text-slate-900 text-xs">{p.name}</div>
-                    <div className="text-[10px] text-slate-400">{p.lastVisit}</div>
-                  </div>
-                  <span className="text-[11px] font-bold text-blue-600">
-                    {simulating === p.uid ? 'Scanning…' : `Tap — ${p.label}`}
-                  </span>
-                </button>
-              ))}
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Place or tap any physical RFID Smart Card on the USB reader.
+              Registered patient cards will immediately authenticate and launch your intake session.
+              Any new blank card will automatically open the registration screen below so you can feed patient data into it.
+            </p>
+
+            <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-[11px] text-slate-400">
+              <span className="flex items-center gap-1.5 text-slate-300 font-medium">
+                <Sparkles size={13} className="text-blue-400" />
+                Ready to scan USB RFID card
+              </span>
+              <button
+                type="button"
+                onClick={() => { setActiveTab('REGISTER'); setFormError(null); }}
+                className="text-blue-400 hover:text-blue-300 font-semibold underline cursor-pointer"
+              >
+                Register Without Card &rarr;
+              </button>
             </div>
           </div>
         </div>
@@ -304,6 +269,18 @@ export function IdentifyScreen({ wsState, error, onError }: IdentifyScreenProps)
       {/* TAB 2: FIRST TIME REGISTRATION (OTP) */}
       {activeTab === 'REGISTER' && (
         <div className="w-full bg-white rounded-3xl border border-slate-200/90 p-6 shadow-sm text-left animate-fade-in">
+          {blankCardNotice && (
+            <div className="mb-4 rounded-2xl bg-emerald-50 border border-emerald-200 p-3.5 text-xs font-semibold text-emerald-800 flex items-center justify-between gap-2 shadow-xs">
+              <div className="flex items-center gap-2">
+                <CreditCard size={18} className="text-emerald-600 shrink-0" />
+                <span>{blankCardNotice}</span>
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold shrink-0">
+                Card Linked
+              </span>
+            </div>
+          )}
+
           {formError && (
             <div className="mb-4 rounded-2xl bg-red-50 border border-red-200 p-3 text-xs font-semibold text-red-700 flex items-center gap-2">
               <ShieldAlert size={15} />
@@ -319,7 +296,9 @@ export function IdentifyScreen({ wsState, error, onError }: IdentifyScreenProps)
                   <h2 className="text-base font-bold text-slate-900 flex items-center gap-1.5">
                     <span>Step 1: Patient Demographic Details</span>
                   </h2>
-                  <p className="text-xs text-slate-500">Enter details to generate your RFID smart health card</p>
+                  <p className="text-xs text-slate-500">
+                    {cardUid ? `Feeding data into physical card UID: ${cardUid}` : 'Enter details to generate your RFID smart health card'}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-100">
@@ -329,6 +308,32 @@ export function IdentifyScreen({ wsState, error, onError }: IdentifyScreenProps)
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {/* Physical Card UID Field */}
+                <div className="col-span-1 sm:col-span-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-bold text-slate-700">RFID Card UID / कार्ड यूआईडी</label>
+                    {cardUid ? (
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                        Physical Blank Card Attached
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-slate-400">
+                        Tap blank card on reader or enter manually
+                      </span>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <CreditCard size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={cardUid}
+                      onChange={(e) => setCardUid(e.target.value.toUpperCase())}
+                      placeholder="e.g. 82:12:68:E9 (Tap card on reader anytime)"
+                      className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+
                 <div className="col-span-1 sm:col-span-2">
                   <label className="block text-xs font-bold text-slate-700 mb-1">Full Name / पूरा नाम *</label>
                   <div className="relative">

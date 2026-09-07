@@ -7,6 +7,17 @@ export interface RfidScannedEvent {
     uid: string;
     patientId: string | null;
     isNewPatient: boolean;
+    isRegistered?: boolean;
+    message?: string;
+    patient?: {
+      id: string;
+      fullName: string;
+      dateOfBirth?: Date | string | null;
+      gender?: string | null;
+      phone?: string | null;
+      bloodGroup?: string | null;
+      abhaId?: string | null;
+    };
     timestamp: string;
   };
 }

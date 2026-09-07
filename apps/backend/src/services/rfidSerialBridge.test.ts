@@ -176,18 +176,39 @@ describe('RfidSerialBridge Serial Stream & Debounce', () => {
   });
 });
 
-describe('Temporary Physical RFID Demo Cards & Terminal Output', () => {
-  it('correctly maps and formats UID 82:12:68:E9 to Rudra Sandilya', async () => {
+describe('Production Physical RFID Blank Cards & Terminal Output', () => {
+  it('correctly detects blank physical cards as NOT REGISTERED ready for data feeding', async () => {
     const { getPatientByRfid, formatRfidScanBanner } = await import('./rfidService.js');
     const result = await getPatientByRfid('82:12:68:E9');
 
-    expect(result.success).toBe(true);
-    expect(result.patient?.fullName).toBe('Rudra Sandilya');
+    expect(result.success).toBe(false);
+    expect(result.message).toBe('RFID card is not registered');
+
+    const banner = formatRfidScanBanner({
+      uid: '82:12:68:E9',
+      status: 'NOT REGISTERED',
+    });
+
+    const expected = [
+      '========================================',
+      'RFID CARD DETECTED',
+      '==================',
+      '',
+      'UID: 82:12:68:E9',
+      'Status: NOT REGISTERED',
+      '======================',
+    ].join('\n');
+
+    expect(banner).toBe(expected);
+  });
+
+  it('correctly formats terminal output for registered patient cards', async () => {
+    const { formatRfidScanBanner } = await import('./rfidService.js');
 
     const banner = formatRfidScanBanner({
       uid: '82:12:68:E9',
       status: 'REGISTERED',
-      patientName: result.patient?.fullName,
+      patientName: 'Vikas Sharma',
     });
 
     const expected = [
@@ -197,62 +218,8 @@ describe('Temporary Physical RFID Demo Cards & Terminal Output', () => {
       '',
       'UID: 82:12:68:E9',
       'Status: REGISTERED',
-      'Patient Name: Rudra Sandilya',
-      '============================',
-    ].join('\n');
-
-    expect(banner).toBe(expected);
-  });
-
-  it('correctly maps and formats UID DB:F9:25:07 to Bluetag', async () => {
-    const { getPatientByRfid, formatRfidScanBanner } = await import('./rfidService.js');
-    const result = await getPatientByRfid('DB:F9:25:07');
-
-    expect(result.success).toBe(true);
-    expect(result.patient?.fullName).toBe('Bluetag');
-
-    const banner = formatRfidScanBanner({
-      uid: 'DB:F9:25:07',
-      status: 'REGISTERED',
-      patientName: result.patient?.fullName,
-    });
-
-    const expected = [
-      '========================================',
-      'RFID CARD DETECTED',
-      '==================',
-      '',
-      'UID: DB:F9:25:07',
-      'Status: REGISTERED',
-      'Patient Name: Bluetag',
-      '=====================',
-    ].join('\n');
-
-    expect(banner).toBe(expected);
-  });
-
-  it('correctly maps and formats UID 24:33:F0:06 to White One', async () => {
-    const { getPatientByRfid, formatRfidScanBanner } = await import('./rfidService.js');
-    const result = await getPatientByRfid('24:33:F0:06');
-
-    expect(result.success).toBe(true);
-    expect(result.patient?.fullName).toBe('White One');
-
-    const banner = formatRfidScanBanner({
-      uid: '24:33:F0:06',
-      status: 'REGISTERED',
-      patientName: result.patient?.fullName,
-    });
-
-    const expected = [
-      '========================================',
-      'RFID CARD DETECTED',
-      '==================',
-      '',
-      'UID: 24:33:F0:06',
-      'Status: REGISTERED',
-      'Patient Name: White One',
-      '=======================',
+      'Patient Name: Vikas Sharma',
+      '==========================',
     ].join('\n');
 
     expect(banner).toBe(expected);
@@ -282,20 +249,13 @@ describe('Temporary Physical RFID Demo Cards & Terminal Output', () => {
     expect(banner).toBe(expected);
   });
 
-  it('normalizes lowercase UIDs and space/dash-separated UIDs for temporary cards', async () => {
-    const { getPatientByRfid } = await import('./rfidService.js');
+  it('normalizes lowercase UIDs and space/dash-separated UIDs accurately', async () => {
+    const { normalizeRfidUid } = await import('./rfidService.js');
 
-    const res1 = await getPatientByRfid('82:12:68:e9');
-    expect(res1.success).toBe(true);
-    expect(res1.patient?.fullName).toBe('Rudra Sandilya');
-
-    const res2 = await getPatientByRfid('db-f9-25-07');
-    expect(res2.success).toBe(true);
-    expect(res2.patient?.fullName).toBe('Bluetag');
-
-    const res3 = await getPatientByRfid('2433F006');
-    expect(res3.success).toBe(true);
-    expect(res3.patient?.fullName).toBe('White One');
+    expect(normalizeRfidUid('82:12:68:e9')).toBe('82:12:68:E9');
+    expect(normalizeRfidUid('db-f9-25-07')).toBe('DB:F9:25:07');
+    expect(normalizeRfidUid('24 33 f0 06')).toBe('24:33:F0:06');
+    expect(normalizeRfidUid('821268e9')).toBe('82:12:68:E9');
   });
 });
 

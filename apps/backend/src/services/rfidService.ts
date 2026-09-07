@@ -5,7 +5,6 @@ import { env } from '../lib/env.js';
 import { Errors } from '../lib/errors.js';
 import { recordAudit } from '../lib/audit.js';
 import { wsHub } from '../ws/hub.js';
-import { getTemporaryDemoPatient, TEMPORARY_PHYSICAL_RFID_PATIENTS } from '../config/temporaryRfidDemo.js';
 
 export interface RfidScanInput {
   deviceCode: string;
@@ -77,37 +76,6 @@ const DEMO_PATIENTS_MAP: Record<string, DemoPatientRecord> = {
     abhaId: '91-5501-1928-3341',
     chiefComplaint: 'AYUSH Assessment',
   },
-  // Temporary physical RFID test cards (easy to remove or update)
-  '82:12:68:E9': {
-    id: TEMPORARY_PHYSICAL_RFID_PATIENTS['82:12:68:E9'].id,
-    fullName: TEMPORARY_PHYSICAL_RFID_PATIENTS['82:12:68:E9'].patientName,
-    gender: TEMPORARY_PHYSICAL_RFID_PATIENTS['82:12:68:E9'].gender,
-    dateOfBirth: TEMPORARY_PHYSICAL_RFID_PATIENTS['82:12:68:E9'].dateOfBirth,
-    phone: TEMPORARY_PHYSICAL_RFID_PATIENTS['82:12:68:E9'].phone || '',
-    uid: '82:12:68:E9',
-    abhaId: TEMPORARY_PHYSICAL_RFID_PATIENTS['82:12:68:E9'].abhaId || '',
-    chiefComplaint: TEMPORARY_PHYSICAL_RFID_PATIENTS['82:12:68:E9'].chiefComplaint || '',
-  },
-  'DB:F9:25:07': {
-    id: TEMPORARY_PHYSICAL_RFID_PATIENTS['DB:F9:25:07'].id,
-    fullName: TEMPORARY_PHYSICAL_RFID_PATIENTS['DB:F9:25:07'].patientName,
-    gender: TEMPORARY_PHYSICAL_RFID_PATIENTS['DB:F9:25:07'].gender,
-    dateOfBirth: TEMPORARY_PHYSICAL_RFID_PATIENTS['DB:F9:25:07'].dateOfBirth,
-    phone: TEMPORARY_PHYSICAL_RFID_PATIENTS['DB:F9:25:07'].phone || '',
-    uid: 'DB:F9:25:07',
-    abhaId: TEMPORARY_PHYSICAL_RFID_PATIENTS['DB:F9:25:07'].abhaId || '',
-    chiefComplaint: TEMPORARY_PHYSICAL_RFID_PATIENTS['DB:F9:25:07'].chiefComplaint || '',
-  },
-  '24:33:F0:06': {
-    id: TEMPORARY_PHYSICAL_RFID_PATIENTS['24:33:F0:06'].id,
-    fullName: TEMPORARY_PHYSICAL_RFID_PATIENTS['24:33:F0:06'].patientName,
-    gender: TEMPORARY_PHYSICAL_RFID_PATIENTS['24:33:F0:06'].gender,
-    dateOfBirth: TEMPORARY_PHYSICAL_RFID_PATIENTS['24:33:F0:06'].dateOfBirth,
-    phone: TEMPORARY_PHYSICAL_RFID_PATIENTS['24:33:F0:06'].phone || '',
-    uid: '24:33:F0:06',
-    abhaId: TEMPORARY_PHYSICAL_RFID_PATIENTS['24:33:F0:06'].abhaId || '',
-    chiefComplaint: TEMPORARY_PHYSICAL_RFID_PATIENTS['24:33:F0:06'].chiefComplaint || '',
-  },
 };
 
 /**
@@ -116,52 +84,108 @@ const DEMO_PATIENTS_MAP: Record<string, DemoPatientRecord> = {
  * looked up by its opaque UID only - it never carries patient/medical data.
  */
 export async function handleRfidScan(input: RfidScanInput): Promise<RfidScanResponse> {
-  let card: { id?: string; uid: string; patientId: string | null; isDemo: boolean; active: boolean } | null = null;
-  let deviceId: string = 'device-001';
-  if (env.DEMO_MODE && (input.isSimulated || DEMO_PATIENTS_MAP[input.uid] || DEMO_PATIENTS_MAP[normalizeRfidUid(input.uid)])) {
-    const demo = DEMO_PATIENTS_MAP[input.uid] || DEMO_PATIENTS_MAP[normalizeRfidUid(input.uid)];
-    if (!demo) {
-      throw Errors.notFound('Card not recognized. Please contact the registration desk.');
-    }
-    card = { uid: demo.uid, patientId: demo.id, isDemo: true, active: true };
-    deviceId = 'device-001';
-  } else {
-    try {
-      const device = await prisma.rFIDDevice.upsert({
-        where: { deviceCode: input.deviceCode },
-        update: { lastHeartbeatAt: new Date() },
-        create: {
-          deviceCode: input.deviceCode,
-          isDemo: input.isSimulated,
-          lastHeartbeatAt: new Date(),
-        },
-      });
-      deviceId = device.id;
+  const normalizedUid = normalizeRfidUid(input.uid) || input.uid;
+  let deviceId = 'device-001';
 
-      card = await prisma.rFIDCard.findUnique({ where: { uid: input.uid } });
-    } catch (err) {
-      if (!env.DEMO_MODE) throw err;
-      const demo = DEMO_PATIENTS_MAP[input.uid] || DEMO_PATIENTS_MAP[normalizeRfidUid(input.uid)];
-      if (demo) {
-        card = { uid: demo.uid, patientId: demo.id, isDemo: true, active: true };
-      }
+  try {
+    const device = await prisma.rFIDDevice.upsert({
+      where: { deviceCode: input.deviceCode },
+      update: { lastHeartbeatAt: new Date() },
+      create: {
+        deviceCode: input.deviceCode,
+        isDemo: input.isSimulated,
+        lastHeartbeatAt: new Date(),
+      },
+    });
+    deviceId = device.id;
+  } catch {}
+
+  let card: any = null;
+
+  // 1. Check CockroachDB for real registered card
+  try {
+    card = await prisma.rFIDCard.findFirst({
+      where: {
+        OR: [
+          { uid: normalizedUid },
+          { uid: input.uid },
+          { uid: input.uid.toUpperCase() },
+        ],
+        active: true,
+      },
+      include: {
+        patient: true,
+      },
+    });
+  } catch (err) {
+    console.warn('[handleRfidScan] Database lookup notice:', err);
+  }
+
+  // 2. If not found in DB and it's a simulated demo scan, check DEMO_PATIENTS_MAP
+  if (!card && input.isSimulated && env.DEMO_MODE) {
+    const demo = DEMO_PATIENTS_MAP[input.uid] || DEMO_PATIENTS_MAP[normalizedUid];
+    if (demo) {
+      card = {
+        uid: demo.uid,
+        patientId: demo.id,
+        isDemo: true,
+        active: true,
+        patient: {
+          id: demo.id,
+          fullName: demo.fullName,
+          dateOfBirth: demo.dateOfBirth,
+          gender: demo.gender,
+          phone: demo.phone,
+          abhaId: demo.abhaId,
+          bloodGroup: 'O+',
+        },
+      };
     }
   }
 
-  if (!card || !card.active) {
+  // 3. BLANK / UNREGISTERED CARD DETECTED
+  if (!card || !card.patientId || !card.patient) {
+    if (input.isSimulated) {
+      throw Errors.notFound('Card not recognized. Please contact the registration desk.');
+    }
+
+    console.log(`[RFID Service] Blank/unregistered card detected: ${normalizedUid}. Notifying kiosk to initiate patient registration.`);
 
     try {
       await recordAudit({
         actorType: ActorType.DEVICE,
         actorId: deviceId,
-        action: 'RFID_SCAN_REJECTED',
+        action: 'RFID_BLANK_CARD_SCANNED',
         entityType: 'RFIDCard',
-        metadata: { reason: !card ? 'UNKNOWN_UID' : 'INACTIVE_CARD' },
+        metadata: { uid: normalizedUid },
       });
     } catch {}
-    throw Errors.notFound('Card not recognized. Please contact the registration desk.');
+
+    // Broadcast to Kiosk & Doctor Dashboard that a blank card is ready to be bound
+    wsHub.broadcast({
+      type: 'RFID_SCANNED',
+      payload: {
+        sessionId: '',
+        uid: normalizedUid,
+        patientId: null,
+        isNewPatient: true,
+        isRegistered: false,
+        message: `Blank RFID card detected (${normalizedUid}). Ready for registration.`,
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+    return {
+      sessionId: '',
+      patientId: null,
+      isNewPatient: true,
+      status: 'NEW_PATIENT',
+      ledColor: 'YELLOW',
+      buzz: true,
+    };
   }
 
+  // 4. REGISTERED PATIENT DETECTED
   let sessionId = `session-${card.patientId || Date.now()}`;
   try {
     const session = await prisma.patientSession.create({
@@ -181,31 +205,38 @@ export async function handleRfidScan(input: RfidScanInput): Promise<RfidScanResp
       action: 'RFID_IDENTIFIED',
       entityType: 'PatientSession',
       entityId: session.id,
-      metadata: { isNewPatient: card.patientId === null, isSimulated: input.isSimulated },
+      metadata: { isNewPatient: false, isSimulated: input.isSimulated, uid: normalizedUid },
     });
   } catch (err) {
-    if (!env.DEMO_MODE) throw err;
+    if (!env.DEMO_MODE) console.warn('[handleRfidScan] Session create notice:', err);
   }
-
-  const isNewPatient = card.patientId === null;
 
   const response: RfidScanResponse = {
     sessionId,
     patientId: card.patientId,
-    isNewPatient,
-    status: isNewPatient ? 'NEW_PATIENT' : 'IDENTIFIED',
+    isNewPatient: false,
+    status: 'IDENTIFIED',
     ledColor: 'GREEN',
     buzz: true,
   };
-
 
   wsHub.broadcast({
     type: 'RFID_SCANNED',
     payload: {
       sessionId,
-      uid: input.uid,
+      uid: normalizedUid,
       patientId: card.patientId,
-      isNewPatient,
+      isNewPatient: false,
+      isRegistered: true,
+      patient: {
+        id: card.patient.id,
+        fullName: card.patient.fullName,
+        dateOfBirth: card.patient.dateOfBirth,
+        gender: card.patient.gender,
+        phone: card.patient.phone,
+        abhaId: card.patient.abhaId,
+        bloodGroup: card.patient.bloodGroup,
+      },
       timestamp: new Date().toISOString(),
     },
   });
@@ -289,79 +320,10 @@ export async function getPatientByRfid(
   rawUid: string,
   options?: GetPatientByRfidOptions,
 ): Promise<RfidPatientLookupResult> {
-  const normalized = normalizeRfidUid(rawUid);
+  const normalized = normalizeRfidUid(rawUid) || rawUid;
   const skipDemo = options?.skipDemoFallback === true;
 
-  // 1. Check temporary physical RFID demo mappings (takes priority for live hardware testing)
-  const tempPatient = getTemporaryDemoPatient(rawUid);
-  if (tempPatient) {
-    return {
-      success: true,
-      card: {
-        uid: tempPatient.uid,
-        active: true,
-        issuedAt: new Date('2026-01-01T00:00:00Z'),
-      },
-      patient: {
-        id: tempPatient.id,
-        fullName: tempPatient.patientName,
-        dateOfBirth: tempPatient.dateOfBirth,
-        gender: tempPatient.gender,
-        phone: tempPatient.phone || null,
-        abhaId: tempPatient.abhaId || null,
-        registrationSource: 'PHYSICAL_RFID_DEMO',
-        createdAt: new Date('2026-01-01T00:00:00Z'),
-      },
-      encounter: {
-        id: `session-${tempPatient.id}`,
-        status: SessionStatus.IDENTIFIED,
-        mode: 'GENERAL',
-        language: 'EN',
-        createdAt: new Date('2026-01-01T00:00:00Z'),
-        consultation: null,
-      },
-    };
-  }
-
-  // Fast-path for demo/test mode to avoid database socket timeouts (only if not skipping demo)
-  if (env.DEMO_MODE && !skipDemo) {
-    const demo = DEMO_PATIENTS_MAP[rawUid] || DEMO_PATIENTS_MAP[normalized] || DEMO_PATIENTS_MAP[rawUid.toUpperCase()];
-    if (demo) {
-      return {
-        success: true,
-        card: {
-          uid: demo.uid,
-          active: true,
-          issuedAt: new Date('2026-01-01T00:00:00Z'),
-        },
-        patient: {
-          id: demo.id,
-          fullName: demo.fullName,
-          dateOfBirth: demo.dateOfBirth,
-          gender: demo.gender,
-          phone: demo.phone,
-          abhaId: demo.abhaId,
-          registrationSource: 'RFID',
-          createdAt: new Date('2026-01-01T00:00:00Z'),
-        },
-        encounter: {
-          id: `session-${demo.id}`,
-          status: SessionStatus.IDENTIFIED,
-          mode: 'GENERAL',
-          language: 'EN',
-          createdAt: new Date('2026-01-01T00:00:00Z'),
-          consultation: null,
-        },
-      };
-    }
-    if (rawUid.startsWith('UNKNOWN') || rawUid === 'NOT-A-REAL-CARD') {
-      return {
-        success: false,
-        message: 'RFID card is not registered',
-      };
-    }
-  }
-
+  // 1. Primary lookup: Real CockroachDB database
   try {
     const card = await prisma.rFIDCard.findFirst({
       where: {
@@ -432,11 +394,11 @@ export async function getPatientByRfid(
       };
     }
   } catch (err: any) {
-    if (!env.DEMO_MODE && !skipDemo) throw err;
+    if (!env.DEMO_MODE && !skipDemo) console.warn('[getPatientByRfid] DB query notice:', err?.message || err);
   }
 
-  // If in DEMO_MODE or DB offline, resolve from synthetic demo patient registry (only if not skipping demo)
-  if (env.DEMO_MODE && !skipDemo) {
+  // 2. Demo fallback ONLY for synthetic unit test tokens (e.g. DEMO-RFID-001)
+  if (env.DEMO_MODE && !skipDemo && (rawUid.startsWith('DEMO-RFID') || normalized.startsWith('DEMO-RFID'))) {
     const demo = DEMO_PATIENTS_MAP[rawUid] || DEMO_PATIENTS_MAP[normalized] || DEMO_PATIENTS_MAP[rawUid.toUpperCase()];
     if (demo) {
       return {

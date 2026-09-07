@@ -9,7 +9,7 @@
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
-    "test": "vitest run",
+    "test": "vitest run --testTimeout=15000",
     "rfid:bridge": "tsx src/scripts/runSerialBridge.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",

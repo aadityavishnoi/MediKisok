@@ -27,38 +27,7 @@ export interface TemporaryRfidPatient {
  * 2. DB:F9:25:07 -> Bluetag
  * 3. 24:33:F0:06 -> White One
  */
-export const TEMPORARY_PHYSICAL_RFID_PATIENTS: Record<string, TemporaryRfidPatient> = {
-  '82:12:68:E9': {
-    uid: '82:12:68:E9',
-    patientName: 'Rudra Sandilya',
-    id: 'demo-phys-001',
-    gender: 'Male',
-    dateOfBirth: new Date('1995-05-15'),
-    phone: '9876543210',
-    abhaId: '91-8212-6800-0001',
-    chiefComplaint: 'General Health Checkup',
-  },
-  'DB:F9:25:07': {
-    uid: 'DB:F9:25:07',
-    patientName: 'Bluetag',
-    id: 'demo-phys-002',
-    gender: 'Other',
-    dateOfBirth: new Date('2000-01-01'),
-    phone: '9876543211',
-    abhaId: '91-0000-2507-0002',
-    chiefComplaint: 'Demo Intake Consultation',
-  },
-  '24:33:F0:06': {
-    uid: '24:33:F0:06',
-    patientName: 'White One',
-    id: 'demo-phys-003',
-    gender: 'Other',
-    dateOfBirth: new Date('2000-01-01'),
-    phone: '9876543212',
-    abhaId: '91-2433-0006-0003',
-    chiefComplaint: 'Routine Clinical History',
-  },
-};
+export const TEMPORARY_PHYSICAL_RFID_PATIENTS: Record<string, TemporaryRfidPatient> = {};
 
 /**
  * Looks up temporary demo patient by RFID UID (handles case-insensitivity and delimiters).

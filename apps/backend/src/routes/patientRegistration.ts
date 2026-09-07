@@ -6,6 +6,7 @@ import { Errors } from '../lib/errors.js';
 import { wsHub } from '../ws/hub.js';
 import { ActorType, IdentificationMethod, SessionStatus } from '@medikiosk/shared-types';
 import { recordAudit } from '../lib/audit.js';
+import { normalizeRfidUid } from '../services/rfidService.js';
 
 const db = prisma as any;
 
@@ -28,9 +29,9 @@ patientRegistrationRouter.post(
     const data = registerKioskPatientSchema.parse(req.body);
     const cleanPhone = data.phone.replace(/\D/g, '').slice(-10);
 
-    // 1. Generate or use provided RFID Card UID
+    // 1. Generate or normalize provided RFID Card UID
     const assignedUid = data.rfidUid && data.rfidUid.trim() !== ''
-      ? data.rfidUid.trim()
+      ? normalizeRfidUid(data.rfidUid.trim()) || data.rfidUid.trim()
       : `RFID-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
 
     // 2. Ensure device exists
@@ -102,7 +103,7 @@ patientRegistrationRouter.post(
       metadata: { uid: assignedUid, sessionId: session.id },
     });
 
-    // 7. Broadcast via WebSocket to kiosk
+    // 7. Broadcast via WebSocket to kiosk and doctor dashboard
     wsHub.broadcast({
       type: 'RFID_SCANNED',
       payload: {
@@ -110,6 +111,16 @@ patientRegistrationRouter.post(
         uid: assignedUid,
         patientId: patient.id,
         isNewPatient: false,
+        isRegistered: true,
+        patient: {
+          id: patient.id,
+          fullName: patient.fullName,
+          dateOfBirth: patient.dateOfBirth,
+          gender: patient.gender,
+          phone: patient.phone,
+          bloodGroup: patient.bloodGroup,
+          abhaId: patient.abhaId,
+        },
         timestamp: new Date().toISOString(),
       },
     });

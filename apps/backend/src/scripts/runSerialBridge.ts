@@ -8,7 +8,7 @@
  */
 
 import { RfidSerialBridge } from '../services/rfidSerialBridge.js';
-import { getPatientByRfid, formatRfidScanBanner } from '../services/rfidService.js';
+import { getPatientByRfid, formatRfidScanBanner, handleRfidScan } from '../services/rfidService.js';
 import { env } from '../lib/env.js';
 
 async function main() {
@@ -102,6 +102,32 @@ async function main() {
             uid,
             status: 'NOT REGISTERED',
           }));
+        }
+
+        // 1. Process directly in-process
+        await handleRfidScan({
+          deviceCode: 'KIOSK-DEV-001',
+          uid,
+          timestamp: new Date().toISOString(),
+          isSimulated: false,
+        });
+
+        // 2. Also forward to running backend HTTP server on port 4000 if active
+        try {
+          await fetch(`http://localhost:${env.PORT || 4000}/api/rfid/scan`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Device-Key': env.DEVICE_KEY || 'dev-device-key-change-in-production',
+            },
+            body: JSON.stringify({
+              deviceCode: 'KIOSK-DEV-001',
+              uid,
+              timestamp: new Date().toISOString(),
+            }),
+          });
+        } catch {
+          // Dev server might be the same process or offline
         }
       } catch (err: any) {
         console.log(formatRfidScanBanner({
