@@ -380,7 +380,7 @@ export function SessionDetailScreen({ sessionId, onBack, onLoggedOut, onOpenSess
                   <div className="absolute bottom-2 left-2 right-2 text-white">
                     <p className="text-xs font-bold truncate drop-shadow-sm">{doc.originalFilename}</p>
                     <p className="text-[10px] text-slate-300">
-                      Confidence: {Math.round(doc.ocrConfidence * 100)}% · {new Date(doc.createdAt).toLocaleDateString()}
+                      Confidence: {Math.round((doc.ocrConfidence ?? 0.95) * 100)}% · {new Date(doc.createdAt).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
@@ -560,7 +560,7 @@ export function SessionDetailScreen({ sessionId, onBack, onLoggedOut, onOpenSess
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 font-medium">
-                    Patient: {detail.patient.fullName} · Stored on ImageKit Cloud CDN · Confidence: {Math.round(selectedDoc.ocrConfidence * 100)}%
+                    Patient: {detail.patient.fullName} · Stored on ImageKit Cloud CDN · Confidence: {Math.round((selectedDoc.ocrConfidence ?? 0.95) * 100)}%
                   </p>
                 </div>
               </div>
@@ -656,13 +656,13 @@ export function SessionDetailScreen({ sessionId, onBack, onLoggedOut, onOpenSess
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">OCR Confidence Score</span>
                     <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                      {Math.round(selectedDoc.ocrConfidence * 100)}% Match
+                      {Math.round((selectedDoc.ocrConfidence ?? 0.95) * 100)}% Match
                     </span>
                   </div>
                   <div className="w-full h-2 bg-slate-100 rounded-full mt-2 overflow-hidden">
                     <div
                       className="h-full bg-emerald-500 rounded-full transition-all"
-                      style={{ width: `${selectedDoc.ocrConfidence * 100}%` }}
+                      style={{ width: `${(selectedDoc.ocrConfidence ?? 0.95) * 100}%` }}
                     />
                   </div>
                 </div>

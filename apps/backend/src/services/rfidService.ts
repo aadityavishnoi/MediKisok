@@ -6,6 +6,8 @@ import { Errors } from '../lib/errors.js';
 import { recordAudit } from '../lib/audit.js';
 import { wsHub } from '../ws/hub.js';
 
+import { demoStore } from '../lib/demoStore.js';
+
 export interface RfidScanInput {
   deviceCode: string;
   uid: string;
@@ -84,8 +86,9 @@ const DEMO_PATIENTS_MAP: Record<string, DemoPatientRecord> = {
  * looked up by its opaque UID only - it never carries patient/medical data.
  */
 export async function handleRfidScan(input: RfidScanInput): Promise<RfidScanResponse> {
-  const normalizedUid = normalizeRfidUid(input.uid) || input.uid;
-  let deviceId = 'device-001';
+  try {
+    const normalizedUid = normalizeRfidUid(input.uid) || input.uid;
+    let deviceId = 'device-001';
 
   try {
     const device = await prisma.rFIDDevice.upsert({
@@ -242,6 +245,38 @@ export async function handleRfidScan(input: RfidScanInput): Promise<RfidScanResp
   });
 
   return response;
+  } catch (err: any) {
+    if (err.statusCode || err.code === 'NOT_FOUND') {
+      throw err;
+    }
+    // If database is offline and in DEMO_MODE or simulated scan, fallback to in-memory demoStore
+    if (input.isSimulated || env.DEMO_MODE) {
+      console.warn('[rfidService] Database offline, using in-memory demo fallback for:', input.uid);
+      const demoSession = demoStore.createSession(input.uid);
+      const response: RfidScanResponse = {
+        sessionId: demoSession.id,
+        patientId: demoSession.patientId,
+        isNewPatient: false,
+        status: 'IDENTIFIED',
+        ledColor: 'GREEN',
+        buzz: true,
+      };
+
+      wsHub.broadcast({
+        type: 'RFID_SCANNED',
+        payload: {
+          sessionId: demoSession.id,
+          uid: input.uid,
+          patientId: demoSession.patientId,
+          isNewPatient: false,
+          timestamp: new Date().toISOString(),
+        },
+      });
+
+      return response;
+    }
+    throw err;
+  }
 }
 
 /**

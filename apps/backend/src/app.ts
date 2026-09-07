@@ -15,6 +15,7 @@ import { adminRouter } from './routes/admin.js';
 import { ttsRouter } from './routes/tts.js';
 import { otpRouter } from './routes/otp.js';
 import { patientRegistrationRouter } from './routes/patientRegistration.js';
+import { discoveryRouter } from './routes/discovery.js';
 
 export function createApp() {
   const app = express();
@@ -24,7 +25,8 @@ export function createApp() {
       origin: env.CORS_ORIGINS.length > 0 ? env.CORS_ORIGINS : true,
     }),
   );
-  app.use(express.json());
+  app.use(express.json({ limit: '15mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
   app.use('/api', healthRouter);
   app.use('/api', rfidRouter);
@@ -39,6 +41,7 @@ export function createApp() {
   app.use('/api', ttsRouter);
   app.use('/api', otpRouter);
   app.use('/api', patientRegistrationRouter);
+  app.use('/api', discoveryRouter);
 
   app.use((_req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Route not found' } });
