@@ -10,3 +10,4 @@ apps/backend/src/generated/
 hardware/esp32-rfid/config.h
 .vite/
 coverage/
+*.tsbuildinfo

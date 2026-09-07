@@ -5,9 +5,11 @@ import type {
   ClinicalAnswer,
   ClinicalHistory,
   Consent,
+  Consultation,
   ExtractedMedicalData,
   HardwareDeviceState,
   LocalizedText,
+  MedicalDocument,
   MedicalTimelineEvent,
   Patient,
   PatientSession,
@@ -183,7 +185,6 @@ export interface DoctorDashboardResponse {
   sessions: DoctorDashboardSessionRow[];
 }
 
-/** Full clinical picture for one session - what the doctor sees on the detail screen. */
 export interface SessionDetailResponse {
   sessionId: string;
   status: PatientSession['status'];
@@ -196,7 +197,60 @@ export interface SessionDetailResponse {
   consent: Pick<Consent, 'status' | 'language' | 'grantedAt'> | null;
   history: (ClinicalHistory & { answers: ClinicalAnswer[] }) | null;
   summary?: AISummary | null;
+  documents?: (MedicalDocument & { extractedData: ExtractedMedicalData[] })[];
+  timelineEvents?: MedicalTimelineEvent[];
+  consultation?: Consultation | null;
   alerts: Alert[];
+}
+
+export interface PrescriptionItem {
+  medicineName: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  instructions: string;
+}
+
+export interface ConsultationStartResponse {
+  consultationId: string;
+  status: 'IN_PROGRESS';
+  startedAt: string;
+}
+
+export interface ConsultationCompleteRequest {
+  notes?: string;
+  prescriptions: PrescriptionItem[];
+  labOrders: string[];
+  followUpDate?: string;
+}
+
+export interface ConsultationCompleteResponse {
+  consultationId: string;
+  status: 'COMPLETED';
+  completedAt: string;
+  prescriptionSummary?: string;
+}
+
+export interface AISummaryReviewRequest {
+  action: 'ACCEPT' | 'EDIT' | 'REJECT';
+  editedContent?: string;
+}
+
+export interface AISummaryReviewResponse {
+  summaryId: string;
+  status: 'CONFIRMED' | 'DRAFT';
+  content: string;
+}
+
+export interface CopilotChatRequest {
+  patientId: string;
+  sessionId?: string;
+  query: string;
+}
+
+export interface CopilotChatResponse {
+  reply: string;
+  sources: Array<{ title: string; type: string; snippet?: string }>;
 }
 
 export interface SummaryConfirmRequest {
