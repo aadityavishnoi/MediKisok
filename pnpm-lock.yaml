@@ -32,6 +32,9 @@ importers:
 
   apps/backend:
     dependencies:
+      '@medikiosk/ai-service':
+        specifier: workspace:*
+        version: link:../../packages/ai-service
       '@medikiosk/clinical-engine':
         specifier: workspace:*
         version: link:../../packages/clinical-engine

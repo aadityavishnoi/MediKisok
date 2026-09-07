@@ -13,6 +13,7 @@ import { documentsRouter } from './routes/documents.js';
 import { aiRouter } from './routes/ai.js';
 import { adminRouter } from './routes/admin.js';
 import { ttsRouter } from './routes/tts.js';
+import { discoveryRouter } from './routes/discovery.js';
 
 export function createApp() {
   const app = express();
@@ -22,7 +23,8 @@ export function createApp() {
       origin: env.CORS_ORIGINS.length > 0 ? env.CORS_ORIGINS : true,
     }),
   );
-  app.use(express.json());
+  app.use(express.json({ limit: '15mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
   app.use('/api', healthRouter);
   app.use('/api', rfidRouter);
@@ -35,6 +37,7 @@ export function createApp() {
   app.use('/api', aiRouter);
   app.use('/api', adminRouter);
   app.use('/api', ttsRouter);
+  app.use('/api', discoveryRouter);
 
   app.use((_req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Route not found' } });

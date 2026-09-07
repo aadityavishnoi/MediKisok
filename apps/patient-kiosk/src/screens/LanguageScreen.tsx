@@ -57,10 +57,16 @@ function speakNow(code: string) {
   audio.volume = 1;
   currentAudio = audio;
 
-  audio.play().catch(() => {
-    // Method 2: Web Speech API fallback (works for EN + HI on Windows)
+  try {
+    const playPromise = audio.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => {
+        speakWebAPI(text, langTag);
+      });
+    }
+  } catch {
     speakWebAPI(text, langTag);
-  });
+  }
 }
 
 
@@ -107,9 +113,8 @@ export interface LanguageScreenProps {
 
 export function LanguageScreen({ onSelect }: LanguageScreenProps) {
   const handleSelect = (code: string) => {
-    // Speak FIRST, then navigate after a short delay so audio has time to start
     speakNow(code);
-    setTimeout(() => onSelect(code), 300);
+    onSelect(code);
   };
 
   return (

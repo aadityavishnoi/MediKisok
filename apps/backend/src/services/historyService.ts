@@ -25,11 +25,29 @@ function appendEntry(current: unknown, entry: HistorySectionEntry): Prisma.Input
   return [...existing, entry] as unknown as Prisma.InputJsonValue;
 }
 
+import { demoStore } from '../lib/demoStore.js';
+
 export async function startHistory(input: {
   sessionId: string;
   mode: Mode;
   chiefComplaintCategory: string;
 }): Promise<HistoryStartResponse> {
+  const demoSession = demoStore.getSession(input.sessionId);
+  if (demoSession) {
+    const { treeId, node } = engineStartHistory(input.chiefComplaintCategory, input.mode);
+    demoStore.updateSession(input.sessionId, {
+      chiefComplaintCategory: input.chiefComplaintCategory,
+      currentTreeId: treeId,
+      currentNodeId: node.id,
+      status: 'IN_HISTORY',
+    });
+    wsHub.broadcast({
+      type: 'SESSION_UPDATED',
+      payload: { sessionId: input.sessionId, status: SessionStatus.IN_HISTORY, timestamp: new Date().toISOString() },
+    });
+    return { clinicalHistoryId: `hist_${input.sessionId}`, question: toApiQuestion(node) };
+  }
+
   const session = await prisma.patientSession.findUnique({ where: { id: input.sessionId } });
   if (!session) throw Errors.notFound('Session not found');
   if (!session.patientId) {
@@ -84,6 +102,40 @@ export async function answerHistory(input: {
   nodeId: string;
   answerValue?: unknown;
 }): Promise<HistoryAnswerResponse> {
+  const demoSession = demoStore.getSession(input.sessionId);
+  if (demoSession) {
+    const result = advance({
+      chiefComplaintCategory: demoSession.chiefComplaintCategory ?? 'general-fallback',
+      mode: 'GENERAL' as any,
+      currentTreeId: demoSession.currentTreeId ?? 'general-review-of-systems',
+      currentNodeId: demoSession.currentNodeId ?? input.nodeId,
+      answerValue: input.answerValue,
+    });
+
+    demoStore.updateSession(input.sessionId, {
+      currentTreeId: result.nextTreeId ?? undefined,
+      currentNodeId: result.nextNode?.id ?? undefined,
+      historyCompleted: result.historyComplete,
+      status: result.historyComplete ? 'DOCUMENTS' : 'IN_HISTORY',
+    });
+
+    if (result.historyComplete) {
+      wsHub.broadcast({
+        type: 'SESSION_UPDATED',
+        payload: { sessionId: input.sessionId, status: SessionStatus.DOCUMENTS, timestamp: new Date().toISOString() },
+      });
+    }
+
+    const sectionComplete = result.historyComplete || (result.nextNode ? result.nextNode.section !== result.appliedEntry.section : true);
+
+    return {
+      historyComplete: result.historyComplete,
+      sectionComplete,
+      nextQuestion: result.nextNode ? toApiQuestion(result.nextNode) : null,
+      redFlag: result.redFlag ? { severity: result.redFlag.severity, message: result.redFlag.message } : null,
+    };
+  }
+
   const history = await prisma.clinicalHistory.findUnique({ where: { sessionId: input.sessionId } });
   if (!history) throw Errors.notFound('History has not been started for this session');
   if (!history.currentTreeId || !history.currentNodeId) {

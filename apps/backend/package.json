@@ -20,6 +20,7 @@
   "dependencies": {
     "@medikiosk/shared-types": "workspace:*",
     "@medikiosk/clinical-engine": "workspace:*",
+    "@medikiosk/ai-service": "workspace:*",
     "@prisma/client": "^5.20.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",

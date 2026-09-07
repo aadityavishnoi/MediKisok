@@ -14,6 +14,7 @@ const envSchema = z.object({
     .transform((v) => v === 'true'),
   AI_PROVIDER: z.enum(['LOCAL', 'MOCK', 'REAL']).default('LOCAL'),
   ANTHROPIC_API_KEY: z.string().optional().default(''),
+  GEMINI_API_KEY: z.string().optional().default(''),
   CORS_ORIGINS: z
     .string()
     .default('')
