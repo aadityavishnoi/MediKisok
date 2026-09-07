@@ -38,34 +38,51 @@ const GTTS_LANG: Record<string, string> = {
 let currentAudio: HTMLAudioElement | null = null;
 
 function speakNow(code: string) {
-  const text = GREETINGS[code] || GREETINGS['EN'];
-  const langTag = LANG_TAGS[code] || 'en-IN';
-  const gttsLang = GTTS_LANG[code] || 'en';
+  try {
+    const text = GREETINGS[code] || GREETINGS['EN'];
+    const langTag = LANG_TAGS[code] || 'en-IN';
+    const gttsLang = GTTS_LANG[code] || 'en';
 
-  // Stop any currently playing audio
-  if (currentAudio) {
-    currentAudio.pause();
-    currentAudio = null;
+    // Stop any currently playing audio
+    if (currentAudio) {
+      try {
+        currentAudio.pause();
+      } catch {
+        // ignore
+      }
+      currentAudio = null;
+    }
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+
+    // Method 1: Backend TTS proxy (fetches Google TTS server-side, no CORS issues)
+    const encodedText = encodeURIComponent(text);
+    const proxyUrl = `http://localhost:4000/api/tts?text=${encodedText}&lang=${gttsLang}`;
+
+    if (typeof Audio !== 'undefined') {
+      const audio = new Audio(proxyUrl);
+      audio.volume = 1;
+      currentAudio = audio;
+
+      const playPromise = audio.play();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {
+          // Method 2: Web Speech API fallback (works for EN + HI on Windows)
+          speakWebAPI(text, langTag);
+        });
+      }
+    } else {
+      speakWebAPI(text, langTag);
+    }
+  } catch {
+    // Graceful fallback without crashing UI
   }
-  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-
-  // Method 1: Backend TTS proxy (fetches Google TTS server-side, no CORS issues)
-  const encodedText = encodeURIComponent(text);
-  const proxyUrl = `http://localhost:4000/api/tts?text=${encodedText}&lang=${gttsLang}`;
-
-  const audio = new Audio(proxyUrl);
-  audio.volume = 1;
-  currentAudio = audio;
-
-  audio.play().catch(() => {
-    // Method 2: Web Speech API fallback (works for EN + HI on Windows)
-    speakWebAPI(text, langTag);
-  });
 }
 
 
 function speakWebAPI(text: string, langTag: string) {
-  if (!('speechSynthesis' in window)) return;
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
 
   const trySpeak = () => {
     window.speechSynthesis.cancel();
@@ -107,9 +124,8 @@ export interface LanguageScreenProps {
 
 export function LanguageScreen({ onSelect }: LanguageScreenProps) {
   const handleSelect = (code: string) => {
-    // Speak FIRST, then navigate after a short delay so audio has time to start
     speakNow(code);
-    setTimeout(() => onSelect(code), 300);
+    onSelect(code);
   };
 
   return (

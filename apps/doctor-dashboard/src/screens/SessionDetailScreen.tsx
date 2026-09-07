@@ -12,7 +12,9 @@ export interface SessionDetailScreenProps {
   sessionId: string;
   onBack: () => void;
   onLoggedOut: () => void;
+  onOpenSession?: (sessionId: string) => void;
 }
+
 
 const SECTION_LABELS: { key: keyof ClinicalHistory; label: string }[] = [
   { key: 'pastMedicalHistory', label: 'Past Medical History' },
@@ -38,7 +40,7 @@ function EntryList({ entries }: { entries: HistorySectionEntry[] }) {
   );
 }
 
-export function SessionDetailScreen({ sessionId, onBack, onLoggedOut }: SessionDetailScreenProps) {
+export function SessionDetailScreen({ sessionId, onBack, onLoggedOut, onOpenSession }: SessionDetailScreenProps) {
   const [detail, setDetail] = useState<SessionDetailResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [acknowledging, setAcknowledging] = useState<string | null>(null);
@@ -102,7 +104,9 @@ export function SessionDetailScreen({ sessionId, onBack, onLoggedOut }: SessionD
     onSearchChange: () => {},
     wsState,
     doctorName: getDoctorName() ?? 'Dr. Rohan Mehta',
+    onOpenSession,
   };
+
 
   if (error && !detail) {
     return (

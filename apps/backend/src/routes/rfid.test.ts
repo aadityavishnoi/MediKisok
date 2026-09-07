@@ -43,3 +43,53 @@ describe('POST /api/rfid/scan', () => {
     expect(res.body.status).toBe('IDENTIFIED');
   });
 });
+
+describe('GET /api/rfid/patient/:uid', () => {
+  it('returns not registered message for unknown card UID', async () => {
+    const res = await request(app).get('/api/rfid/patient/UNKNOWN-99-99');
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({
+      success: false,
+      message: 'RFID card is not registered',
+    });
+  });
+
+  it('returns patient profile and encounter for a registered card UID', async () => {
+    const res = await request(app).get('/api/rfid/patient/DEMO-RFID-001');
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.patient).toBeDefined();
+    expect(res.body.patient.id).toBe('demo-patient-001');
+    expect(res.body.patient.fullName).toBe('Aarav Sharma');
+    expect(res.body.card.uid).toBe('DEMO-RFID-001');
+    expect(res.body.encounter).toBeDefined();
+  });
+
+  it('normalizes lowercase/unformatted UID and matches patient', async () => {
+    const res = await request(app).get('/api/rfid/patient/demo-rfid-001');
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.patient.fullName).toBe('Aarav Sharma');
+  });
+
+  it('successfully retrieves second demo card (DEMO-RFID-002 - Priya Verma)', async () => {
+    const res = await request(app).get('/api/rfid/patient/DEMO-RFID-002');
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.patient.fullName).toBe('Priya Verma');
+    expect(res.body.patient.id).toBe('demo-patient-002');
+  });
+});
+
+describe('GET /api/rfid/status', () => {
+  it('reports current serial hardware reader state and configuration', async () => {
+    const res = await request(app).get('/api/rfid/status');
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('connected');
+    expect(res.body).toHaveProperty('state');
+    expect(res.body).toHaveProperty('port');
+    expect(res.body).toHaveProperty('baudRate');
+    expect(res.body).toHaveProperty('enabled');
+  });
+});
+

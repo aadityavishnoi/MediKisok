@@ -14,6 +14,7 @@ export interface DashboardShellProps {
   onSearchChange: (value: string) => void;
   wsState: WsConnectionState;
   doctorName: string;
+  onOpenSession?: (sessionId: string) => void;
   children: ReactNode;
 }
 
@@ -28,6 +29,7 @@ export function DashboardShell({
   onSearchChange,
   wsState,
   doctorName,
+  onOpenSession,
   children,
 }: DashboardShellProps) {
   return (
@@ -43,9 +45,11 @@ export function DashboardShell({
           alertCount={alertCount}
           onBellClick={() => onNavigate('alerts')}
           doctorName={doctorName}
+          onOpenSession={onOpenSession}
         />
         <main className="px-8 py-8">{children}</main>
       </div>
     </div>
   );
 }
+
