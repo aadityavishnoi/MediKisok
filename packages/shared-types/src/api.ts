@@ -245,7 +245,6 @@ export interface SessionDetailResponse {
   timelineEvents?: MedicalTimelineEvent[];
   consultation?: Consultation | null;
   alerts: Alert[];
-  documents?: (MedicalDocument & { extractedData?: ExtractedMedicalData[] })[];
 }
 
 export interface PrescriptionItem {

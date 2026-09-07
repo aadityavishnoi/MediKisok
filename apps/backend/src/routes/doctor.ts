@@ -110,6 +110,10 @@ doctorRouter.post(
   asyncHandler(async (req, res) => {
     const { query } = copilotChatSchema.parse(req.body);
     const detail = await getSessionDetail(req.params.sessionId);
+    if (!detail) {
+      res.status(404).json({ message: 'Session not found' });
+      return;
+    }
 
     const lower = query.toLowerCase();
     let reply = `Regarding "${query}": `;

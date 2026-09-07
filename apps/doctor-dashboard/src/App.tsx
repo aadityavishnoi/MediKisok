@@ -77,7 +77,6 @@ export function App() {
         onOpenSession={(sessionId) => setView({ name: 'SESSION_DETAIL', sessionId })}
         onOpenConsultation={(sessionId) => setView({ name: 'CONSULTATION', sessionId })}
         onOpenAlerts={() => setView({ name: 'RED_FLAGS' })}
->>>>>>> origin/Doctor-Dashboard
         onLoggedOut={() => {
           setLoggedIn(false);
           setView({ name: 'DASHBOARD' });
