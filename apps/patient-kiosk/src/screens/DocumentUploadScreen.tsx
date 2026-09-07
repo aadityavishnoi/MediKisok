@@ -379,209 +379,248 @@ export function DocumentUploadScreen({ sessionId, patientId, onComplete, onSkip 
         </div>
       )}
 
-      {/* Document Type Selector */}
-      <div className="flex gap-2 p-1.5 bg-slate-100/80 rounded-2xl w-full border border-slate-200/60">
-        <button
-          type="button"
-          onClick={() => {
-            setDocType('prescription');
-            setScannedDoc(null);
-          }}
-          className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
-            docType === 'prescription' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          📄 Prescription
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setDocType('lab');
-            setScannedDoc(null);
-          }}
-          className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
-            docType === 'lab' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          🧪 Lab Report
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setDocType('id');
-            setScannedDoc(null);
-          }}
-          className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
-            docType === 'id' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          🆔 ABHA / ID Card
-        </button>
-      </div>
-
-      {/* Viewfinder Frame */}
-      <div className="relative w-full h-80 bg-slate-950 rounded-3xl overflow-hidden border border-slate-800 shadow-inner flex flex-col items-center justify-center text-white">
-        {/* Viewfinder Target Guidelines */}
-        <div className="absolute inset-x-8 inset-y-6 border border-dashed border-blue-500/40 rounded-2xl pointer-events-none z-10">
-          <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-blue-400 rounded-tl" />
-          <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-blue-400 rounded-tr" />
-          <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-blue-400 rounded-bl" />
-          <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-blue-400 rounded-br" />
-          <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] font-mono uppercase tracking-wider text-blue-300/80 bg-slate-900/80 px-2 py-0.5 rounded backdrop-blur">
-            Align Document in Box
-          </span>
-        </div>
-
-        {/* Live Camera View */}
-        {!isIpMode ? (
-          <video
-            ref={videoRef}
-            playsInline
-            muted
-            className={`w-full h-full object-cover transition-opacity duration-300 ${
-              isStreaming && !scannedDoc ? 'opacity-100' : 'opacity-0 absolute pointer-events-none'
+      {/* Document Type Selector (only when not yet scanned) */}
+      {!scannedDoc && (
+        <div className="flex gap-2 p-1.5 bg-slate-100/80 rounded-2xl w-full border border-slate-200/60">
+          <button
+            type="button"
+            onClick={() => {
+              setDocType('prescription');
+              setScannedDoc(null);
+            }}
+            className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
+              docType === 'prescription' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
             }`}
-          />
-        ) : (
-          <div className="w-full h-full relative flex items-center justify-center">
-            <img
-              ref={ipImageRef}
-              src={videoFeedUrl}
-              alt="DroidCam Stream"
-              crossOrigin="anonymous"
+          >
+            📄 Prescription
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setDocType('lab');
+              setScannedDoc(null);
+            }}
+            className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
+              docType === 'lab' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            🧪 Lab Report
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setDocType('id');
+              setScannedDoc(null);
+            }}
+            className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
+              docType === 'id' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            🆔 ABHA / ID Card
+          </button>
+        </div>
+      )}
+
+      {/* Camera Viewfinder (Only shown when no document has been verified) */}
+      {!scannedDoc ? (
+        <div className="relative w-full h-80 bg-slate-950 rounded-3xl overflow-hidden border border-slate-800 shadow-inner flex flex-col items-center justify-center text-white">
+          {/* Viewfinder Target Guidelines */}
+          <div className="absolute inset-x-8 inset-y-6 border border-dashed border-blue-500/40 rounded-2xl pointer-events-none z-10">
+            <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-blue-400 rounded-tl" />
+            <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-blue-400 rounded-tr" />
+            <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-blue-400 rounded-bl" />
+            <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-blue-400 rounded-br" />
+            <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] font-mono uppercase tracking-wider text-blue-300/80 bg-slate-900/80 px-2 py-0.5 rounded backdrop-blur">
+              Align Document in Box
+            </span>
+          </div>
+
+          {/* Live Camera View */}
+          {!isIpMode ? (
+            <video
+              ref={videoRef}
+              playsInline
+              muted
               className={`w-full h-full object-cover transition-opacity duration-300 ${
-                !scannedDoc ? 'opacity-100' : 'opacity-0 absolute pointer-events-none'
+                isStreaming ? 'opacity-100' : 'opacity-0 absolute pointer-events-none'
               }`}
-              onError={() => {
-                setScanErrorMessage(`Cannot load DroidCam video at ${cleanIpUrl}. Ensure phone & PC are on the same Wi-Fi.`);
-              }}
             />
-          </div>
-        )}
+          ) : (
+            <div className="w-full h-full relative flex items-center justify-center">
+              <img
+                ref={ipImageRef}
+                src={videoFeedUrl}
+                alt="DroidCam Stream"
+                crossOrigin="anonymous"
+                className="w-full h-full object-cover transition-opacity duration-300"
+                onError={() => {
+                  setScanErrorMessage(`Cannot load DroidCam video at ${cleanIpUrl}. Ensure phone & PC are on the same Wi-Fi.`);
+                }}
+              />
+            </div>
+          )}
 
-        {/* Camera Permission or Idle Guidance */}
-        {!scannedDoc && (cameraError || isSimulationMode) && !isIpMode && (
-          <div className="flex flex-col items-center gap-2 text-slate-300 p-6 z-10 bg-slate-900/90 rounded-2xl border border-slate-800 max-w-sm">
-            {isSimulationMode ? (
-              <>
-                <Sparkles size={36} className="text-amber-400" />
-                <span className="text-sm font-bold text-slate-100">Test Simulation Mode Active</span>
-                <p className="text-xs text-slate-400 text-center">
-                  Will use AI clinical test fixtures without requiring physical camera connection.
-                </p>
-              </>
-            ) : (
-              <>
-                <AlertCircle size={36} className="text-amber-400" />
-                <span className="text-sm font-bold text-slate-100">Camera Permission / Connection</span>
-                <p className="text-xs text-slate-400 text-center">{cameraError}</p>
-                <div className="flex flex-wrap gap-2 mt-2 justify-center">
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      const refreshed = await refreshDevices();
-                      const droid = refreshed.find((d) => d.isDroidCam);
-                      startCamera(droid?.deviceId);
-                    }}
-                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1"
-                  >
-                    <RotateCcw size={12} /> Retry Camera
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsIpMode(true)}
-                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1"
-                  >
-                    <Wifi size={12} /> Use Phone Wi-Fi IP
-                  </button>
+          {/* Camera Permission or Idle Guidance */}
+          {(cameraError || isSimulationMode) && !isIpMode && (
+            <div className="flex flex-col items-center gap-2 text-slate-300 p-6 z-10 bg-slate-900/90 rounded-2xl border border-slate-800 max-w-sm">
+              {isSimulationMode ? (
+                <>
+                  <Sparkles size={36} className="text-amber-400" />
+                  <span className="text-sm font-bold text-slate-100">Test Simulation Mode Active</span>
+                  <p className="text-xs text-slate-400 text-center">
+                    Will use AI clinical test fixtures without requiring physical camera connection.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <AlertCircle size={36} className="text-amber-400" />
+                  <span className="text-sm font-bold text-slate-100">Camera Permission / Connection</span>
+                  <p className="text-xs text-slate-400 text-center">{cameraError}</p>
+                  <div className="flex flex-wrap gap-2 mt-2 justify-center">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const refreshed = await refreshDevices();
+                        const droid = refreshed.find((d) => d.isDroidCam);
+                        startCamera(droid?.deviceId);
+                      }}
+                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1"
+                    >
+                      <RotateCcw size={12} /> Retry Camera
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsIpMode(true)}
+                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1"
+                    >
+                      <Wifi size={12} /> Use Phone Wi-Fi IP
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Scanning Spinner Overlay */}
+          {scanning && (
+            <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-sm z-20 flex flex-col items-center justify-center gap-3 animate-fade-in">
+              <RefreshCw size={42} className="text-blue-400 animate-spin" />
+              <span className="text-sm font-bold text-blue-100">{scanStatusMessage}</span>
+              <span className="text-xs text-slate-400">Extracting medicines, dosages, and clinical values…</span>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Verified Document Inspection View (Clean, Spacious, Full-Width) */
+        <div className="w-full bg-white border border-slate-200/90 rounded-3xl p-5 sm:p-6 text-left shadow-sm space-y-4 animate-scale-in">
+          {/* Header Status Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <CheckCircle2 size={20} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">{scannedDoc.type} Verified</h3>
+                <p className="text-[11px] text-slate-500">Optical character recognition & entity extraction complete</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-100">
+                {scannedDoc.engineUsed === 'GEMINI_VISION' ? '⚡ Gemini Vision' : 'AI OCR'}
+              </span>
+              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
+                {scannedDoc.confidence}% Match
+              </span>
+            </div>
+          </div>
+
+          {/* Content Body: Preview + Extracted Clinical Data */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Left: Document Preview Thumbnail */}
+            {(scannedDoc.capturedImage || scannedDoc.imagekitUrl) && (
+              <div className="sm:col-span-1 flex flex-col gap-1.5">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Captured Document:
+                </span>
+                <div className="relative aspect-3/4 rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 shadow-inner group">
+                  <img
+                    src={scannedDoc.capturedImage || scannedDoc.imagekitUrl}
+                    alt="Captured Prescription / Report"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  {scannedDoc.imagekitUrl && (
+                    <a
+                      href={scannedDoc.imagekitUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="absolute bottom-2 right-2 p-1.5 rounded-lg bg-slate-950/80 text-white hover:text-blue-300 backdrop-blur text-[10px] flex items-center gap-1 font-semibold"
+                      title="Open full resolution in ImageKit"
+                    >
+                      <ExternalLink size={12} />
+                    </a>
+                  )}
                 </div>
-              </>
+              </div>
             )}
-          </div>
-        )}
 
-        {/* Scanning Spinner Overlay */}
-        {scanning && (
-          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center gap-3 animate-fade-in">
-            <RefreshCw size={42} className="text-blue-400 animate-spin" />
-            <span className="text-sm font-bold text-blue-100">{scanStatusMessage}</span>
-            <span className="text-xs text-slate-400">Extracting medicines, dosages, and clinical values…</span>
-          </div>
-        )}
-
-        {/* Scanned Document Result View */}
-        {scannedDoc && !scanning && (
-          <div className="w-full h-full overflow-y-auto p-4 flex flex-col items-center justify-start text-left bg-slate-900 z-10 animate-fade-in">
-            <div className="w-full bg-slate-800/90 border border-slate-700 rounded-2xl p-3.5 flex flex-col gap-2.5">
-              {/* Header Status */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
-                  <span className="text-xs font-bold text-emerald-300">
-                    {scannedDoc.type} Verified
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-blue-900/60 text-blue-300 border border-blue-700/50">
-                    {scannedDoc.engineUsed === 'GEMINI_VISION' ? '⚡ Gemini Vision' : 'AI OCR'}
-                  </span>
-                  <span className="text-[11px] font-bold text-emerald-400 bg-emerald-950/70 px-2 py-0.5 rounded-md border border-emerald-800">
-                    {scannedDoc.confidence}% Match
-                  </span>
+            {/* Right: Clinical Summary & Medicines */}
+            <div className={`${scannedDoc.capturedImage || scannedDoc.imagekitUrl ? 'sm:col-span-2' : 'sm:col-span-3'} flex flex-col gap-3`}>
+              {/* Summary */}
+              <div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                  Clinical Summary:
+                </span>
+                <div className="text-xs text-slate-700 bg-slate-50 border border-slate-200/80 p-3 rounded-2xl font-medium leading-relaxed">
+                  {scannedDoc.summary}
                 </div>
               </div>
 
-              {/* Summary */}
-              <p className="text-xs text-slate-200 bg-slate-950/70 p-2.5 rounded-xl border border-slate-800 font-medium">
-                {scannedDoc.summary}
-              </p>
-
-              {/* Extracted Clinical Fields */}
+              {/* Extracted Clinical Entities */}
               {scannedDoc.fields.length > 0 && (
-                <div className="flex flex-col gap-1.5 mt-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Extracted Clinical Entities:
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                    Extracted Medicines & Values ({scannedDoc.fields.length}):
                   </span>
-                  <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
+                  <div className="flex flex-wrap gap-2">
                     {scannedDoc.fields.map((f, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center gap-1.5 text-xs bg-slate-950 border border-slate-800 px-2.5 py-1 rounded-lg text-slate-200"
+                        className="flex items-center gap-1.5 text-xs bg-blue-50/70 border border-blue-100/90 px-3 py-1.5 rounded-xl text-slate-800 shadow-2xs"
                       >
                         {f.fieldType === 'MEDICATION' ? (
-                          <Pill size={11} className="text-blue-400 shrink-0" />
+                          <Pill size={13} className="text-blue-600 shrink-0" />
                         ) : f.fieldType === 'LAB_VALUE' ? (
-                          <Activity size={11} className="text-emerald-400 shrink-0" />
+                          <Activity size={13} className="text-emerald-600 shrink-0" />
                         ) : (
-                          <FileText size={11} className="text-amber-400 shrink-0" />
+                          <FileText size={13} className="text-amber-600 shrink-0" />
                         )}
-                        <span className="font-mono text-[11px]">{f.fieldValue}</span>
+                        <span className="font-semibold text-[11px]">{f.fieldValue}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* ImageKit Cloud URL if available */}
+              {/* ImageKit Cloud Status */}
               {scannedDoc.imagekitUrl && (
-                <div className="flex items-center justify-between w-full pt-2 border-t border-slate-700/60 text-[11px]">
-                  <span className="text-slate-400 flex items-center gap-1">
-                    <Cloud size={12} className="text-emerald-400" /> Saved to ImageKit Cloud CDN
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-500">
+                  <span className="flex items-center gap-1 text-slate-600 font-medium">
+                    <Cloud size={14} className="text-emerald-600" /> Saved to ImageKit Cloud CDN
                   </span>
                   <a
                     href={scannedDoc.imagekitUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-blue-400 hover:text-blue-300 flex items-center gap-1 font-semibold"
+                    className="text-blue-600 hover:text-blue-700 flex items-center gap-1 font-bold"
                   >
-                    View Cloud Asset <ExternalLink size={11} />
+                    View Cloud Asset <ExternalLink size={12} />
                   </a>
                 </div>
               )}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Hidden File Input for uploading document images */}
       <input
@@ -593,7 +632,7 @@ export function DocumentUploadScreen({ sessionId, patientId, onComplete, onSkip 
       />
 
       {/* Control Action Buttons */}
-      <div className="flex flex-col sm:flex-row gap-2.5 w-full">
+      <div className="flex flex-col sm:flex-row gap-3 w-full">
         {!scannedDoc ? (
           <>
             <button
@@ -620,9 +659,9 @@ export function DocumentUploadScreen({ sessionId, patientId, onComplete, onSkip 
             <button
               type="button"
               onClick={handleRetake}
-              className="py-3.5 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all"
+              className="py-3.5 px-5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
             >
-              <RotateCcw size={15} /> Retake
+              <RotateCcw size={15} /> Retake / Scan Another
             </button>
             <button
               type="button"
@@ -635,7 +674,7 @@ export function DocumentUploadScreen({ sessionId, patientId, onComplete, onSkip 
               }
               className="flex-1 py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-[0.98]"
             >
-              <CheckCircle2 size={18} /> Complete Intake <ArrowRight size={16} />
+              <CheckCircle2 size={18} /> Complete Intake & Proceed <ArrowRight size={16} />
             </button>
           </>
         )}
