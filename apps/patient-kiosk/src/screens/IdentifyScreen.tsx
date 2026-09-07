@@ -23,6 +23,7 @@ import {
   Clock,
   ShieldCheck,
   Flame,
+  Radio,
 } from 'lucide-react';
 import { toUserMessage } from '../lib/errors.js';
 
@@ -47,6 +48,7 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid }: Ide
   // Mode: 'TAP' | 'REGISTER'
   const [activeTab, setActiveTab] = useState<'TAP' | 'REGISTER'>('TAP');
   const [blankCardNotice, setBlankCardNotice] = useState<string | null>(null);
+  const [isScanningBlank, setIsScanningBlank] = useState(false);
 
   const connection = CONNECTION_CONFIG[wsState];
 
@@ -60,13 +62,34 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid }: Ide
   const [abhaId, setAbhaId] = useState('');
   const [cardUid, setCardUid] = useState('');
 
+  // Audio beep feedback when a card is detected
+  function playCardBeep() {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1400, ctx.currentTime);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.15);
+    } catch {}
+  }
+
   // Auto-switch to register when a blank card is tapped on the reader
   useEffect(() => {
     if (detectedCardUid) {
       setCardUid(detectedCardUid);
       setActiveTab('REGISTER');
       setRegStep('DETAILS');
-      setBlankCardNotice(`Blank Card Detected (${detectedCardUid}). Complete details below to feed data and link this card.`);
+      setIsScanningBlank(false);
+      setBlankCardNotice(`Blank RFID Card (${detectedCardUid}) Detected! Fill patient details below to feed data.`);
+      playCardBeep();
     }
   }, [detectedCardUid]);
 
@@ -297,7 +320,7 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid }: Ide
                     <span>Step 1: Patient Demographic Details</span>
                   </h2>
                   <p className="text-xs text-slate-500">
-                    {cardUid ? `Feeding data into physical card UID: ${cardUid}` : 'Enter details to generate your RFID smart health card'}
+                    {cardUid ? `Feeding patient data into physical card UID: ${cardUid}` : 'Enter details to feed data into your blank smart health card'}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -305,6 +328,66 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid }: Ide
                     Step 1 of 2
                   </span>
                 </div>
+              </div>
+
+              {/* INTERACTIVE BLANK RFID CARD SCANNER */}
+              <div className="p-4 bg-gradient-to-r from-blue-50/90 via-slate-50 to-indigo-50/90 border border-blue-200/90 rounded-2xl space-y-2.5 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                      <CreditCard size={18} />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                        <span>Scan Blank RFID Card / रिक्त कार्ड स्कैन करें</span>
+                        {cardUid && (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                            Attached
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-slate-500 font-mono">
+                        {cardUid ? `Hardware Card UID: ${cardUid}` : 'Tap physical blank card on USB reader or click scan'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsScanningBlank(!isScanningBlank);
+                      setFormError(null);
+                    }}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer ${
+                      isScanningBlank
+                        ? 'bg-amber-500 text-white animate-pulse'
+                        : cardUid
+                        ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    <Radio size={14} className={isScanningBlank ? 'animate-spin' : ''} />
+                    <span>{isScanningBlank ? 'Scanning…' : cardUid ? 'Re-scan Blank Card' : 'Scan Card / स्कैन करें'}</span>
+                  </button>
+                </div>
+
+                {isScanningBlank && (
+                  <div className="p-3 bg-white rounded-xl border border-blue-200 text-xs space-y-2 animate-fade-in">
+                    <div className="flex items-center justify-between text-blue-900 font-semibold">
+                      <span className="flex items-center gap-2">
+                        <span className="relative flex h-2.5 w-2.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-600"></span>
+                        </span>
+                        <span>Waiting for blank RFID card tap on reader…</span>
+                      </span>
+                      <span className="text-[10px] text-slate-400">13.56 MHz Active</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      Hold or tap your blank physical RFID card over the reader antenna. Its UID will be captured automatically.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">

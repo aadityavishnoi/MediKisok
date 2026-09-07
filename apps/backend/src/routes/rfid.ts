@@ -51,6 +51,29 @@ rfidRouter.get(
 
 
 
+/**
+ * POST /api/rfid/trigger-scan
+ * Used by Kiosk UI to trigger or forward an RFID scan (e.g. from on-screen Scan Card button).
+ */
+const triggerScanSchema = z.object({
+  uid: z.string().min(1),
+  deviceCode: z.string().optional().default('KIOSK-DEV-001'),
+});
+
+rfidRouter.post(
+  '/rfid/trigger-scan',
+  asyncHandler(async (req, res) => {
+    const body = triggerScanSchema.parse(req.body);
+    const result = await handleRfidScan({
+      deviceCode: body.deviceCode,
+      uid: body.uid,
+      timestamp: new Date().toISOString(),
+      isSimulated: false,
+    });
+    res.status(200).json(result);
+  }),
+);
+
 const scanSchema = z.object({
   deviceCode: z.string().min(1),
   uid: z.string().min(1),

@@ -178,10 +178,23 @@ export class RfidSerialBridge {
     }
   }
 
-  private connect(): void {
+  private async connect(): Promise<void> {
     if (this.isStopped) return;
 
     this.state = 'CONNECTING';
+
+    try {
+      const ports = await RfidSerialBridge.listAvailablePorts();
+      const ch340OrArduino = ports.find(
+        (p) => (p.friendlyName && /CH340|Arduino|USB-SERIAL/i.test(p.friendlyName)) ||
+               (p.manufacturer && /wch|arduino/i.test(p.manufacturer)) ||
+               (p.vendorId && /1a86/i.test(p.vendorId))
+      );
+      if (ch340OrArduino && ch340OrArduino.path) {
+        this.portPath = ch340OrArduino.path;
+      }
+    } catch {}
+
     console.log(`[RFID Serial] Attempting connection on ${this.portPath} at ${this.baudRate} baud...`);
 
     try {

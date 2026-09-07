@@ -58,6 +58,26 @@ async function main() {
   console.log(`Baud Rate:             ${targetBaud}`);
   console.log(`Debounce Interval:     ${targetDebounce} ms`);
   console.log('-'.repeat(60));
+
+  // Check if MediKiosk Backend server is already running and connected to this port
+  try {
+    const statusRes = await fetch(`http://localhost:${env.PORT || 4000}/api/rfid/status`);
+    if (statusRes.ok) {
+      const status = (await statusRes.json()) as any;
+      if (status.connected && status.port?.toUpperCase() === targetPort.toUpperCase()) {
+        console.log('\n============================================================');
+        console.log(` [MediKiosk] Port ${targetPort} is ALREADY CONNECTED & ACTIVE in Backend!`);
+        console.log(' Physical card taps are read directly by the backend server.');
+        console.log(' WebSocket events are actively streaming to the Patient Kiosk.');
+        console.log('============================================================\n');
+        console.log('Ready! Tap your RFID card on the reader antenna at any time.\n');
+        // Keep alive so user terminal stays open
+        setInterval(() => {}, 30000);
+        return;
+      }
+    }
+  } catch {}
+
   console.log('Starting RFID listener... Tap an RFID card on the MFRC522 reader.\n');
 
   // 3. Start bridge with exact required physical test formatting

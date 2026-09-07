@@ -27,7 +27,7 @@ describe('IdentifyScreen', () => {
 
   it('switches to registration mode and pre-fills card UID when a blank card is detected', () => {
     render(<IdentifyScreen wsState="open" error={null} onError={vi.fn()} detectedCardUid="82:12:68:E9" />);
-    expect(screen.getByText(/Blank Card Detected \(82:12:68:E9\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Blank.*\(82:12:68:E9\)/)).toBeInTheDocument();
     expect(screen.getByDisplayValue('82:12:68:E9')).toBeInTheDocument();
   });
 

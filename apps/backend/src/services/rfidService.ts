@@ -121,8 +121,8 @@ export async function handleRfidScan(input: RfidScanInput): Promise<RfidScanResp
     console.warn('[handleRfidScan] Database lookup notice:', err);
   }
 
-  // 2. If not found in DB and it's a simulated demo scan, check DEMO_PATIENTS_MAP
-  if (!card && input.isSimulated && env.DEMO_MODE) {
+  // 2. If not found in DB and it's a simulated scan or DEMO-RFID token, check DEMO_PATIENTS_MAP
+  if (!card && env.DEMO_MODE && (input.isSimulated || input.uid.startsWith('DEMO-RFID'))) {
     const demo = DEMO_PATIENTS_MAP[input.uid] || DEMO_PATIENTS_MAP[normalizedUid];
     if (demo) {
       card = {
