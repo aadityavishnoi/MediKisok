@@ -88,7 +88,7 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid }: Ide
       setActiveTab('REGISTER');
       setRegStep('DETAILS');
       setIsScanningBlank(false);
-      setBlankCardNotice(`Blank RFID Card (${detectedCardUid}) Detected! Fill patient details below to feed data.`);
+      setBlankCardNotice(`Blank Smart Card (${detectedCardUid}) Detected`);
       playCardBeep();
     }
   }, [detectedCardUid]);
@@ -316,38 +316,41 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid }: Ide
             <form onSubmit={handleSendOtp} className="space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div>
-                  <h2 className="text-base font-bold text-slate-900 flex items-center gap-1.5">
-                    <span>Step 1: Patient Demographic Details</span>
+                  <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <span>Patient Registration & Card Issuance</span>
+                    <span className="text-xs font-normal text-slate-400">/ रोगी पंजीकरण</span>
                   </h2>
                   <p className="text-xs text-slate-500">
-                    {cardUid ? `Feeding patient data into physical card UID: ${cardUid}` : 'Enter details to feed data into your blank smart health card'}
+                    Enter demographic information to issue and activate this MediKiosk Smart Card.
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-100">
                     Step 1 of 2
                   </span>
                 </div>
               </div>
 
-              {/* INTERACTIVE BLANK RFID CARD SCANNER */}
-              <div className="p-4 bg-gradient-to-r from-blue-50/90 via-slate-50 to-indigo-50/90 border border-blue-200/90 rounded-2xl space-y-2.5 shadow-xs">
+              {/* UNIFIED SMART HEALTH CARD MODULE */}
+              <div className="p-4 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-2xl shadow-sm border border-slate-700/80 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                    <div className="w-9 h-9 rounded-xl bg-blue-500/20 border border-blue-400/30 text-blue-300 flex items-center justify-center">
                       <CreditCard size={18} />
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                        <span>Scan Blank RFID Card / रिक्त कार्ड स्कैन करें</span>
-                        {cardUid && (
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                            Attached
-                          </span>
-                        )}
+                      <div className="text-xs font-bold text-white flex items-center gap-2">
+                        <span>MediKiosk Smart Health Card</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wider uppercase border ${
+                          cardUid
+                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                            : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                        }`}>
+                          {cardUid ? 'Attached' : 'Ready to Link'}
+                        </span>
                       </div>
-                      <div className="text-[11px] text-slate-500 font-mono">
-                        {cardUid ? `Hardware Card UID: ${cardUid}` : 'Tap physical blank card on USB reader or click scan'}
+                      <div className="text-[10px] text-slate-400 font-medium">
+                        ISO/IEC 14443-A Contactless Smart Card
                       </div>
                     </div>
                   </div>
@@ -358,65 +361,46 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid }: Ide
                       setIsScanningBlank(!isScanningBlank);
                       setFormError(null);
                     }}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer ${
                       isScanningBlank
                         ? 'bg-amber-500 text-white animate-pulse'
-                        : cardUid
-                        ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'bg-white/10 hover:bg-white/20 text-slate-200 border border-white/15'
                     }`}
                   >
-                    <Radio size={14} className={isScanningBlank ? 'animate-spin' : ''} />
-                    <span>{isScanningBlank ? 'Scanning…' : cardUid ? 'Re-scan Blank Card' : 'Scan Card / स्कैन करें'}</span>
+                    <Radio size={12} className={isScanningBlank ? 'animate-spin' : 'text-blue-400'} />
+                    <span>{isScanningBlank ? 'Scanning…' : cardUid ? 'Re-scan Card' : 'Scan Card'}</span>
                   </button>
                 </div>
 
+                {/* Card UID Display / Input Bar */}
+                <div className="flex items-center justify-between bg-black/40 rounded-xl px-3 py-2 border border-white/10 text-xs font-mono">
+                  <span className="text-slate-400 text-[11px] font-sans">Hardware UID:</span>
+                  <input
+                    type="text"
+                    value={cardUid}
+                    onChange={(e) => setCardUid(e.target.value.toUpperCase())}
+                    placeholder="Tap blank card on USB reader"
+                    className="bg-transparent text-right font-mono font-bold text-emerald-300 focus:outline-none focus:text-white transition-colors w-52 text-xs tracking-wider"
+                  />
+                </div>
+
                 {isScanningBlank && (
-                  <div className="p-3 bg-white rounded-xl border border-blue-200 text-xs space-y-2 animate-fade-in">
-                    <div className="flex items-center justify-between text-blue-900 font-semibold">
-                      <span className="flex items-center gap-2">
-                        <span className="relative flex h-2.5 w-2.5">
+                  <div className="p-2.5 bg-blue-950/60 rounded-xl border border-blue-500/30 text-xs space-y-1 animate-fade-in">
+                    <div className="flex items-center justify-between text-blue-300 font-semibold text-[11px]">
+                      <span className="flex items-center gap-1.5">
+                        <span className="relative flex h-2 w-2">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-600"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
                         </span>
-                        <span>Waiting for blank RFID card tap on reader…</span>
+                        <span>Waiting for blank card tap on reader antenna…</span>
                       </span>
                       <span className="text-[10px] text-slate-400">13.56 MHz Active</span>
                     </div>
-                    <p className="text-[11px] text-slate-500 leading-relaxed">
-                      Hold or tap your blank physical RFID card over the reader antenna. Its UID will be captured automatically.
-                    </p>
                   </div>
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {/* Physical Card UID Field */}
-                <div className="col-span-1 sm:col-span-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-bold text-slate-700">RFID Card UID / कार्ड यूआईडी</label>
-                    {cardUid ? (
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                        Physical Blank Card Attached
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-slate-400">
-                        Tap blank card on reader or enter manually
-                      </span>
-                    )}
-                  </div>
-                  <div className="relative">
-                    <CreditCard size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      value={cardUid}
-                      onChange={(e) => setCardUid(e.target.value.toUpperCase())}
-                      placeholder="e.g. 82:12:68:E9 (Tap card on reader anytime)"
-                      className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-none transition-colors"
-                    />
-                  </div>
-                </div>
-
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
                 <div className="col-span-1 sm:col-span-2">
                   <label className="block text-xs font-bold text-slate-700 mb-1">Full Name / पूरा नाम *</label>
                   <div className="relative">
