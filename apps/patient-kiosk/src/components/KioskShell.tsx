@@ -51,9 +51,9 @@ export function KioskShell({ step, language, onLanguageChange, wsState, sessionI
   }, [isRtl]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-b from-slate-50 via-slate-50 to-blue-50/30 font-sans antialiased text-slate-900 selection:bg-blue-600 selection:text-white">
+    <div className="flex h-screen max-h-screen overflow-hidden flex-col bg-gradient-to-b from-slate-50 via-slate-50 to-blue-50/30 font-sans antialiased text-slate-900 selection:bg-blue-600 selection:text-white">
       {/* Serene Glass Header */}
-      <header className="flex items-center justify-between gap-6 border-b border-slate-200/70 bg-white/90 backdrop-blur-md px-8 py-4 sticky top-0 z-40 shadow-xs">
+      <header className="flex items-center justify-between gap-6 border-b border-slate-200/70 bg-white/90 backdrop-blur-md px-6 py-2.5 shrink-0 z-40 shadow-xs">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-md shadow-blue-500/20">
             🏥
@@ -112,12 +112,12 @@ export function KioskShell({ step, language, onLanguageChange, wsState, sessionI
       </header>
 
       {/* Main Screen Canvas */}
-      <main className="flex flex-1 flex-col items-center justify-center px-6 py-8">
-        <div className="w-full max-w-2xl">{children}</div>
+      <main className="flex flex-1 flex-col items-center justify-center px-4 py-2 overflow-hidden w-full">
+        <div className="w-full max-w-5xl h-full flex items-center justify-center">{children}</div>
       </main>
 
       {/* Ultra-Clean Footer */}
-      <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-200/70 bg-white px-8 py-3.5 text-xs text-slate-500 font-medium">
+      <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-200/70 bg-white px-6 py-2 text-xs text-slate-500 font-medium shrink-0">
         <div className="flex items-center gap-2 text-slate-600">
           <ShieldCheck size={16} className="text-emerald-600" />
           <span>ABDM Digital Health Certified · Encrypted Session</span>

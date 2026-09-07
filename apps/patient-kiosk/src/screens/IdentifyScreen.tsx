@@ -180,101 +180,90 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid }: Ide
   }
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-4 py-6 text-center max-w-xl mx-auto w-full">
-      {/* Badge */}
-      <div className="mb-2 animate-slide-up">
-        <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100/80">
-          <Sparkles size={13} /> MediKiosk Smart Intake Terminal
-        </span>
-      </div>
-
-      <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-1 tracking-tight font-display animate-slide-up">
-        Welcome to MediKiosk
-      </h1>
-      <p className="text-slate-500 mb-6 text-sm font-medium leading-relaxed">
-        Quick OPD Check-In & AI-Assisted Clinical History
-      </p>
-
-      {/* Segmented Mode Selector */}
-      <div className="flex p-1.5 bg-slate-100/90 rounded-2xl w-full max-w-md border border-slate-200/80 mb-6 shadow-xs">
-        <button
-          type="button"
-          onClick={() => { setActiveTab('TAP'); setFormError(null); }}
-          className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-            activeTab === 'TAP'
-              ? 'bg-white text-blue-700 shadow-sm'
-              : 'text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <CreditCard size={15} />
-          <span>कार्ड टैप करें / Tap Card</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => { setActiveTab('REGISTER'); setFormError(null); }}
-          className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-            activeTab === 'REGISTER'
-              ? 'bg-white text-blue-700 shadow-sm'
-              : 'text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <UserPlus size={15} />
-          <span>नया पंजीकरण / New (OTP)</span>
-        </button>
-      </div>
-
-      {/* TAB 1: TAP CARD */}
+    <div className="flex-1 flex flex-col items-center justify-center p-2 w-full max-w-4xl mx-auto">
+      {/* TAB 1: TAP CARD MODE */}
       {activeTab === 'TAP' && (
-        <div className="w-full flex flex-col items-center animate-fade-in">
+        <div className="w-full max-w-md flex flex-col items-center text-center animate-fade-in py-1">
+          <div className="mb-2 animate-slide-up">
+            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-100/80">
+              <Sparkles size={12} /> MediKiosk Smart Intake Terminal
+            </span>
+          </div>
+
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-0.5 tracking-tight font-display animate-slide-up">
+            Welcome to MediKiosk
+          </h1>
+          <p className="text-slate-500 mb-3 text-xs font-medium leading-relaxed">
+            Quick OPD Check-In & AI-Assisted Clinical History
+          </p>
+
+          {/* Segmented Mode Selector */}
+          <div className="flex p-1 bg-slate-100/90 rounded-xl w-full border border-slate-200/80 mb-3.5 shadow-xs">
+            <button
+              type="button"
+              onClick={() => { setActiveTab('TAP'); setFormError(null); }}
+              className="flex-1 py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 bg-white text-blue-700 shadow-xs"
+            >
+              <CreditCard size={14} />
+              <span>कार्ड टैप करें / Tap Card</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setActiveTab('REGISTER'); setFormError(null); }}
+              className="flex-1 py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900"
+            >
+              <UserPlus size={14} />
+              <span>नया पंजीकरण / New (OTP)</span>
+            </button>
+          </div>
+
           {/* Glowing RFID Tap Ring */}
-          <div className="relative mb-6 group cursor-pointer animate-slide-up">
+          <div className="relative mb-3 group cursor-pointer animate-slide-up">
             <div className="absolute -inset-2 rounded-full bg-blue-500/10 blur-xl group-hover:bg-blue-500/20 transition-all animate-pulse-subtle" />
-            <div className="relative w-32 h-32 rounded-full bg-gradient-to-tr from-blue-600 via-blue-600 to-indigo-600 shadow-xl shadow-blue-600/25 flex flex-col items-center justify-center text-white transition-transform duration-300 group-hover:scale-105">
-              <CreditCard size={38} className="drop-shadow-sm mb-1" />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-100">Tap Card</span>
+            <div className="relative w-24 h-24 rounded-full bg-gradient-to-tr from-blue-600 via-blue-600 to-indigo-600 shadow-xl shadow-blue-600/25 flex flex-col items-center justify-center text-white transition-transform duration-300 group-hover:scale-105">
+              <CreditCard size={32} className="drop-shadow-sm mb-0.5" />
+              <span className="text-[9px] font-bold uppercase tracking-wider text-blue-100">Tap Card</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 mb-6">
-            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white border border-slate-200/80 shadow-xs text-slate-700">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-white border border-slate-200/80 shadow-xs text-slate-700">
               <span className={`w-2 h-2 rounded-full ${connection.color} animate-pulse`} />
               {connection.label}
             </span>
           </div>
 
           {error && (
-            <div role="alert" className="w-full rounded-2xl bg-red-50 border border-red-200 p-3.5 text-xs font-bold text-red-800 mb-6 flex items-center justify-center gap-2">
-              <ShieldAlert size={16} />
+            <div role="alert" className="w-full rounded-xl bg-red-50 border border-red-200 p-2.5 text-xs font-bold text-red-800 mb-3 flex items-center justify-center gap-2">
+              <ShieldAlert size={14} />
               {error}
             </div>
           )}
 
           {/* Production Hardware Reader Status Card */}
-          <div className="w-full bg-slate-900 text-white rounded-3xl border border-slate-800 p-5 shadow-xl text-left space-y-3">
+          <div className="w-full bg-slate-900 text-white rounded-2xl border border-slate-800 p-3.5 shadow-xl text-left space-y-2">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <span className="relative flex h-3 w-3">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2.5 w-2.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                 </span>
-                <span className="text-xs font-bold text-slate-100 uppercase tracking-wider">
+                <span className="text-[11px] font-bold text-slate-100 uppercase tracking-wider">
                   Physical RFID Hardware Scanner Active
                 </span>
               </div>
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-mono font-bold border border-emerald-500/30">
+              <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-mono font-bold border border-emerald-500/30">
                 Live Reader
               </span>
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Place or tap any physical RFID Smart Card on the USB reader.
-              Registered patient cards will immediately authenticate and launch your intake session.
-              Any new blank card will automatically open the registration screen below so you can feed patient data into it.
+            <p className="text-[11px] text-slate-300 leading-relaxed">
+              Place any physical RFID Smart Card on the USB reader. Registered cards authenticate immediately. Blank cards open registration to issue.
             </p>
 
-            <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-[11px] text-slate-400">
-              <span className="flex items-center gap-1.5 text-slate-300 font-medium">
-                <Sparkles size={13} className="text-blue-400" />
+            <div className="flex items-center justify-between pt-1.5 border-t border-slate-800/80 text-[10px] text-slate-400">
+              <span className="flex items-center gap-1 text-slate-300 font-medium">
+                <Sparkles size={11} className="text-blue-400" />
                 Ready to scan USB RFID card
               </span>
               <button
@@ -289,345 +278,344 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid }: Ide
         </div>
       )}
 
-      {/* TAB 2: FIRST TIME REGISTRATION (OTP) */}
+      {/* TAB 2: ZERO-SCROLL WIDESCREEN REGISTRATION MODE */}
       {activeTab === 'REGISTER' && (
-        <div className="w-full bg-white rounded-3xl border border-slate-200/90 p-6 shadow-sm text-left animate-fade-in">
-          {blankCardNotice && (
-            <div className="mb-4 rounded-2xl bg-emerald-50 border border-emerald-200 p-3.5 text-xs font-semibold text-emerald-800 flex items-center justify-between gap-2 shadow-xs">
-              <div className="flex items-center gap-2">
-                <CreditCard size={18} className="text-emerald-600 shrink-0" />
-                <span>{blankCardNotice}</span>
-              </div>
-              <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold shrink-0">
-                Card Linked
-              </span>
-            </div>
-          )}
-
-          {formError && (
-            <div className="mb-4 rounded-2xl bg-red-50 border border-red-200 p-3 text-xs font-semibold text-red-700 flex items-center gap-2">
-              <ShieldAlert size={15} />
-              <span>{formError}</span>
-            </div>
-          )}
-
-          {/* STEP 1: PATIENT DETAILS */}
-          {regStep === 'DETAILS' && (
-            <form onSubmit={handleSendOtp} className="space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <div>
-                  <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                    <span>Patient Registration & Card Issuance</span>
-                    <span className="text-xs font-normal text-slate-400">/ रोगी पंजीकरण</span>
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Enter demographic information to issue and activate this MediKiosk Smart Card.
-                  </p>
+        <div className="w-full bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-sm text-left animate-fade-in">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+            {/* LEFT COLUMN: Header, Mode Toggle, Smart Card Status Cardlet */}
+            <div className="md:col-span-5 space-y-3">
+              <div>
+                <div className="flex items-center gap-1.5 text-[10px] font-bold text-blue-700 uppercase tracking-wider mb-0.5">
+                  <Sparkles size={12} />
+                  <span>Kiosk Self-Registration</span>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-100">
-                    Step 1 of 2
-                  </span>
-                </div>
+                <h1 className="text-lg sm:text-xl font-black text-slate-900 font-display tracking-tight leading-snug">
+                  Patient Registration & Card Issuance
+                </h1>
+                <p className="text-[11px] text-slate-500">
+                  रोगी पंजीकरण एवं स्मार्ट हेल्थ कार्ड जारीकरण
+                </p>
               </div>
 
-              {/* UNIFIED SMART HEALTH CARD MODULE */}
-              <div className="p-4 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-2xl shadow-sm border border-slate-700/80 space-y-3">
+              {/* Mode Toggle */}
+              <div className="flex p-1 bg-slate-100 rounded-xl border border-slate-200/80 shadow-xs">
+                <button
+                  type="button"
+                  onClick={() => { setActiveTab('TAP'); setFormError(null); }}
+                  className="flex-1 py-1 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900"
+                >
+                  <CreditCard size={13} />
+                  <span>Tap Card</span>
+                </button>
+                <button
+                  type="button"
+                  className="flex-1 py-1 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 bg-white text-blue-700 shadow-xs"
+                >
+                  <UserPlus size={13} />
+                  <span>New (OTP)</span>
+                </button>
+              </div>
+
+              {/* Smart Card Status Cardlet */}
+              <div className="p-3 bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-950 text-white rounded-xl shadow-sm border border-slate-700/80 space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-blue-500/20 border border-blue-400/30 text-blue-300 flex items-center justify-center">
-                      <CreditCard size={18} />
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-blue-500/20 border border-blue-400/30 text-blue-300 flex items-center justify-center">
+                      <CreditCard size={14} />
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-white flex items-center gap-2">
-                        <span>MediKiosk Smart Health Card</span>
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wider uppercase border ${
-                          cardUid
-                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                            : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                        }`}>
-                          {cardUid ? 'Attached' : 'Ready to Link'}
-                        </span>
-                      </div>
-                      <div className="text-[10px] text-slate-400 font-medium">
-                        ISO/IEC 14443-A Contactless Smart Card
-                      </div>
+                      <div className="text-xs font-bold text-white">MediKiosk Smart Health Card</div>
+                      <div className="text-[9px] text-slate-400">13.56 MHz ISO/IEC 14443-A</div>
                     </div>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsScanningBlank(!isScanningBlank);
-                      setFormError(null);
-                    }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer ${
-                      isScanningBlank
-                        ? 'bg-amber-500 text-white animate-pulse'
-                        : 'bg-white/10 hover:bg-white/20 text-slate-200 border border-white/15'
-                    }`}
-                  >
-                    <Radio size={12} className={isScanningBlank ? 'animate-spin' : 'text-blue-400'} />
-                    <span>{isScanningBlank ? 'Scanning…' : cardUid ? 'Re-scan Card' : 'Scan Card'}</span>
-                  </button>
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wider uppercase border ${
+                    cardUid
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                      : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                  }`}>
+                    {cardUid ? 'Attached' : 'Ready'}
+                  </span>
                 </div>
 
-                {/* Card UID Display / Input Bar */}
-                <div className="flex items-center justify-between bg-black/40 rounded-xl px-3 py-2 border border-white/10 text-xs font-mono">
-                  <span className="text-slate-400 text-[11px] font-sans">Hardware UID:</span>
+                {/* Blank card detected notice (matches vitest test regex /Blank.*\(82:12:68:E9\)/) */}
+                {blankCardNotice && (
+                  <div className="text-[10px] text-emerald-300 font-semibold flex items-center gap-1.5 bg-emerald-950/50 p-1.5 rounded-lg border border-emerald-500/25">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                    <span className="truncate">{blankCardNotice}</span>
+                  </div>
+                )}
+
+                {/* Card UID Input */}
+                <div className="flex items-center justify-between bg-black/40 rounded-lg px-2.5 py-1 border border-white/10 text-xs font-mono">
+                  <span className="text-slate-400 text-[10px] font-sans">Hardware UID:</span>
                   <input
                     type="text"
                     value={cardUid}
                     onChange={(e) => setCardUid(e.target.value.toUpperCase())}
-                    placeholder="Tap blank card on USB reader"
-                    className="bg-transparent text-right font-mono font-bold text-emerald-300 focus:outline-none focus:text-white transition-colors w-52 text-xs tracking-wider"
+                    placeholder="Tap blank card"
+                    className="bg-transparent text-right font-mono font-bold text-emerald-300 focus:outline-none focus:text-white transition-colors w-32 text-xs tracking-wider"
                   />
                 </div>
 
+                <div className="flex items-center justify-between pt-0.5 text-[10px] text-slate-400">
+                  <span>Card: {cardUid ? 'Card Linked' : 'Unlinked'}</span>
+                  <button
+                    type="button"
+                    onClick={() => { setIsScanningBlank(!isScanningBlank); setFormError(null); }}
+                    className="text-blue-400 hover:text-blue-300 font-semibold cursor-pointer"
+                  >
+                    {isScanningBlank ? 'Scanning…' : cardUid ? 'Re-scan Card' : 'Scan Card'}
+                  </button>
+                </div>
+
                 {isScanningBlank && (
-                  <div className="p-2.5 bg-blue-950/60 rounded-xl border border-blue-500/30 text-xs space-y-1 animate-fade-in">
-                    <div className="flex items-center justify-between text-blue-300 font-semibold text-[11px]">
-                      <span className="flex items-center gap-1.5">
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-                        </span>
-                        <span>Waiting for blank card tap on reader antenna…</span>
-                      </span>
-                      <span className="text-[10px] text-slate-400">13.56 MHz Active</span>
-                    </div>
+                  <div className="p-1.5 bg-blue-950/60 rounded-lg border border-blue-500/30 text-[10px] text-blue-300 flex items-center gap-1.5 animate-fade-in">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500"></span>
+                    </span>
+                    <span>Tap card on USB reader now…</span>
                   </div>
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
-                <div className="col-span-1 sm:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Full Name / पूरा नाम *</label>
-                  <div className="relative">
-                    <User size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      required
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      placeholder="e.g. Ramesh Kumar"
-                      className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-none transition-colors"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Mobile Number / मोबाइल नंबर *</label>
-                  <div className="relative">
-                    <Phone size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="tel"
-                      required
-                      maxLength={10}
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                      placeholder="10-digit number"
-                      className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-none transition-colors"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Age / उम्र</label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={120}
-                      value={age}
-                      onChange={(e) => setAge(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-none transition-colors"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Gender / लिंग</label>
-                    <select
-                      value={gender}
-                      onChange={(e) => setGender(e.target.value)}
-                      className="w-full px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-none transition-colors"
-                    >
-                      <option value="Male">Male (पुरुष)</option>
-                      <option value="Female">Female (महिला)</option>
-                      <option value="Other">Other (अन्य)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Blood Group / रक्त समूह</label>
-                  <select
-                    value={bloodGroup}
-                    onChange={(e) => setBloodGroup(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-none transition-colors"
-                  >
-                    {BLOOD_GROUPS.map((bg) => (
-                      <option key={bg} value={bg}>{bg}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">ABHA ID (Optional)</label>
-                  <input
-                    type="text"
-                    value={abhaId}
-                    onChange={(e) => setAbhaId(e.target.value)}
-                    placeholder="91-XXXX-XXXX-XXXX"
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-none transition-colors"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={otpLoading}
-                  className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-60"
-                >
-                  {otpLoading ? (
-                    <>
-                      <RefreshCw size={15} className="animate-spin" />
-                      <span>Sending OTP…</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Generate OTP & Proceed / ओटीपी भेजें</span>
-                      <ArrowRight size={15} />
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* STEP 2: OTP VERIFICATION & RFID CARD BIND */}
-          {regStep === 'OTP' && (
-            <form onSubmit={handleVerifyAndRegister} className="space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <div>
-                  <h2 className="text-base font-bold text-slate-900">Step 2: Verify Mobile & Assign Card</h2>
-                  <p className="text-xs text-slate-500">
-                    OTP sent to <span className="font-bold text-slate-800">+91-******{phone.slice(-4)}</span>
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setRegStep('DETAILS')}
-                  className="text-xs text-blue-600 hover:underline flex items-center gap-1 font-semibold"
-                >
-                  <ArrowLeft size={13} /> Edit Details
-                </button>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Enter 6-Digit OTP / ओटीपी दर्ज करें *</label>
-                <div className="relative">
-                  <KeyRound size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    required
-                    maxLength={6}
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                    placeholder="Enter 6-digit OTP"
-                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm tracking-widest font-mono font-bold text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none transition-colors"
-                  />
-                </div>
-
-                {/* Touch Keypad for Kiosk Touchscreen */}
-                <div className="mt-3 grid grid-cols-3 gap-1.5 max-w-xs mx-auto">
-                  {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'Clear', '0', '⌫'].map((k) => (
-                    <button
-                      key={k}
-                      type="button"
-                      onClick={() => {
-                        if (k === 'Clear') setOtpCode('');
-                        else if (k === '⌫') setOtpCode((c) => c.slice(0, -1));
-                        else if (otpCode.length < 6) setOtpCode((c) => c + k);
-                      }}
-                      className="py-2 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-xl text-xs font-bold text-slate-700 transition-colors shadow-2xs"
-                    >
-                      {k}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="flex items-center justify-between mt-2 text-[11px] text-slate-400">
-                  <span className="flex items-center gap-1">
-                    <Clock size={12} /> Valid for: {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleSendOtp()}
-                    className="text-blue-600 hover:underline font-semibold"
-                  >
-                    Resend OTP / पुनः भेजें
-                  </button>
-                </div>
-              </div>
-
-              {/* Card UID Assignment Preview */}
-              <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                    <CreditCard size={14} className="text-blue-600" />
-                    Assigned Smart RFID Card UID
-                  </span>
-                  <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                    Ready to Bind
-                  </span>
-                </div>
-                <div className="font-mono text-xs font-semibold text-slate-800">
-                  {cardUid}
-                </div>
-                <p className="text-[10px] text-slate-400">
-                  This blank health card is automatically mapped to {fullName || 'patient'}.
-                </p>
-              </div>
-
-              <div className="pt-1">
-                <button
-                  type="submit"
-                  disabled={otpLoading}
-                  className="w-full py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-60"
-                >
-                  {otpLoading ? (
-                    <>
-                      <RefreshCw size={15} className="animate-spin" />
-                      <span>Verifying & Linking Card…</span>
-                    </>
-                  ) : (
-                    <>
-                      <Check size={16} />
-                      <span>Verify OTP & Launch Kiosk Intake</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* STEP 3: SUCCESS FEEDBACK */}
-          {regStep === 'SUCCESS' && (
-            <div className="py-6 flex flex-col items-center justify-center text-center space-y-3 animate-scale-in">
-              <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-inner">
-                <CheckCircle2 size={32} />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">Registration Successful!</h3>
-              <p className="text-xs text-slate-500 max-w-sm">
-                Patient <strong>{registeredName}</strong> has been registered. RFID card <strong>{cardUid}</strong> is active.
-              </p>
-              <div className="flex items-center gap-2 text-xs font-semibold text-blue-600 animate-pulse pt-2">
-                <RefreshCw size={14} className="animate-spin" />
-                <span>Launching language selection and clinical intake flow…</span>
+              <div className="text-[10px] text-slate-400 flex items-center gap-1.5 pt-0.5">
+                <ShieldAlert size={12} className="text-emerald-600 shrink-0" />
+                <span>ABDM Compliant · 256-Bit Encrypted Terminal</span>
               </div>
             </div>
-          )}
+
+            {/* RIGHT COLUMN: Step 1 Details Form or Step 2 OTP */}
+            <div className="md:col-span-7">
+              {formError && (
+                <div className="mb-2.5 rounded-xl bg-red-50 border border-red-200 p-2 text-xs font-semibold text-red-700 flex items-center gap-2">
+                  <ShieldAlert size={14} className="shrink-0" />
+                  <span>{formError}</span>
+                </div>
+              )}
+
+              {/* STEP 1: PATIENT DETAILS */}
+              {regStep === 'DETAILS' && (
+                <form onSubmit={handleSendOtp} className="space-y-2.5">
+                  <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                    <span className="text-xs font-bold text-slate-800">Step 1: Patient Demographic Details</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-100">
+                      Step 1 of 2
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Full Name / पूरा नाम *</label>
+                      <div className="relative">
+                        <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          required
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          placeholder="e.g. Ramesh Kumar"
+                          className="w-full pl-8 pr-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-none transition-colors"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Mobile Number / मोबाइल नंबर *</label>
+                      <div className="relative">
+                        <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="tel"
+                          required
+                          maxLength={10}
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                          placeholder="10-digit number"
+                          className="w-full pl-8 pr-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-none transition-colors"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Age / उम्र</label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={120}
+                          value={age}
+                          onChange={(e) => setAge(e.target.value)}
+                          className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-none transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Gender / लिंग</label>
+                        <select
+                          value={gender}
+                          onChange={(e) => setGender(e.target.value)}
+                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-none transition-colors"
+                        >
+                          <option value="Male">Male (पुरुष)</option>
+                          <option value="Female">Female (महिला)</option>
+                          <option value="Other">Other (अन्य)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Blood Group / रक्त समूह</label>
+                        <select
+                          value={bloodGroup}
+                          onChange={(e) => setBloodGroup(e.target.value)}
+                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-none transition-colors"
+                        >
+                          {BLOOD_GROUPS.map((bg) => (
+                            <option key={bg} value={bg}>{bg}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-0.5">ABHA ID (Optional)</label>
+                        <input
+                          type="text"
+                          value={abhaId}
+                          onChange={(e) => setAbhaId(e.target.value)}
+                          placeholder="91-XXXX-XXXX-XXXX"
+                          className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-none transition-colors"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-1">
+                    <button
+                      type="submit"
+                      disabled={otpLoading}
+                      className="w-full py-2.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-60 cursor-pointer"
+                    >
+                      {otpLoading ? (
+                        <>
+                          <RefreshCw size={14} className="animate-spin" />
+                          <span>Sending OTP…</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Generate OTP & Proceed / ओटीपी भेजें</span>
+                          <ArrowRight size={14} />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* STEP 2: OTP VERIFICATION & RFID CARD BIND */}
+              {regStep === 'OTP' && (
+                <form onSubmit={handleVerifyAndRegister} className="space-y-3">
+                  <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                    <div>
+                      <h2 className="text-xs font-bold text-slate-900">Step 2: Verify Mobile & Assign Card</h2>
+                      <p className="text-[10px] text-slate-500">
+                        OTP sent to <span className="font-bold text-slate-800">+91-******{phone.slice(-4)}</span>
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setRegStep('DETAILS')}
+                      className="text-xs text-blue-600 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+                    >
+                      <ArrowLeft size={12} /> Edit Details
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Enter 6-Digit OTP / ओटीपी दर्ज करें *</label>
+                    <div className="relative">
+                      <KeyRound size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        required
+                        maxLength={6}
+                        value={otpCode}
+                        onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                        placeholder="Enter 6-digit OTP"
+                        className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm tracking-widest font-mono font-bold text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none transition-colors"
+                      />
+                    </div>
+
+                    {/* Touch Keypad for Kiosk Touchscreen */}
+                    <div className="mt-2 grid grid-cols-3 gap-1 max-w-xs mx-auto">
+                      {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'Clear', '0', '⌫'].map((k) => (
+                        <button
+                          key={k}
+                          type="button"
+                          onClick={() => {
+                            if (k === 'Clear') setOtpCode('');
+                            else if (k === '⌫') setOtpCode((c) => c.slice(0, -1));
+                            else if (otpCode.length < 6) setOtpCode((c) => c + k);
+                          }}
+                          className="py-1.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-lg text-xs font-bold text-slate-700 transition-colors cursor-pointer"
+                        >
+                          {k}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between mt-1.5 text-[10px] text-slate-400">
+                      <span className="flex items-center gap-1">
+                        <Clock size={11} /> Valid for: {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleSendOtp()}
+                        className="text-blue-600 hover:underline font-semibold cursor-pointer"
+                      >
+                        Resend OTP / पुनः भेजें
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="pt-0.5">
+                    <button
+                      type="submit"
+                      disabled={otpLoading}
+                      className="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-60 cursor-pointer"
+                    >
+                      {otpLoading ? (
+                        <>
+                          <RefreshCw size={14} className="animate-spin" />
+                          <span>Verifying & Linking Card…</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check size={15} />
+                          <span>Verify OTP & Launch Kiosk Intake</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* STEP 3: SUCCESS FEEDBACK */}
+              {regStep === 'SUCCESS' && (
+                <div className="py-6 flex flex-col items-center justify-center text-center space-y-2.5 animate-scale-in">
+                  <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-inner">
+                    <CheckCircle2 size={28} />
+                  </div>
+                  <h3 className="text-base font-bold text-slate-900">Registration Successful!</h3>
+                  <p className="text-xs text-slate-500 max-w-sm">
+                    Patient <strong>{registeredName}</strong> has been registered. RFID card <strong>{cardUid}</strong> is active.
+                  </p>
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 animate-pulse pt-1">
+                    <RefreshCw size={13} className="animate-spin" />
+                    <span>Launching language selection and clinical intake flow…</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
