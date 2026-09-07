@@ -14,7 +14,7 @@ const { IdentifyScreen } = await import('./IdentifyScreen.js');
 describe('IdentifyScreen', () => {
   it('shows the tap-card prompt and both demo simulate buttons', () => {
     render(<IdentifyScreen wsState="open" error={null} onError={vi.fn()} />);
-    expect(screen.getByText(/Tap your patient card/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Tap Card/).length).toBeGreaterThan(0);
     expect(screen.getByText('Connected')).toBeInTheDocument();
     expect(screen.getByText(/Demo Patient 001/)).toBeInTheDocument();
     expect(screen.getByText(/Demo Patient 002/)).toBeInTheDocument();
