@@ -35,6 +35,16 @@ export interface Patient {
   updatedAt: ISODateString;
 }
 
+export interface OtpVerification {
+  id: string;
+  phone: string;
+  code: string;
+  expiresAt: ISODateString;
+  verified: boolean;
+  attempts: number;
+  createdAt: ISODateString;
+}
+
 export interface RFIDDevice {
   id: string;
   deviceCode: string;

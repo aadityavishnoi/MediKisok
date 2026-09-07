@@ -57,6 +57,50 @@ export interface PatientRegisterResponse {
   sessionId: string;
 }
 
+// ---------------------------------------------------------------------------
+// OTP & First-Time Kiosk Registration
+// ---------------------------------------------------------------------------
+
+export interface SendOtpRequest {
+  phone: string;
+}
+
+export interface SendOtpResponse {
+  success: boolean;
+  message: string;
+  /** For dev/demo convenience only */
+  devOtp?: string;
+  expiresInSeconds: number;
+}
+
+export interface VerifyOtpRequest {
+  phone: string;
+  code: string;
+}
+
+export interface VerifyOtpResponse {
+  verified: boolean;
+  message: string;
+}
+
+export interface RegisterKioskPatientRequest {
+  fullName: string;
+  phone: string;
+  age?: number;
+  gender?: string;
+  bloodGroup?: string;
+  abhaId?: string;
+  rfidUid?: string;
+  deviceCode?: string;
+}
+
+export interface RegisterKioskPatientResponse {
+  patient: Patient;
+  sessionId: string;
+  rfidUid: string;
+  status: 'IDENTIFIED';
+}
+
 export interface SessionCreateRequest {
   mode?: Mode;
   language?: Language;

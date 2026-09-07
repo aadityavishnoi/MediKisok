@@ -13,6 +13,8 @@ import { documentsRouter } from './routes/documents.js';
 import { aiRouter } from './routes/ai.js';
 import { adminRouter } from './routes/admin.js';
 import { ttsRouter } from './routes/tts.js';
+import { otpRouter } from './routes/otp.js';
+import { patientRegistrationRouter } from './routes/patientRegistration.js';
 
 export function createApp() {
   const app = express();
@@ -35,6 +37,8 @@ export function createApp() {
   app.use('/api', aiRouter);
   app.use('/api', adminRouter);
   app.use('/api', ttsRouter);
+  app.use('/api', otpRouter);
+  app.use('/api', patientRegistrationRouter);
 
   app.use((_req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Route not found' } });
