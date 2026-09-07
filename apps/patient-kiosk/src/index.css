@@ -4,10 +4,9 @@
 
 @layer base {
   html {
-    /* Must match the tailwind.config.js font-sans stack: Inter + a Noto Sans fallback
-       per script so all 13 supported languages render with real glyphs instead of
-       falling through to whatever sans-serif the OS happens to ship. */
     font-family:
+      'Outfit',
+      'Plus Jakarta Sans',
       'Inter',
       'Noto Sans Devanagari',
       'Noto Sans Bengali',
@@ -21,19 +20,27 @@
       'Noto Sans Arabic',
       ui-sans-serif,
       system-ui,
-      -apple-system,
-      'Segoe UI',
-      Roboto,
-      'Helvetica Neue',
-      Arial,
-      sans-serif;
+      sans-serif !important;
     -webkit-tap-highlight-color: transparent;
   }
 
   body {
+    font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif !important;
     @apply bg-slate-50 text-slate-900 antialiased selection:bg-blue-600 selection:text-white;
   }
 }
+
+@layer utilities {
+  .font-sans, .font-display, .font-heading {
+    font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif !important;
+  }
+}
+
+/* Global Font Override - Outfit everywhere */
+*, ::before, ::after, html, body, .font-sans, .font-display, .font-heading, .font-mono, code, pre, kbd, samp {
+  font-family: 'Outfit', sans-serif !important;
+}
+
 
 @keyframes pulse-subtle {
   0%, 100% {
@@ -93,7 +100,6 @@
   animation: scale-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* Stagger helper: pair with animate-slide-up and an inline animationDelay */
 .stagger-item {
   animation-fill-mode: both;
 }

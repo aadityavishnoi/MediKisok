@@ -273,7 +273,7 @@ export default function App() {
                     }`}
                   >
                     <span className={`text-[11px] font-semibold uppercase tracking-wider block ${isLight ? 'text-slate-500' : 'text-blue-400'}`}>{item.label}</span>
-                    <div className="text-3xl font-extrabold font-mono mt-1">{item.val}</div>
+                    <div className="text-3xl font-extrabold mt-1">{item.val}</div>
                     <span className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-blue-300'}`}>{item.sub}</span>
                   </div>
                 ))}
@@ -507,7 +507,7 @@ export default function App() {
                     isLight ? `${item.lightColor} shadow-xs` : `${item.darkColor}`
                   }`}>
                     <span className={`block text-[10px] uppercase font-bold ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>{item.label}</span>
-                    <span className="text-3xl font-extrabold font-mono mt-1 block">{item.val}</span>
+                    <span className="text-3xl font-extrabold mt-1 block">{item.val}</span>
                   </div>
                 ))}
               </div>

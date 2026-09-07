@@ -2,14 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  .font-heading {
-    font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+@layer base {
+  html, body {
+    font-family: 'Outfit', sans-serif !important;
   }
-  .font-display {
-    font-family: 'Plus Jakarta Sans', sans-serif;
-  }
+}
 
+@layer utilities {
   /* Micro-animations */
   @keyframes fadeIn {
     from {
@@ -42,3 +41,9 @@
     background: rgba(59, 130, 246, 0.6);
   }
 }
+
+/* Global Font Override - Outfit everywhere */
+*, ::before, ::after, html, body, .font-sans, .font-display, .font-heading, .font-mono, code, pre, kbd, samp {
+  font-family: 'Outfit', sans-serif !important;
+}
+

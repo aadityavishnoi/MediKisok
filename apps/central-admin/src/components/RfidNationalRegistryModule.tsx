@@ -86,7 +86,7 @@ export function RfidNationalRegistryModule() {
             style={{ animationDelay: `${idx * 40}ms` }}
           >
             <span className="text-[10px] font-bold uppercase tracking-wider block opacity-70">{item.label}</span>
-            <span className="text-xl font-extrabold font-mono mt-1 block">{item.val}</span>
+            <span className="text-xl font-extrabold mt-1 block">{item.val}</span>
           </div>
         ))}
       </div>

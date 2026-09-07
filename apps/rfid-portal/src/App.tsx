@@ -268,7 +268,7 @@ export default function App() {
                     <span className={`text-[10px] font-bold uppercase tracking-wider block ${isLight ? 'text-slate-400' : 'opacity-70'}`}>
                       {item.label}
                     </span>
-                    <span className="text-xl font-extrabold font-mono mt-1 block">{item.val}</span>
+                    <span className="text-xl font-extrabold mt-1 block">{item.val}</span>
                   </div>
                 ))}
               </div>
