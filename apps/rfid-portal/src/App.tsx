@@ -20,7 +20,9 @@ import {
   Layers,
   Radio,
   RefreshCw,
-  UserCheck
+  UserCheck,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 interface CardRow {
@@ -42,6 +44,7 @@ const INITIAL_CARDS: CardRow[] = [
 ];
 
 export default function App() {
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [activeNav, setActiveNav] = useState('inventory');
   const [search, setSearch] = useState('');
   const [cards, setCards] = useState<CardRow[]>(INITIAL_CARDS);
@@ -97,26 +100,32 @@ export default function App() {
     { id: 'hardware_readers', label: 'Reader Antenna Telemetry', icon: Radio, badge: '13.56MHz' },
   ];
 
+  const isLight = theme === 'light';
+
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[#090D16] text-slate-100 font-sans flex selection:bg-blue-600 selection:text-white antialiased">
+    <div className={`h-screen w-screen overflow-hidden font-display flex transition-colors duration-300 antialiased ${
+      isLight ? 'bg-slate-50 text-slate-900 selection:bg-blue-500 selection:text-white' : 'bg-[#090D16] text-slate-100 selection:bg-blue-600 selection:text-white'
+    }`}>
       {/* Sidebar Navigation */}
-      <aside className="w-80 h-full bg-white/[0.03] border-r border-white/10 backdrop-blur-md flex flex-col shrink-0 overflow-hidden">
-        <div className="px-5 py-4 flex items-center gap-3 border-b border-white/10 shrink-0">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-extrabold text-lg shadow-[0_0_20px_rgba(59,130,246,0.5)]">
+      <aside className={`w-80 h-full border-r backdrop-blur-md flex flex-col shrink-0 overflow-hidden transition-colors duration-300 ${
+        isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-white/[0.03] border-white/10'
+      }`}>
+        <div className={`px-5 py-4 flex items-center gap-3 border-b shrink-0 ${isLight ? 'border-slate-100' : 'border-white/10'}`}>
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-extrabold text-lg shadow-[0_0_20px_rgba(59,130,246,0.4)]">
             💳
           </div>
           <div>
-            <div className="font-extrabold text-white leading-none text-xs font-display tracking-tight">
+            <div className={`font-extrabold leading-none text-xs font-heading tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
               MediKiosk RFID Token Authority
             </div>
-            <div className="text-[10px] text-blue-400 font-semibold leading-none mt-1 font-mono">
+            <div className="text-[10px] text-blue-500 font-semibold leading-none mt-1 font-mono">
               Cryptographic Card Authority
             </div>
           </div>
         </div>
 
         <nav className="flex-1 px-3 py-3 space-y-1.5 text-xs font-medium overflow-y-auto">
-          <div className="px-3 pb-1 text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">
+          <div className={`px-3 pb-1 text-[9px] font-bold uppercase tracking-wider font-mono ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>
             RFID Token Lifecycle Modules
           </div>
           {SIDEBAR_ITEMS.map((item) => {
@@ -127,10 +136,14 @@ export default function App() {
                 key={item.id}
                 type="button"
                 onClick={() => setActiveNav(item.id)}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all ${
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 ${
                   active
-                    ? 'bg-blue-600 text-white font-bold shadow-[0_0_16px_rgba(59,130,246,0.4)]'
-                    : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                    ? isLight
+                      ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-500/20 scale-[1.01]'
+                      : 'bg-blue-600 text-white font-bold shadow-[0_0_16px_rgba(59,130,246,0.4)] scale-[1.01]'
+                    : isLight
+                      ? 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      : 'text-slate-300 hover:bg-white/5 hover:text-white'
                 }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0 pr-2">
@@ -138,7 +151,11 @@ export default function App() {
                   <span className="truncate">{item.label}</span>
                 </div>
                 {item.badge && (
-                  <span className="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase shrink-0 whitespace-nowrap bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                  <span className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase shrink-0 whitespace-nowrap ${
+                    isLight
+                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                      : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                  }`}>
                     {item.badge}
                   </span>
                 )}
@@ -148,13 +165,15 @@ export default function App() {
         </nav>
 
         {/* Footer Status */}
-        <div className="p-3 border-t border-white/10 shrink-0">
-          <div className="flex items-center justify-between text-xs font-semibold text-emerald-400 bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/20">
+        <div className={`p-3 border-t shrink-0 ${isLight ? 'border-slate-100' : 'border-white/10'}`}>
+          <div className={`flex items-center justify-between text-xs font-semibold p-2.5 rounded-xl border ${
+            isLight ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+          }`}>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-[11px]">13.56MHz Reader Active</span>
             </div>
-            <span className="font-mono text-[10px] text-emerald-300">ISO 14443A</span>
+            <span className="font-mono text-[10px]">ISO 14443A</span>
           </div>
         </div>
       </aside>
@@ -162,67 +181,113 @@ export default function App() {
       {/* Main Content Viewport */}
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
         {/* Header */}
-        <header className="h-16 bg-white/[0.03] border-b border-white/10 backdrop-blur-md flex items-center justify-between px-8 shrink-0 z-30">
+        <header className={`h-16 border-b flex items-center justify-between px-8 shrink-0 z-30 transition-colors duration-300 ${
+          isLight ? 'bg-white/90 border-slate-200/80 backdrop-blur-md' : 'bg-white/[0.03] border-white/10 backdrop-blur-md'
+        }`}>
           <div className="w-96 max-w-full relative">
-            <Search size={16} className="absolute left-3.5 top-3.5 text-slate-400" />
+            <Search size={16} className={`absolute left-3.5 top-3.5 ${isLight ? 'text-slate-400' : 'text-slate-400'}`} />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500/50"
+              className={`w-full border rounded-xl pl-10 pr-4 py-2 text-xs transition-colors focus:outline-none ${
+                isLight
+                  ? 'bg-slate-100/70 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500'
+                  : 'bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-blue-500/50'
+              }`}
               placeholder="Search card UID, patient name, facility, security tokens..."
             />
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20 font-mono">
+            {/* Theme Switcher Button */}
+            <button
+              type="button"
+              onClick={() => setTheme(isLight ? 'dark' : 'light')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${
+                isLight
+                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                  : 'bg-white/10 hover:bg-white/20 text-white border-white/20'
+              }`}
+            >
+              {isLight ? (
+                <>
+                  <Sun size={14} className="text-amber-500" />
+                  <span>Light Mode</span>
+                </>
+              ) : (
+                <>
+                  <Moon size={14} className="text-blue-400" />
+                  <span>Dark Mode</span>
+                </>
+              )}
+            </button>
+
+            <div className={`flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded-xl border ${
+              isLight ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+            }`}>
               <Lock size={14} />
-              <span>Zero PHI On Chip Policy</span>
+              <span>Zero PHI On Chip</span>
             </div>
 
-            <div className="flex items-center gap-3 border-l border-white/10 pl-4">
-              <div className="w-9 h-9 rounded-xl bg-blue-600/30 border border-blue-500/40 flex items-center justify-center font-bold text-blue-300 text-xs shadow-inner font-mono">
+            <div className={`flex items-center gap-3 border-l pl-4 ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
+              <div className="w-9 h-9 rounded-xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center font-bold text-blue-600 text-xs shadow-inner font-mono">
                 CARD
               </div>
               <div className="text-xs">
-                <div className="font-bold leading-none text-white font-display">RFID Encoding Desk</div>
-                <div className="text-[10px] text-slate-400 leading-none mt-1 font-mono">Operator: ENCODER-DEL-01</div>
+                <div className={`font-bold leading-none font-heading ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  RFID Encoding Desk
+                </div>
+                <div className={`text-[10px] leading-none mt-1 font-mono ${isLight ? 'text-slate-400' : 'text-slate-400'}`}>
+                  Operator: ENCODER-DEL-01
+                </div>
               </div>
             </div>
           </div>
         </header>
 
         {/* Main Viewport */}
-        <main className="p-6 space-y-6 max-w-7xl mx-auto w-full flex-1 overflow-y-auto">
+        <main className="p-6 space-y-6 max-w-7xl mx-auto w-full flex-1 overflow-y-auto animate-fade-in">
           {activeNav === 'inventory' && (
             <div className="space-y-6">
               {/* Token Stats Cards */}
               <div className="grid grid-cols-6 gap-3">
                 {[
-                  { label: 'Total Batch Stock', val: '100,000', color: 'border-blue-500/30 bg-blue-500/10 text-blue-300' },
-                  { label: 'Available Stock', val: '45,000', color: 'border-slate-500/30 bg-slate-500/10 text-slate-300' },
-                  { label: 'Assigned Cards', val: '35,000', color: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-300' },
-                  { label: 'Active Sessions', val: '18,420', color: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' },
-                  { label: 'Suspended Cards', val: '412', color: 'border-amber-500/30 bg-amber-500/10 text-amber-300' },
-                  { label: 'Damaged / Retired', val: '1,388', color: 'border-red-500/30 bg-red-500/10 text-red-300' },
+                  { label: 'Total Batch Stock', val: '100,000', lightColor: 'bg-white border-blue-200 text-blue-900', darkColor: 'border-blue-500/30 bg-blue-500/10 text-blue-300' },
+                  { label: 'Available Stock', val: '45,000', lightColor: 'bg-white border-slate-200 text-slate-900', darkColor: 'border-slate-500/30 bg-slate-500/10 text-slate-300' },
+                  { label: 'Assigned Cards', val: '35,000', lightColor: 'bg-white border-cyan-200 text-cyan-900', darkColor: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-300' },
+                  { label: 'Active Sessions', val: '18,420', lightColor: 'bg-white border-emerald-200 text-emerald-900', darkColor: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' },
+                  { label: 'Suspended Cards', val: '412', lightColor: 'bg-white border-amber-200 text-amber-900', darkColor: 'border-amber-500/30 bg-amber-500/10 text-amber-300' },
+                  { label: 'Damaged / Retired', val: '1,388', lightColor: 'bg-white border-red-200 text-red-900', darkColor: 'border-red-500/30 bg-red-500/10 text-red-300' },
                 ].map((item, idx) => (
-                  <div key={idx} className={`p-3 rounded-2xl border ${item.color} backdrop-blur-md text-center`}>
-                    <span className="text-[10px] font-bold uppercase tracking-wider block opacity-70">{item.label}</span>
+                  <div
+                    key={idx}
+                    className={`p-3.5 rounded-2xl border text-center transition-all duration-200 hover:scale-[1.02] hover:shadow-md ${
+                      isLight ? `${item.lightColor} shadow-xs` : `${item.darkColor} backdrop-blur-md`
+                    }`}
+                  >
+                    <span className={`text-[10px] font-bold uppercase tracking-wider block ${isLight ? 'text-slate-400' : 'opacity-70'}`}>
+                      {item.label}
+                    </span>
                     <span className="text-xl font-extrabold font-mono mt-1 block">{item.val}</span>
                   </div>
                 ))}
               </div>
 
               {/* Master Inventory Table */}
-              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 backdrop-blur-md space-y-4">
+              <div className={`border rounded-2xl p-5 space-y-4 transition-colors duration-300 ${
+                isLight ? 'bg-white border-slate-200/80 shadow-xs' : 'bg-white/[0.03] border-white/10 backdrop-blur-md'
+              }`}>
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Key size={16} className="text-blue-400" />
+                  <h3 className={`text-sm font-bold font-heading flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                    <Key size={16} className="text-blue-500" />
                     RFID Card Token Master Inventory
                   </h3>
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
-                    className="bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+                    className={`border rounded-xl px-3 py-1.5 text-xs focus:outline-none ${
+                      isLight ? 'bg-slate-100 border-slate-300 text-slate-800' : 'bg-white/5 border-white/10 text-slate-200'
+                    }`}
                   >
                     <option value="All">All Card Statuses</option>
                     <option value="Available">Available</option>
@@ -234,7 +299,7 @@ export default function App() {
 
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-white/10 text-slate-400 font-semibold">
+                    <tr className={`border-b font-semibold ${isLight ? 'border-slate-200 text-slate-500' : 'border-white/10 text-slate-400'}`}>
                       <th className="pb-3">13.56MHz UID</th>
                       <th className="pb-3">Patient Identity</th>
                       <th className="pb-3">ABHA Address</th>
@@ -243,22 +308,25 @@ export default function App() {
                       <th className="pb-3 text-right">Cryptographic Token</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/5 font-mono text-[11px]">
+                  <tbody className={`divide-y font-mono text-[11px] ${isLight ? 'divide-slate-100' : 'divide-white/5'}`}>
                     {filteredCards.map((c) => (
-                      <tr key={c.uid} className="hover:bg-white/5">
-                        <td className="py-3 font-bold text-blue-300">{c.uid}</td>
-                        <td className="py-3 text-white font-sans font-bold">{c.patientName}</td>
-                        <td className="py-3 text-cyan-300">{c.abhaId}</td>
-                        <td className="py-3 text-slate-300 font-sans">{c.facility}</td>
+                      <tr key={c.uid} className={`transition-colors ${isLight ? 'hover:bg-slate-50' : 'hover:bg-white/5'}`}>
+                        <td className="py-3 font-bold text-blue-600">{c.uid}</td>
+                        <td className={`py-3 font-sans font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{c.patientName}</td>
+                        <td className="py-3 text-cyan-600 font-bold">{c.abhaId}</td>
+                        <td className={`py-3 font-sans ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>{c.facility}</td>
                         <td className="py-3">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            c.status === 'Active' ? 'bg-emerald-500/20 text-emerald-300' :
-                            c.status === 'Available' ? 'bg-slate-500/20 text-slate-300' : 'bg-amber-500/20 text-amber-300'
+                          <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold border ${
+                            c.status === 'Active'
+                              ? isLight ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                              : c.status === 'Available'
+                              ? isLight ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-slate-500/20 text-slate-300 border-slate-500/30'
+                              : isLight ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
                           }`}>
                             {c.status}
                           </span>
                         </td>
-                        <td className="py-3 text-right text-slate-500 text-[10px]">{c.securityToken}</td>
+                        <td className={`py-3 text-right text-[10px] ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>{c.securityToken}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -269,38 +337,44 @@ export default function App() {
 
           {activeNav === 'enrollment' && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-white flex items-center gap-3">
-                    <PlusCircle className="text-blue-400" />
-                    RFID Card Encoding & Patient Issuance Desk
-                  </h2>
-                  <p className="text-xs text-slate-400 mt-1">
-                    USB Reader Tap Simulation → Tokenize UID → Link ABHA → Revocable Patient Consent → 1-Click Activate
-                  </p>
-                </div>
+              <div>
+                <h2 className={`text-xl font-extrabold font-heading flex items-center gap-3 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  <PlusCircle className="text-blue-500" />
+                  RFID Card Encoding & Patient Issuance Desk
+                </h2>
+                <p className={`text-xs mt-1 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                  USB Reader Tap Simulation → Tokenize UID → Link ABHA → Revocable Patient Consent → 1-Click Activate
+                </p>
               </div>
 
               <div className="grid grid-cols-12 gap-6">
                 {/* Hardware Reader Tap Terminal */}
-                <div className="col-span-5 bg-white/[0.03] border border-white/10 rounded-2xl p-5 backdrop-blur-md space-y-4">
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Radio size={16} className="text-emerald-400 animate-pulse" />
+                <div className={`col-span-5 border rounded-2xl p-5 space-y-4 ${
+                  isLight ? 'bg-white border-slate-200/80 shadow-xs' : 'bg-white/[0.03] border-white/10 backdrop-blur-md'
+                }`}>
+                  <h3 className={`text-sm font-bold font-heading flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                    <Radio size={16} className="text-emerald-500 animate-pulse" />
                     USB 13.56MHz Hardware Antenna Reader
                   </h3>
 
-                  <div className="p-6 bg-gradient-to-tr from-blue-950/40 via-slate-900 to-indigo-950/40 border border-blue-500/30 rounded-2xl text-center space-y-3">
-                    <div className="w-20 h-20 mx-auto rounded-full bg-blue-600/20 border-2 border-blue-500 flex items-center justify-center text-white text-2xl shadow-[0_0_30px_rgba(59,130,246,0.4)] animate-pulse">
+                  <div className={`p-6 border rounded-2xl text-center space-y-3 ${
+                    isLight ? 'bg-gradient-to-tr from-blue-50 via-slate-50 to-indigo-50 border-blue-200' : 'bg-gradient-to-tr from-blue-950/40 via-slate-900 to-indigo-950/40 border-blue-500/30'
+                  }`}>
+                    <div className="w-20 h-20 mx-auto rounded-full bg-blue-600/20 border-2 border-blue-500 flex items-center justify-center text-2xl shadow-[0_0_30px_rgba(59,130,246,0.3)] animate-pulse">
                       💳
                     </div>
-                    <span className="text-xs text-slate-300 font-medium block">Tap blank card on USB Reader pad</span>
-                    <div className="p-2 bg-black/40 border border-white/10 rounded-xl font-mono text-xs text-emerald-300">
+                    <span className={`text-xs font-medium block ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>Tap blank card on USB Reader pad</span>
+                    <div className={`p-2.5 border rounded-xl font-mono text-xs ${
+                      isLight ? 'bg-white border-slate-200 text-emerald-700 font-bold' : 'bg-black/40 border-white/10 text-emerald-300'
+                    }`}>
                       Scanned UID: <strong>{scannedUid}</strong>
                     </div>
                     <button
                       type="button"
                       onClick={handleSimulateReaderTap}
-                      className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl border border-white/20 transition-all flex items-center justify-center gap-2 mx-auto"
+                      className={`px-4 py-2 font-bold text-xs rounded-xl border transition-all flex items-center justify-center gap-2 mx-auto ${
+                        isLight ? 'bg-white hover:bg-slate-100 text-slate-800 border-slate-300 shadow-xs' : 'bg-white/10 hover:bg-white/20 text-white border-white/20'
+                      }`}
                     >
                       <RefreshCw size={14} />
                       Simulate Tap New Card
@@ -309,51 +383,59 @@ export default function App() {
                 </div>
 
                 {/* Patient Enrollment Form */}
-                <form onSubmit={handleActivateCard} className="col-span-7 bg-white/[0.03] border border-white/10 rounded-2xl p-5 backdrop-blur-md space-y-4">
-                  <h3 className="text-sm font-bold text-white">Patient Identity & ABHA Token Mapping</h3>
+                <form onSubmit={handleActivateCard} className={`col-span-7 border rounded-2xl p-5 space-y-4 ${
+                  isLight ? 'bg-white border-slate-200/80 shadow-xs' : 'bg-white/[0.03] border-white/10 backdrop-blur-md'
+                }`}>
+                  <h3 className={`text-sm font-bold font-heading ${isLight ? 'text-slate-900' : 'text-white'}`}>Patient Identity & ABHA Token Mapping</h3>
 
                   {enrolledSuccess && (
-                    <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-300 flex items-center gap-2">
-                      <CheckCircle2 size={16} />
+                    <div className="p-3 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs flex items-center gap-2">
+                      <CheckCircle2 size={16} className="text-emerald-600" />
                       <span>RFID Card activated successfully! UID tokenized & mapped to patient.</span>
                     </div>
                   )}
 
                   <div className="space-y-3 text-xs">
                     <div>
-                      <label className="text-slate-400 font-medium block mb-1">Full Patient Name *</label>
+                      <label className={`font-medium block mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>Full Patient Name *</label>
                       <input
                         type="text"
                         required
                         value={patientInput}
                         onChange={(e) => setPatientInput(e.target.value)}
                         placeholder="e.g. Ramesh Kumar"
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+                        className={`w-full border rounded-xl px-3 py-2 text-xs focus:outline-none ${
+                          isLight ? 'bg-slate-50 border-slate-300 text-slate-900 focus:border-blue-500' : 'bg-white/5 border-white/10 text-white focus:border-blue-500'
+                        }`}
                       />
                     </div>
 
                     <div>
-                      <label className="text-slate-400 font-medium block mb-1">ABHA Health ID / Address (Optional)</label>
+                      <label className={`font-medium block mb-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>ABHA Health ID / Address (Optional)</label>
                       <input
                         type="text"
                         value={abhaInput}
                         onChange={(e) => setAbhaInput(e.target.value)}
                         placeholder="e.g. ramesh@abdm or ABHA-91-8821-0042"
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500 font-mono"
+                        className={`w-full border rounded-xl px-3 py-2 text-xs font-mono focus:outline-none ${
+                          isLight ? 'bg-slate-50 border-slate-300 text-slate-900 focus:border-blue-500' : 'bg-white/5 border-white/10 text-white focus:border-blue-500'
+                        }`}
                       />
                     </div>
 
-                    <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl space-y-2">
+                    <div className={`p-3 border rounded-xl space-y-2 ${
+                      isLight ? 'bg-blue-50/70 border-blue-200' : 'bg-blue-500/10 border-blue-500/20'
+                    }`}>
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={consentChecked}
                           onChange={(e) => setConsentChecked(e.target.checked)}
-                          className="rounded border-white/20 bg-white/10 text-blue-600 focus:ring-0"
+                          className="rounded border-slate-300 bg-white text-blue-600 focus:ring-0"
                         />
-                        <span className="font-bold text-white text-[11px]">DPDP 2023 Digital Consent Confirmation</span>
+                        <span className={`font-bold text-[11px] ${isLight ? 'text-blue-900' : 'text-white'}`}>DPDP 2023 Digital Consent Confirmation</span>
                       </label>
-                      <p className="text-[10px] text-slate-400 leading-tight">
+                      <p className={`text-[10px] leading-tight ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                         Patient grants consent for session tokenization. Card contains no sensitive medical or personal health data on chip.
                       </p>
                     </div>
@@ -362,7 +444,7 @@ export default function App() {
                   <button
                     type="submit"
                     disabled={!consentChecked || !patientInput}
-                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/30 transition-all disabled:opacity-50"
+                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-500/20 transition-all disabled:opacity-50"
                   >
                     Activate & Issue RFID Token Card
                   </button>
@@ -373,28 +455,32 @@ export default function App() {
 
           {activeNav === 'security_audit' && (
             <div className="space-y-6">
-              <h2 className="text-xl font-bold text-white flex items-center gap-3">
-                <ShieldAlert className="text-amber-400" />
+              <h2 className={`text-xl font-extrabold font-heading flex items-center gap-3 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                <ShieldAlert className="text-amber-500" />
                 Security, Clone Audit & Anomaly Sentinel
               </h2>
 
               <div className="grid grid-cols-2 gap-4 text-xs">
-                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl space-y-2">
-                  <span className="font-bold text-red-300 block text-sm">Cloned Card Detection Alert</span>
-                  <p className="text-slate-400 text-[11px]">
+                <div className={`p-4 border rounded-2xl space-y-2 ${
+                  isLight ? 'bg-red-50/80 border-red-200' : 'bg-red-500/10 border-red-500/20'
+                }`}>
+                  <span className={`font-bold block text-sm ${isLight ? 'text-red-900' : 'text-red-300'}`}>Cloned Card Detection Alert</span>
+                  <p className={`text-[11px] ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                     Duplicate UID `04:A7:99:FF` attempted simultaneous scan at AIIMS Delhi & KEM Mumbai within 5 minutes.
                   </p>
-                  <button type="button" className="px-3 py-1.5 bg-red-600 text-white font-bold rounded-xl text-[10px]">
+                  <button type="button" className="px-3 py-1.5 bg-red-600 text-white font-bold rounded-xl text-[10px] shadow-sm">
                     Revoke Token Immediately
                   </button>
                 </div>
 
-                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl space-y-2">
-                  <span className="font-bold text-amber-300 block text-sm">Rapid Re-Tap Anomaly</span>
-                  <p className="text-slate-400 text-[11px]">
+                <div className={`p-4 border rounded-2xl space-y-2 ${
+                  isLight ? 'bg-amber-50/80 border-amber-200' : 'bg-amber-500/10 border-amber-500/20'
+                }`}>
+                  <span className={`font-bold block text-sm ${isLight ? 'text-amber-900' : 'text-amber-300'}`}>Rapid Re-Tap Anomaly</span>
+                  <p className={`text-[11px] ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                     UID `04:B2:11:09` registered 14 tap events in 20 seconds at Kiosk KSK-DEL-014.
                   </p>
-                  <button type="button" className="px-3 py-1.5 bg-amber-600 text-white font-bold rounded-xl text-[10px]">
+                  <button type="button" className="px-3 py-1.5 bg-amber-600 text-white font-bold rounded-xl text-[10px] shadow-sm">
                     Quarantine Card Session
                   </button>
                 </div>
@@ -404,16 +490,18 @@ export default function App() {
 
           {activeNav === 'facility_distribution' && (
             <div className="space-y-6">
-              <h2 className="text-xl font-bold text-white">Hospital Reception Desk Allocation Grid</h2>
+              <h2 className={`text-xl font-extrabold font-heading ${isLight ? 'text-slate-900' : 'text-white'}`}>Hospital Reception Desk Allocation Grid</h2>
               <div className="grid grid-cols-3 gap-4 text-xs">
                 {[
                   { facility: 'AIIMS New Delhi Main OPD', allocated: '12,500 Cards', status: 'Active' },
                   { facility: 'KEM Hospital Mumbai', allocated: '8,000 Cards', status: 'Active' },
                   { facility: 'Bowring Hospital Bengaluru', allocated: '4,500 Cards', status: 'Active' },
                 ].map((f, idx) => (
-                  <div key={idx} className="p-4 bg-white/[0.03] border border-white/10 rounded-2xl space-y-2">
-                    <span className="font-bold text-white text-sm block">{f.facility}</span>
-                    <span className="text-blue-300 font-mono block">Allocated: {f.allocated}</span>
+                  <div key={idx} className={`p-4 border rounded-2xl space-y-2 ${
+                    isLight ? 'bg-white border-slate-200/80 shadow-xs' : 'bg-white/[0.03] border-white/10'
+                  }`}>
+                    <span className={`font-bold text-sm block font-heading ${isLight ? 'text-slate-900' : 'text-white'}`}>{f.facility}</span>
+                    <span className="text-blue-600 font-mono font-bold block">Allocated: {f.allocated}</span>
                   </div>
                 ))}
               </div>
@@ -422,11 +510,13 @@ export default function App() {
 
           {activeNav === 'hardware_readers' && (
             <div className="space-y-6">
-              <h2 className="text-xl font-bold text-white">Hardware Reader Antenna Telemetry</h2>
-              <div className="p-4 bg-white/[0.03] border border-white/10 rounded-2xl space-y-2 text-xs font-mono">
-                <div className="flex justify-between"><span>Protocol: ISO/IEC 14443 Type A</span><span className="text-emerald-400 font-bold">✓ Verified</span></div>
-                <div className="flex justify-between"><span>Frequency: 13.56 MHz High Frequency</span><span className="text-emerald-400 font-bold">✓ Active</span></div>
-                <div className="flex justify-between"><span>Baud Rate: 115200 bps</span><span className="text-emerald-400 font-bold">✓ Synchronized</span></div>
+              <h2 className={`text-xl font-extrabold font-heading ${isLight ? 'text-slate-900' : 'text-white'}`}>Hardware Reader Antenna Telemetry</h2>
+              <div className={`p-4 border rounded-2xl space-y-2 text-xs font-mono ${
+                isLight ? 'bg-white border-slate-200/80 shadow-xs' : 'bg-white/[0.03] border-white/10'
+              }`}>
+                <div className="flex justify-between"><span>Protocol: ISO/IEC 14443 Type A</span><span className="text-emerald-600 font-bold">✓ Verified</span></div>
+                <div className="flex justify-between"><span>Frequency: 13.56 MHz High Frequency</span><span className="text-emerald-600 font-bold">✓ Active</span></div>
+                <div className="flex justify-between"><span>Baud Rate: 115200 bps</span><span className="text-emerald-600 font-bold">✓ Synchronized</span></div>
               </div>
             </div>
           )}
