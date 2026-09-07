@@ -1,6 +1,6 @@
-import { AlertTriangle, LayoutDashboard, LogOut, Stethoscope } from 'lucide-react';
+import { AlertTriangle, ClipboardCheck, FolderGit2, LayoutDashboard, LogOut, Stethoscope } from 'lucide-react';
 
-export type NavKey = 'dashboard' | 'alerts';
+export type NavKey = 'dashboard' | 'alerts' | 'consultation' | 'records';
 
 export interface SidebarProps {
   active: NavKey;
@@ -10,8 +10,10 @@ export interface SidebarProps {
 }
 
 const NAV_ITEMS: { key: NavKey; label: string; icon: typeof LayoutDashboard }[] = [
-  { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { key: 'dashboard', label: 'OPD Queue', icon: LayoutDashboard },
   { key: 'alerts', label: 'Red Flags', icon: AlertTriangle },
+  { key: 'consultation', label: 'Consultations', icon: ClipboardCheck },
+  { key: 'records', label: 'Patient Records', icon: FolderGit2 },
 ];
 
 export function Sidebar({ active, onNavigate, alertCount, onSignOut }: SidebarProps) {
