@@ -99,3 +99,34 @@ prescriptionsRouter.get('/prescriptions/patient/:patientId', async (req, res, ne
     next(err);
   }
 });
+
+/**
+ * POST /api/rx/check
+ * Developer 2: Evidence-Backed Medicine Safety, NLEM Normalization, and Interaction Engine
+ */
+prescriptionsRouter.post('/rx/check', async (req, res, next) => {
+  try {
+    const { medications, allergies, patientContext } = req.body;
+
+    if (!Array.isArray(medications)) {
+      res.status(400).json({
+        error: { code: 'BAD_REQUEST', message: 'medications must be an array of medication strings' },
+      });
+      return;
+    }
+
+    const rxEngineModulePath = '../../../../ai/rx-engine/src/index.js';
+    const { DrugSafetyEngine } = await (import(rxEngineModulePath) as Promise<any>);
+
+    const result = DrugSafetyEngine.checkPrescriptionSafety({
+      medications,
+      allergies,
+      patientContext,
+    });
+
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
