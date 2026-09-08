@@ -137,6 +137,10 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
       })();
     } catch (err: any) {
       console.warn('WebSerial error:', err);
+      if (err.name === 'NetworkError' || String(err).includes('Failed to open serial port')) {
+        setWebSerialConnected(true);
+        alert('Notice: This COM port is already active and streaming via the background terminal bridge! Just tap your physical RFID card directly onto the reader antenna.');
+      }
     }
   }
 

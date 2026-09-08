@@ -44742,6 +44742,15 @@ var RfidSerialBridge = class _RfidSerialBridge {
           isSimulated: false
         });
         console.log(`[RFID Serial] Intake session established: session=${result.sessionId}, patient=${result.patientId || "NEW"}`);
+        try {
+          await fetch("https://medikiosk-sih26047-three.vercel.app/api/rfid/trigger-scan", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ deviceCode: this.deviceCode, uid: normalizedUid })
+          });
+          console.log(`[RFID Serial Cloud Sync] Synced ${normalizedUid} to live Vercel Kiosk!`);
+        } catch {
+        }
       }
     } catch (err) {
       console.warn(`[RFID Serial] Scan processing notice for UID ${normalizedUid}: ${err.message || err}`);
@@ -47078,8 +47087,15 @@ documentsRouter.post("/documents/scan", async (req, res, next) => {
       return;
     }
     const docType = normalizeDocType(type);
-    const ocrService = new GeminiVisionOcrService({ apiKey: env.GEMINI_API_KEY });
-    const result = await ocrService.processDocumentImage(imageBase64, mimeType || "image/jpeg", docType);
+    let result;
+    try {
+      const ocrService = new GeminiVisionOcrService({ apiKey: env.GEMINI_API_KEY });
+      result = await ocrService.processDocumentImage(imageBase64, mimeType || "image/jpeg", docType);
+    } catch (ocrErr) {
+      console.warn("[documents/scan] OCR notice, engaging clinical fallback:", ocrErr?.message);
+      const fallback = new FallbackOcrService();
+      result = await fallback.processDocumentImage(imageBase64, mimeType || "image/jpeg", docType);
+    }
     let documentId = `doc_${Date.now()}`;
     let imagekitUrl = "";
     try {

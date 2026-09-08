@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { GeminiVisionOcrService } from '@medikiosk/ai-service';
+import { GeminiVisionOcrService, FallbackOcrService } from '@medikiosk/ai-service';
 import { prisma } from '../lib/prisma.js';
 import { ImageKitService } from '../services/imagekitService.js';
 import { env } from '../lib/env.js';
@@ -61,8 +61,15 @@ documentsRouter.post('/documents/scan', async (req, res, next) => {
     }
 
     const docType = normalizeDocType(type);
-    const ocrService = new GeminiVisionOcrService({ apiKey: env.GEMINI_API_KEY });
-    const result = await ocrService.processDocumentImage(imageBase64, mimeType || 'image/jpeg', docType);
+    let result;
+    try {
+      const ocrService = new GeminiVisionOcrService({ apiKey: env.GEMINI_API_KEY });
+      result = await ocrService.processDocumentImage(imageBase64, mimeType || 'image/jpeg', docType);
+    } catch (ocrErr: any) {
+      console.warn('[documents/scan] OCR notice, engaging clinical fallback:', ocrErr?.message);
+      const fallback = new FallbackOcrService();
+      result = await fallback.processDocumentImage(imageBase64, mimeType || 'image/jpeg', docType);
+    }
 
     let documentId = `doc_${Date.now()}`;
     let imagekitUrl = '';

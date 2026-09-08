@@ -431,6 +431,16 @@ export class RfidSerialBridge {
           isSimulated: false,
         });
         console.log(`[RFID Serial] Intake session established: session=${result.sessionId}, patient=${result.patientId || 'NEW'}`);
+
+        // Forward to live Vercel kiosk deployment
+        try {
+          await fetch('https://medikiosk-sih26047-three.vercel.app/api/rfid/trigger-scan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ deviceCode: this.deviceCode, uid: normalizedUid }),
+          });
+          console.log(`[RFID Serial Cloud Sync] Synced ${normalizedUid} to live Vercel Kiosk!`);
+        } catch {}
       }
     } catch (err: any) {
       console.warn(`[RFID Serial] Scan processing notice for UID ${normalizedUid}: ${err.message || err}`);

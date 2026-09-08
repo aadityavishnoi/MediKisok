@@ -24,8 +24,8 @@ export function connectWs({ onEvent, onStateChange }: WsClientOptions): () => vo
     const isBrowser = typeof window !== 'undefined';
     const isCloud = isBrowser && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
 
-    // In cloud (e.g. Vercel serverless without persistent WS), fallback to cloud sync mode
-    if (isCloud && retryCount >= 1) {
+    // In cloud (e.g. Vercel serverless without persistent WS), use HTTP polling and cloud sync mode immediately
+    if (isCloud) {
       onStateChange?.('open');
       return;
     }
