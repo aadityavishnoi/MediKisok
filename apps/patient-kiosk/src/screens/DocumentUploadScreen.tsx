@@ -343,24 +343,8 @@ export function DocumentUploadScreen({ sessionId, patientId, language, onComplet
     let base64Image = '';
 
     if (isIpMode) {
-      // 1. Try to extract from rendered image element
-      if (ipImageRef.current) {
-        try {
-          const canvas = document.createElement('canvas');
-          canvas.width = ipImageRef.current.naturalWidth || 1280;
-          canvas.height = ipImageRef.current.naturalHeight || 720;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(ipImageRef.current, 0, 0);
-            base64Image = canvas.toDataURL('image/jpeg', 0.92);
-          }
-        } catch {
-          console.warn('Direct IP canvas extraction had CORS, fetching frame via proxy...');
-        }
-      }
-
-      // 2. Try local Vite dev proxy first (runs on same Wi-Fi network as the phone!)
-      if (!base64Image && phoneIp) {
+      // 1. Try local Vite dev proxy first — verified working to grab high-res JPEG frames from DroidCam on any port (4747 or 5000)
+      if (phoneIp) {
         try {
           const localRes = await fetch(`/local-droidcam-frame?ip=${encodeURIComponent(phoneIp)}`);
           if (localRes.ok) {
@@ -376,30 +360,23 @@ export function DocumentUploadScreen({ sessionId, patientId, language, onComplet
         }
       }
 
-      // 3. Try direct snapshot endpoints on the phone device itself
-      if (!base64Image && phoneIp) {
-        const cleanHost = phoneIp.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-        const hostWithPort = cleanHost.includes(':') ? cleanHost : `${cleanHost}:4747`;
-        const snapshotPaths = ['/cam/1/frame.jpg', '/shot.jpg', '/cam/1/shot.jpg'];
-        for (const p of snapshotPaths) {
-          try {
-            const snapRes = await fetch(`http://${hostWithPort}${p}`, { mode: 'cors' });
-            if (snapRes.ok) {
-              const blob = await snapRes.blob();
-              base64Image = await new Promise<string>((resolve) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result as string);
-                reader.readAsDataURL(blob);
-              });
-              if (base64Image) break;
-            }
-          } catch {
-            // continue
+      // 2. Try direct canvas extraction from rendered image element
+      if (!base64Image && ipImageRef.current) {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = ipImageRef.current.naturalWidth || 1280;
+          canvas.height = ipImageRef.current.naturalHeight || 720;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(ipImageRef.current, 0, 0);
+            base64Image = canvas.toDataURL('image/jpeg', 0.92);
           }
+        } catch {
+          console.warn('Direct IP canvas extraction had CORS, trying next fallback...');
         }
       }
 
-      // 4. Try backend proxy
+      // 3. Try backend proxy
       if (!base64Image && phoneIp) {
         try {
           const proxyRes = await fetch(`/api/devices/droidcam-frame?ip=${encodeURIComponent(phoneIp)}`);
@@ -416,7 +393,7 @@ export function DocumentUploadScreen({ sessionId, patientId, language, onComplet
         }
       }
 
-      // 5. If phone DroidCam was closed/unreachable, try snapshot from any active webcam or PC camera
+      // 4. Try snapshot from any active PC webcam
       if (!base64Image && videoRef.current) {
         const v = videoRef.current;
         const w = v.videoWidth || v.clientWidth || 1280;
@@ -435,8 +412,12 @@ export function DocumentUploadScreen({ sessionId, patientId, language, onComplet
         }
       }
 
-      // 6. If still no camera frame (e.g. phone DroidCam app camera is busy/locked by another app or closed), fall back to clinical sample
-      if (!base64Image) {
+      // 5. If genuine live frame was captured, clear any lingering error/discovery notices
+      if (base64Image && base64Image.length > 500) {
+        setDiscoveryMsg(null);
+        setScanErrorMessage(null);
+      } else {
+        // Fall back to sample clinical document so the workflow doesn't completely halt
         base64Image = createSampleClinicalDocument(docType);
         setDiscoveryMsg(
           isHindi
@@ -528,8 +509,10 @@ export function DocumentUploadScreen({ sessionId, patientId, language, onComplet
 
   const cleanIpUrl = formatIp(phoneIp);
   const rawVideoFeedUrl = cleanIpUrl.endsWith('/video') ? cleanIpUrl : `${cleanIpUrl}/video`;
+  // Use local Vite dev proxy directly to bypass browser CORS / mixed content and grab smooth frames
+  const localProxyFeedUrl = `/local-droidcam-frame?ip=${encodeURIComponent(phoneIp)}&_t=${streamNonce}`;
   const videoFeedUrl = useProxyFeed
-    ? `/api/devices/droidcam-frame?ip=${encodeURIComponent(phoneIp)}&_t=${streamNonce}`
+    ? localProxyFeedUrl
     : rawVideoFeedUrl;
 
   return (
@@ -743,6 +726,7 @@ export function DocumentUploadScreen({ sessionId, patientId, language, onComplet
               <img
                 ref={ipImageRef}
                 src={videoFeedUrl}
+                crossOrigin="anonymous"
                 alt="DroidCam Stream"
                 className="w-full h-full object-cover transition-opacity duration-300"
                 onError={() => {
