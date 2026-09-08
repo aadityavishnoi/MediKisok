@@ -1,11 +1,9 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createApp } from '../apps/backend/src/app.js';
+let appInstance: any = null;
 
-let app: any = null;
-
-export default function handler(req: VercelRequest, res: VercelResponse) {
-  if (!app) {
-    app = createApp();
+export default async function handler(req: any, res: any) {
+  if (!appInstance) {
+    const { createApp } = await import('../apps/backend/src/app.js');
+    appInstance = createApp();
   }
-  return app(req, res);
+  return appInstance(req, res);
 }
