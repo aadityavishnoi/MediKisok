@@ -81,9 +81,8 @@ aiRouter.post('/ai/next-question', async (req, res, next) => {
       return;
     }
 
-    // Load NextBestQuestionRanker via dynamic path
-    const clinicalAiPath = '../../../../ai/clinical-ai/src/index.js';
-    const { NextBestQuestionRanker } = await (import(clinicalAiPath) as Promise<any>);
+    // Import NextBestQuestionRanker dynamically/directly
+    const { NextBestQuestionRanker } = await import('../../../../ai/clinical-ai/src/index.js');
     const result = NextBestQuestionRanker.selectNextQuestion({
       patientState,
       regionalSignal,
