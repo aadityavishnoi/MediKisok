@@ -363,7 +363,7 @@ export function ConsultationScreen({
                           <div className="truncate">
                             <p className="font-bold text-slate-800 truncate">{doc.originalFilename}</p>
                             <p className="text-[10px] text-slate-400">
-                              {doc.type} · Confidence: {Math.round(doc.ocrConfidence <= 1 ? doc.ocrConfidence * 100 : doc.ocrConfidence)}%
+                              {doc.type} · Confidence: {Math.round((doc.ocrConfidence ?? 0.95) <= 1 ? (doc.ocrConfidence ?? 0.95) * 100 : (doc.ocrConfidence ?? 95))}%
                             </p>
                           </div>
                         </div>
