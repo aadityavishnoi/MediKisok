@@ -104,3 +104,12 @@ npm --filter surveillance test
 ```
 
 All 34 tests in `phase2Intelligence.test.ts` and `surveillance.test.ts` pass cleanly with 0 failures.
+
+---
+
+## 6. Doctor Workflow & Central Admin Integration (Phase 4)
+
+- **Doctor Consultation Radar:** Live regional surveillance banners in `ConsultationScreen.tsx` and `DashboardScreen.tsx` displaying district activity level, affected facility count, 7d/14d forecasts, and clinical review mandate (`individualDiagnosis: false`).
+- **Central Admin Data Contract:** `GET /api/surveillance/central-admin/overview` exposes national overview, state risk, district risk, disease trends, 7d/14d forecasts, affected facilities, data quality scores, and model versions.
+- **Shared AI Contract:** Canonical schemas in `ai/shared/schemas/` (`regional-signal.json`, `forecast.json`, `consultation-ai-context.json`).
+

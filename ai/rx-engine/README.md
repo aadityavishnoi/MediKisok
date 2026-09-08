@@ -146,3 +146,12 @@ All 18 safety tests cover:
 - Drug-allergy cross-reactivity
 - Fail-safe UNKNOWN handling
 - Evidence provenance completeness
+
+---
+
+## Doctor Workflow & Prescription Cockpit Integration (Phase 4)
+
+- **Doctor Dashboard Prescription Cockpit:** Live Medication Safety Review panel in `ConsultationRxWriter.tsx` evaluating DDI risks, duplicate therapy, allergy cross-reactivities, and Jan Aushadhi generic alternatives as the doctor types or adjusts presets.
+- **Fail-Safe Mechanism:** If the Rx engine is unavailable, the system safely falls back to `status: "REVIEW_REQUIRED"` with `doctorReviewRequired: true` — it never claims an unverified regimen is "SAFE".
+- **Physician Final Decision:** All safety alerts are advisory clinical decision support; the doctor makes the final clinical decision (`POST /api/consultations/:id/complete`).
+
