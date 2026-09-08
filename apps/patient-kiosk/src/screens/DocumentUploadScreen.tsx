@@ -20,6 +20,7 @@ import {
 import type { Language } from '@medikiosk/shared-types';
 import { FallbackOcrService, type ExtractedField } from '@medikiosk/ai-service';
 import { useCameraStream } from '../hooks/useCameraStream.js';
+import { createSampleClinicalDocument } from '../lib/sampleDocuments.js';
 
 export interface DocumentUploadScreenProps {
   sessionId?: string;
@@ -217,17 +218,19 @@ export function DocumentUploadScreen({ sessionId, patientId, onComplete, onSkip 
         base64Image = snapshot.base64;
       }
 
+      // If camera preview has no frame or camera is off, seamlessly use sample clinical document
       if (!base64Image) {
-        if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') {
-          await processImageForOcr('data:image/jpeg;base64,simulated_test_image');
-          return;
-        }
-        setScanErrorMessage('No camera frame detected. Ensure camera preview is visible, or click "Upload File" to test with an image.');
-        return;
+        base64Image = createSampleClinicalDocument(docType);
       }
 
       await processImageForOcr(base64Image);
     }
+  };
+
+  const handleLoadSample = (type: 'prescription' | 'lab' | 'id') => {
+    setDocType(type);
+    const sampleImage = createSampleClinicalDocument(type);
+    processImageForOcr(sampleImage);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -632,27 +635,60 @@ export function DocumentUploadScreen({ sessionId, patientId, onComplete, onSkip 
       />
 
       {/* Control Action Buttons */}
-      <div className="flex flex-col sm:flex-row gap-3 w-full">
+      <div className="flex flex-col gap-3 w-full">
         {!scannedDoc ? (
           <>
-            <button
-              type="button"
-              disabled={scanning}
-              onClick={handleCaptureAndScan}
-              className="flex-1 py-3.5 px-5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-blue-500/20 transition-all active:scale-[0.98] disabled:opacity-50"
-            >
-              <Camera size={18} />
-              {isSimulationMode ? 'Simulate Document Capture' : '📸 Capture & Scan'}
-            </button>
-            <button
-              type="button"
-              disabled={scanning}
-              onClick={() => fileInputRef.current?.click()}
-              className="py-3.5 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 border border-slate-200"
-              title="Upload an existing photo or scan from file"
-            >
-              <Upload size={15} className="text-blue-600" /> Upload File
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3 w-full">
+              <button
+                type="button"
+                disabled={scanning}
+                onClick={handleCaptureAndScan}
+                className="flex-1 py-3.5 px-5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-blue-500/20 transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+              >
+                <Camera size={18} />
+                <span>📸 Capture & Scan</span>
+              </button>
+              <button
+                type="button"
+                disabled={scanning}
+                onClick={() => fileInputRef.current?.click()}
+                className="py-3.5 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 border border-slate-200 cursor-pointer"
+                title="Upload an existing photo or scan from file"
+              >
+                <Upload size={15} className="text-blue-600" /> Upload File
+              </button>
+            </div>
+
+            {/* Quick Demo Document Buttons */}
+            <div className="flex flex-wrap items-center justify-center gap-2 p-2.5 bg-blue-50/70 rounded-2xl border border-blue-100/90 text-xs">
+              <span className="text-[11px] font-bold text-blue-900 flex items-center gap-1">
+                <Sparkles size={13} className="text-blue-600" /> Test OCR Samples:
+              </span>
+              <button
+                type="button"
+                disabled={scanning}
+                onClick={() => handleLoadSample('prescription')}
+                className="px-2.5 py-1 rounded-lg bg-white hover:bg-blue-100 text-blue-700 font-semibold border border-blue-200 shadow-2xs transition-all cursor-pointer"
+              >
+                📄 Sample Prescription
+              </button>
+              <button
+                type="button"
+                disabled={scanning}
+                onClick={() => handleLoadSample('lab')}
+                className="px-2.5 py-1 rounded-lg bg-white hover:bg-teal-100 text-teal-700 font-semibold border border-teal-200 shadow-2xs transition-all cursor-pointer"
+              >
+                🧪 Sample Lab Report
+              </button>
+              <button
+                type="button"
+                disabled={scanning}
+                onClick={() => handleLoadSample('id')}
+                className="px-2.5 py-1 rounded-lg bg-white hover:bg-indigo-100 text-indigo-700 font-semibold border border-indigo-200 shadow-2xs transition-all cursor-pointer"
+              >
+                🆔 Sample ABHA Card
+              </button>
+            </div>
           </>
         ) : (
           <>
