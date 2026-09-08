@@ -1,6 +1,7 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+  - 'ai/*'
 allowBuilds:
   '@firebase/util': false
   '@prisma/client': true

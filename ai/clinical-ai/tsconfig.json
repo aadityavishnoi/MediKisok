@@ -3,5 +3,14 @@
   "compilerOptions": {
     "moduleResolution": "Bundler"
   },
-  "include": ["src", "../shared/types"]
+  "include": [
+    "src/**/*",
+    "schemas/**/*",
+    "question-engine/**/*",
+    "inference/**/*",
+    "tests/**/*",
+    "preprocessing/**/*",
+    "datasets/**/*",
+    "../shared/types/**/*"
+  ]
 }

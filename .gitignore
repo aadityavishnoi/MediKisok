@@ -13,3 +13,7 @@ coverage/
 *.tsbuildinfo
 .vercel
 .env*
+__pycache__/
+*.pyc
+ai/clinical-ai/datasets/raw/
+ai/clinical-ai/data/cache/

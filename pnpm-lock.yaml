@@ -58,6 +58,22 @@ importers:
         specifier: ^8.8.1
         version: 8.69.0(eslint@9.39.5(jiti@1.21.7)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@5.9.3)
 
+  ai/clinical-ai:
+    dependencies:
+      '@medikiosk/shared-types':
+        specifier: workspace:*
+        version: link:../../packages/shared-types
+      zod:
+        specifier: ^3.23.8
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.2
+        version: 2.1.9(@edge-runtime/vm@3.2.0)(@types/node@22.20.1)(jsdom@25.0.1(supports-color@7.2.0))(supports-color@7.2.0)
+
   apps/backend:
     dependencies:
       '@libsql/client':
@@ -66,6 +82,9 @@ importers:
       '@medikiosk/ai-service':
         specifier: workspace:*
         version: link:../../packages/ai-service
+      '@medikiosk/clinical-ai':
+        specifier: workspace:*
+        version: link:../../ai/clinical-ai
       '@medikiosk/clinical-engine':
         specifier: workspace:*
         version: link:../../packages/clinical-engine
