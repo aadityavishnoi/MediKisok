@@ -111,17 +111,45 @@ export async function handleRfidScan(input: RfidScanInput): Promise<RfidScanResp
   }
   const noPunct = rawUid.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
 
+  // Multi-format UID candidate set for matching against DB cards
+  const candidateUids = new Set<string>([
+    rawUid,
+    rawUid.toUpperCase(),
+    normalizedUid,
+    colonSeparated,
+    noPunct,
+  ]);
+
+  // Decimal to Hex (10-digit USB readers: e.g. 0005234912 or 77740892)
+  if (/^\d{6,11}$/.test(rawUid)) {
+    const num = parseInt(rawUid, 10);
+    if (!isNaN(num) && num <= 0xffffffff) {
+      const hex = num.toString(16).padStart(8, '0').toUpperCase();
+      candidateUids.add(hex);
+      const colonHex = hex.match(/.{2}/g)?.join(':');
+      if (colonHex) candidateUids.add(colonHex);
+      // Reversed byte order (little endian to big endian)
+      const revHex = [hex.slice(6, 8), hex.slice(4, 6), hex.slice(2, 4), hex.slice(0, 2)].join('');
+      candidateUids.add(revHex);
+      const colonRev = revHex.match(/.{2}/g)?.join(':');
+      if (colonRev) candidateUids.add(colonRev);
+    }
+  }
+
+  // Hex to Decimal
+  if (/^[0-9A-Fa-f]{8}$/.test(noPunct)) {
+    const num = parseInt(noPunct, 16);
+    if (!isNaN(num)) {
+      candidateUids.add(num.toString());
+      candidateUids.add(num.toString().padStart(10, '0'));
+    }
+  }
+
   // 1. Check CockroachDB for real registered card
   try {
     card = await prisma.rFIDCard.findFirst({
       where: {
-        OR: [
-          { uid: rawUid },
-          { uid: rawUid.toUpperCase() },
-          { uid: normalizedUid },
-          { uid: colonSeparated },
-          { uid: noPunct },
-        ],
+        uid: { in: Array.from(candidateUids) },
         active: true,
       },
       include: {
@@ -132,25 +160,28 @@ export async function handleRfidScan(input: RfidScanInput): Promise<RfidScanResp
     console.warn('[handleRfidScan] Database lookup notice:', err);
   }
 
-  // 2. If not found in DB and it's a simulated scan or DEMO-RFID token, check DEMO_PATIENTS_MAP
-  if (!card && env.DEMO_MODE && (input.isSimulated || input.uid.startsWith('DEMO-RFID'))) {
-    const demo = DEMO_PATIENTS_MAP[input.uid] || DEMO_PATIENTS_MAP[normalizedUid];
-    if (demo) {
-      card = {
-        uid: demo.uid,
-        patientId: demo.id,
-        isDemo: true,
-        active: true,
-        patient: {
-          id: demo.id,
-          fullName: demo.fullName,
-          dateOfBirth: demo.dateOfBirth,
-          gender: demo.gender,
-          phone: demo.phone,
-          abhaId: demo.abhaId,
-          bloodGroup: 'O+',
-        },
-      };
+  // 2. If not found in DB, check DEMO_PATIENTS_MAP with all candidate formats
+  if (!card) {
+    for (const c of candidateUids) {
+      const demo = DEMO_PATIENTS_MAP[c];
+      if (demo) {
+        card = {
+          uid: demo.uid,
+          patientId: demo.id,
+          isDemo: true,
+          active: true,
+          patient: {
+            id: demo.id,
+            fullName: demo.fullName,
+            dateOfBirth: demo.dateOfBirth,
+            gender: demo.gender,
+            phone: demo.phone,
+            abhaId: demo.abhaId,
+            bloodGroup: 'O+',
+          },
+        };
+        break;
+      }
     }
   }
 
