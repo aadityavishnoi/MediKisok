@@ -15,7 +15,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
     "db:verify": "tsx src/scripts/verify_database.ts",
-    "db:reset": "tsx src/scripts/reset_db.ts"
+    "db:reset": "tsx src/scripts/reset_db.ts",
+    "db:clean": "tsx src/scripts/clean_100_percent.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

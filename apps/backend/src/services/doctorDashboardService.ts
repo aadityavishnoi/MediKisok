@@ -71,30 +71,27 @@ export async function getDoctorDashboard(): Promise<DoctorDashboardResponse> {
       },
     });
 
-    if (sessions.length > 0) {
-      return {
-        sessions: sessions
-          .filter((s) => s.patient !== null)
-          .map((s) => ({
-            sessionId: s.id,
-            patient: {
-              id: s.patient!.id,
-              fullName: s.patient!.fullName,
-              dateOfBirth: s.patient!.dateOfBirth?.toISOString() ?? null,
-              gender: s.patient!.gender,
-            },
-            status: s.status,
-            chiefComplaint: s.clinicalHistory?.chiefComplaint ?? null,
-            highestAlertSeverity: highestSeverity(s.alerts),
-            updatedAt: s.updatedAt.toISOString(),
-          })),
-      };
-    }
+    return {
+      sessions: sessions
+        .filter((s) => s.patient !== null)
+        .map((s) => ({
+          sessionId: s.id,
+          patient: {
+            id: s.patient!.id,
+            fullName: s.patient!.fullName,
+            dateOfBirth: s.patient!.dateOfBirth?.toISOString() ?? null,
+            gender: s.patient!.gender,
+          },
+          status: s.status,
+          chiefComplaint: s.clinicalHistory?.chiefComplaint ?? null,
+          highestAlertSeverity: highestSeverity(s.alerts),
+          updatedAt: s.updatedAt.toISOString(),
+        })),
+    };
   } catch (err) {
-    console.warn('[doctorDashboardService] DB query failed, using demo sessions fallback:', err);
+    console.warn('[doctorDashboardService] DB query failed:', err);
+    return { sessions: [] };
   }
-
-  return { sessions: DEMO_SESSIONS_FALLBACK };
 }
 
 export async function getSessionDetail(sessionId: string): Promise<SessionDetailResponse | null> {
