@@ -1,0 +1,13 @@
+# Ignore local and development files
+.git
+.env*
+!*.env.example
+*.md
+*.log
+hardware/
+docs/
+scratch/
+test/
+**/*.test.*
+**/*.spec.*
+prisma/seed.ts

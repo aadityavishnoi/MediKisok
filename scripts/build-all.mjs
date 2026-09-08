@@ -22,7 +22,7 @@ try {
 // Bundle Serverless Backend API bundle for Vercel
 try {
   console.log('⚡ Bundling Backend Serverless API for Vercel...');
-  execSync('npx esbuild api/serverless.ts --bundle --platform=node --target=node20 --format=esm "--banner:js=import { createRequire } from \'module\'; const require = createRequire(import.meta.url);" --outfile=api/index.js --external:@prisma/client --external:.prisma/client --external:serialport --external:@serialport/parser-readline', {
+  execSync('npx esbuild scripts/serverless.ts --bundle --platform=node --target=node20 --format=esm "--banner:js=import { createRequire } from \'module\'; const require = createRequire(import.meta.url);" --outfile=api/index.js --external:@prisma/client --external:.prisma/client --external:serialport --external:@serialport/parser-readline', {
     stdio: 'inherit',
     cwd: rootDir,
   });
