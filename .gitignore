@@ -11,3 +11,5 @@ hardware/esp32-rfid/config.h
 .vite/
 coverage/
 *.tsbuildinfo
+.vercel
+.env*
