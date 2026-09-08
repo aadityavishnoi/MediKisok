@@ -307,19 +307,109 @@ export function ConsultationScreen({
               {detail.summary?.content || 'Patient completed digital intake questionnaire. Antihypertensive therapy documented in previous prescription OCR. Zero hallucinations detected.'}
             </p>
           </div>
+
+          {/* Kiosk Scanned Prescriptions & OCR Ingested Medicines Card */}
+          {(() => {
+            const ocrMedicationsFromDocs = (detail.documents || [])
+              .flatMap((d) => d.extractedData || [])
+              .filter((e) => e.fieldType.toUpperCase().includes('MED'))
+              .map((e) => e.fieldValue);
+            const intakeMedications = (detail.history?.currentMedications || []).map((m) => m.value);
+            const allScannedMeds = Array.from(new Set([...ocrMedicationsFromDocs, ...intakeMedications])).filter(Boolean);
+            const scannedDocs = detail.documents || [];
+
+            return (
+              <div className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm space-y-3.5">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                    <FileScan size={15} className="text-emerald-600" /> Scanned Prescriptions & OCR
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    {scannedDocs.length} Document(s)
+                  </span>
+                </div>
+
+                {/* OCR Extracted Medication Badges */}
+                {allScannedMeds.length > 0 ? (
+                  <div className="space-y-2">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                      Detected Active Medicines ({allScannedMeds.length}):
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {allScannedMeds.map((med, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-900 border border-emerald-200 shadow-2xs"
+                        >
+                          💊 {med}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 italic">No physical prescription scanned during this session</p>
+                )}
+
+                {/* Scanned Document Thumbnails / Records */}
+                {scannedDocs.length > 0 && (
+                  <div className="pt-2 border-t border-slate-100 space-y-2">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                      Uploaded Artifacts:
+                    </span>
+                    {scannedDocs.map((doc) => (
+                      <div key={doc.id} className="flex items-center justify-between rounded-xl bg-slate-50 p-2.5 border border-slate-100 text-xs">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          <FileText size={15} className="text-blue-600 shrink-0" />
+                          <div className="truncate">
+                            <p className="font-bold text-slate-800 truncate">{doc.originalFilename}</p>
+                            <p className="text-[10px] text-slate-400">
+                              {doc.type} · Confidence: {Math.round(doc.ocrConfidence <= 1 ? doc.ocrConfidence * 100 : doc.ocrConfidence)}%
+                            </p>
+                          </div>
+                        </div>
+                        {doc.storagePath && (
+                          <a
+                            href={doc.storagePath}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-blue-600 hover:text-blue-800 p-1 font-bold shrink-0"
+                            title="View Full Scan"
+                          >
+                            <ExternalLink size={14} />
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Right Column (8 cols): Full Dedicated Consultation & Rx Writer */}
         <div className="lg:col-span-8">
-          <ConsultationRxWriter
-            sessionId={targetId}
-            patientName={detail.patient.fullName}
-            patientAgeGender={`${detail.patient.gender ?? 'M'} · DOB ${detail.patient.dateOfBirth ? new Date(detail.patient.dateOfBirth).toLocaleDateString() : 'Unknown'}`}
-            doctorName={doctorName}
-            consultation={detail.consultation}
-            onStartConsultation={handleStart}
-            onCompleteConsultation={handleComplete}
-          />
+          {(() => {
+            const ocrMedicationsFromDocs = (detail.documents || [])
+              .flatMap((d) => d.extractedData || [])
+              .filter((e) => e.fieldType.toUpperCase().includes('MED'))
+              .map((e) => e.fieldValue);
+            const intakeMedications = (detail.history?.currentMedications || []).map((m) => m.value);
+            const allScannedMeds = Array.from(new Set([...ocrMedicationsFromDocs, ...intakeMedications])).filter(Boolean);
+
+            return (
+              <ConsultationRxWriter
+                sessionId={targetId}
+                patientName={detail.patient.fullName}
+                patientAgeGender={`${detail.patient.gender ?? 'M'} · DOB ${detail.patient.dateOfBirth ? new Date(detail.patient.dateOfBirth).toLocaleDateString() : 'Unknown'}`}
+                doctorName={doctorName}
+                consultation={detail.consultation}
+                scannedMedications={allScannedMeds}
+                onStartConsultation={handleStart}
+                onCompleteConsultation={handleComplete}
+              />
+            );
+          })()}
         </div>
       </div>
     </DashboardShell>
