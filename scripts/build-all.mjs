@@ -273,8 +273,8 @@ const masterHtml = `<!DOCTYPE html>
         <div class="stat-label">Deterministic Red-Flag Alert</div>
       </div>
       <div>
-        <div class="stat-num">0.0%</div>
-        <div class="stat-label">AI Hallucination Rate</div>
+        <div class="stat-num">100%</div>
+        <div class="stat-label">Evidence-Linked Citations</div>
       </div>
     </div>
 
@@ -357,7 +357,7 @@ const masterHtml = `<!DOCTYPE html>
           <div class="icon-badge">🌐</div>
           <h3 class="portal-title">National Command Center</h3>
           <p class="portal-desc">
-            State and district-level healthcare throughput analytics, demographic language charts, and AI model governance & hallucination tracking.
+            State and district-level healthcare throughput analytics, demographic language charts, and AI model governance & safety audit logs.
           </p>
           <div class="tags">
             <span class="tag">National Metrics</span>
