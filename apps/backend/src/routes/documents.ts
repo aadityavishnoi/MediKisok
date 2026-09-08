@@ -5,6 +5,7 @@ import { prisma } from '../lib/prisma.js';
 import { ImageKitService } from '../services/imagekitService.js';
 import { env } from '../lib/env.js';
 import { fetchDroidcamFrame } from '../lib/droidcamFrame.js';
+import { wsHub } from '../ws/hub.js';
 
 export const documentsRouter = Router();
 
@@ -126,7 +127,72 @@ documentsRouter.post('/documents/scan', async (req, res, next) => {
                 status: 'NEEDS_VERIFICATION',
               })),
             });
+
+            // If medications were extracted, automatically update ClinicalHistory so Doctor Dashboard displays them
+            const extractedMeds = result.fields
+              .filter((f) => f.fieldType.toUpperCase().includes('MED'))
+              .map((f) => ({ label: 'OCR Scanned Rx', value: f.fieldValue }));
+
+            if (extractedMeds.length > 0) {
+              try {
+                const existingHistory = await prisma.clinicalHistory.findUnique({
+                  where: { sessionId },
+                });
+
+                if (existingHistory) {
+                  const currentMeds = Array.isArray(existingHistory.currentMedications)
+                    ? (existingHistory.currentMedications as Array<{ label: string; value: string }>)
+                    : [];
+                  const mergedMeds = [...currentMeds];
+                  for (const em of extractedMeds) {
+                    if (!mergedMeds.some((m) => m.value.toLowerCase() === em.value.toLowerCase())) {
+                      mergedMeds.push(em);
+                    }
+                  }
+                  await prisma.clinicalHistory.update({
+                    where: { sessionId },
+                    data: { currentMedications: mergedMeds as any },
+                  });
+                } else {
+                  await prisma.clinicalHistory.create({
+                    data: {
+                      sessionId,
+                      patientId: resolvedPatientId,
+                      mode: 'GENERAL',
+                      currentMedications: extractedMeds as any,
+                      chiefComplaint: result.summary || 'Prescription Ingested via Kiosk Scanner',
+                    },
+                  });
+                }
+
+                // Add timeline event
+                await prisma.medicalTimelineEvent.create({
+                  data: {
+                    patientId: resolvedPatientId,
+                    sourceDocumentId: doc.id,
+                    eventType: 'MEDICATION',
+                    eventDate: new Date(),
+                    title: 'Prescription Scanned & OCR Ingested',
+                    description: result.summary || `Extracted: ${extractedMeds.map((m) => m.value).join(', ')}`,
+                    metadata: {
+                      imagekitUrl,
+                      medications: extractedMeds,
+                    },
+                  },
+                });
+              } catch (histErr) {
+                console.warn('[documents/scan] Could not sync medications to clinicalHistory:', histErr);
+              }
+            }
           }
+
+          // Broadcast session update to real-time Doctor Dashboard
+          try {
+            wsHub.broadcast({
+              type: 'SESSION_UPDATED',
+              payload: { sessionId, patientId: resolvedPatientId, status: 'ROUTED' },
+            } as any);
+          } catch {}
         }
       } catch (dbErr) {
         console.warn('[documents/scan] Could not persist to DB, returning OCR result:', dbErr);
@@ -315,6 +381,41 @@ documentsRouter.post('/documents/upload', upload.single('file'), async (req, res
           },
         },
       });
+
+      // If medications were extracted, update ClinicalHistory
+      const extractedMeds = extractedItems
+        .filter((f) => f.fieldType === 'MEDICATION')
+        .map((f) => ({ label: 'Prescription OCR', value: f.fieldValue }));
+
+      if (extractedMeds.length > 0 && targetSessionId) {
+        const existingHistory = await prisma.clinicalHistory.findUnique({
+          where: { sessionId: targetSessionId },
+        });
+
+        if (existingHistory) {
+          const currentMeds = Array.isArray(existingHistory.currentMedications)
+            ? (existingHistory.currentMedications as Array<{ label: string; value: string }>)
+            : [];
+          const mergedMeds = [...currentMeds];
+          for (const em of extractedMeds) {
+            if (!mergedMeds.some((m) => m.value.toLowerCase() === em.value.toLowerCase())) {
+              mergedMeds.push(em);
+            }
+          }
+          await prisma.clinicalHistory.update({
+            where: { sessionId: targetSessionId },
+            data: { currentMedications: mergedMeds as any },
+          });
+        }
+      }
+
+      // Broadcast session update to real-time Doctor Dashboard
+      if (targetSessionId) {
+        wsHub.broadcast({
+          type: 'SESSION_UPDATED',
+          payload: { sessionId: targetSessionId, patientId: targetPatientId, status: 'ROUTED' },
+        } as any);
+      }
     } catch {}
 
     res.status(200).json({

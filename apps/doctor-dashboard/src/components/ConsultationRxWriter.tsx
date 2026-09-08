@@ -25,6 +25,7 @@ export interface ConsultationRxWriterProps {
   patientAgeGender?: string;
   doctorName?: string;
   consultation?: Consultation | null;
+  scannedMedications?: string[];
   onStartConsultation: () => Promise<void>;
   onCompleteConsultation: (payload: ConsultationCompleteRequest) => Promise<void>;
 }
@@ -53,6 +54,7 @@ export function ConsultationRxWriter({
   patientAgeGender = '52y / Male',
   doctorName = 'Dr. Rohan Mehta',
   consultation,
+  scannedMedications = [],
   onStartConsultation,
   onCompleteConsultation,
 }: ConsultationRxWriterProps) {
@@ -98,6 +100,55 @@ export function ConsultationRxWriter({
       setShowRxSlip(true);
     }
   }, [isCompleted]);
+
+  // If patient has scanned medications from kiosk intake, automatically offer to populate prescription builder
+  useEffect(() => {
+    if (scannedMedications && scannedMedications.length > 0) {
+      setPrescriptions((prev) => {
+        // If current prescription has only default sample drugs, replace with actual scanned drugs
+        const isDefault = prev.length === 2 && prev[0].medicineName.includes('Metoprolol') && prev[1].medicineName.includes('Atorvastatin');
+        if (isDefault) {
+          return scannedMedications.map((m) => {
+            const parts = m.trim().split(/\s+/);
+            const name = parts[0] ? (parts[0].startsWith('Tab.') ? parts[0] : `Tab. ${parts[0]}`) : m;
+            const dosage = parts.find((p) => /\d+(mg|g|ml)/i.test(p)) || '1 Tab';
+            const freq = parts.find((p) => /OD|BD|TDS|TID|QID|HS|PRN|SOS/i.test(p)) || '1-0-1';
+            return {
+              medicineName: name,
+              dosage,
+              frequency: freq,
+              duration: '5 days',
+              instructions: 'As prescribed during intake',
+            };
+          });
+        }
+        return prev;
+      });
+    }
+  }, [scannedMedications]);
+
+  const handleImportScannedMeds = () => {
+    if (!scannedMedications || scannedMedications.length === 0) return;
+    const newItems: PrescriptionItem[] = scannedMedications.map((m) => {
+      const parts = m.trim().split(/\s+/);
+      const name = parts[0] ? (parts[0].startsWith('Tab.') ? parts[0] : `Tab. ${parts[0]}`) : m;
+      const dosage = parts.find((p) => /\d+(mg|g|ml)/i.test(p)) || '1 Tab';
+      const freq = parts.find((p) => /OD|BD|TDS|TID|QID|HS|PRN|SOS/i.test(p)) || '1-0-1';
+      return {
+        medicineName: name,
+        dosage,
+        frequency: freq,
+        duration: '5 days',
+        instructions: 'As prescribed during intake',
+      };
+    });
+
+    setPrescriptions((prev) => {
+      const existingNames = new Set(prev.map((p) => p.medicineName.toLowerCase()));
+      const filtered = newItems.filter((n) => !existingNames.has(n.medicineName.toLowerCase()));
+      return [...prev, ...filtered];
+    });
+  };
 
   useEffect(() => {
     if (!isStarted) return;
@@ -429,6 +480,35 @@ export function ConsultationRxWriter({
                 <Plus size={14} /> Add Medicine
               </button>
             </div>
+
+            {/* OCR Scanned Ingestion Banner */}
+            {scannedMedications && scannedMedications.length > 0 && (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50/90 p-3.5 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-start gap-2.5">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white text-xs font-black">℞</span>
+                  <div>
+                    <h5 className="text-xs font-extrabold text-emerald-950 flex items-center gap-1.5">
+                      Kiosk Prescription OCR Detected ({scannedMedications.length} items)
+                      <span className="rounded-full bg-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-800">Verified OCR</span>
+                    </h5>
+                    <div className="mt-1 flex flex-wrap gap-1.5">
+                      {scannedMedications.map((m, idx) => (
+                        <span key={idx} className="rounded-md bg-white px-2 py-0.5 text-[11px] font-bold text-emerald-900 border border-emerald-200 shadow-2xs">
+                          💊 {m}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleImportScannedMeds}
+                  className="rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
+                >
+                  <Plus size={14} /> Import All into Rx Table
+                </button>
+              </div>
+            )}
 
             {/* Quick Presets Pills */}
             <div className="flex flex-wrap items-center gap-2 pt-1">

@@ -110,10 +110,90 @@ export async function getSessionDetail(sessionId: string): Promise<SessionDetail
     });
 
     if (session && session.patient) {
-      const timelineEvents = await prisma.medicalTimelineEvent.findMany({
-        where: { patientId: session.patient.id },
-        orderBy: { eventDate: 'desc' },
-      });
+      const [timelineEvents, allDocuments] = await Promise.all([
+        prisma.medicalTimelineEvent.findMany({
+          where: { patientId: session.patient.id },
+          orderBy: { eventDate: 'desc' },
+        }),
+        prisma.medicalDocument.findMany({
+          where: {
+            OR: [
+              { sessionId: session.id },
+              { patientId: session.patient.id },
+            ],
+          },
+          include: { extractedData: true },
+          orderBy: { createdAt: 'desc' },
+        }),
+      ]);
+
+      // Extract all OCR medications from documents
+      const ocrMeds = allDocuments
+        .flatMap((d) => d.extractedData)
+        .filter((e) => e.fieldType.toUpperCase().includes('MED'))
+        .map((e) => ({ label: 'Prescription OCR', value: e.fieldValue }));
+
+      const existingHistoryMeds = Array.isArray(session.clinicalHistory?.currentMedications)
+        ? (session.clinicalHistory!.currentMedications as Array<{ label: string; value: string }>)
+        : [];
+      const mergedCurrentMeds = [...existingHistoryMeds];
+      for (const om of ocrMeds) {
+        if (!mergedCurrentMeds.some((m) => m.value?.toLowerCase() === om.value?.toLowerCase())) {
+          mergedCurrentMeds.push(om);
+        }
+      }
+
+      const effectiveHistory = session.clinicalHistory
+        ? {
+            id: session.clinicalHistory.id,
+            sessionId: session.clinicalHistory.sessionId,
+            patientId: session.clinicalHistory.patientId,
+            mode: session.clinicalHistory.mode,
+            chiefComplaint: session.clinicalHistory.chiefComplaint,
+            hpi: (session.clinicalHistory.hpi as any) ?? [],
+            pastMedicalHistory: (session.clinicalHistory.pastMedicalHistory as any) ?? [],
+            pastSurgicalHistory: (session.clinicalHistory.pastSurgicalHistory as any) ?? [],
+            currentMedications: mergedCurrentMeds,
+            drugAllergies: (session.clinicalHistory.drugAllergies as any) ?? [],
+            familyHistory: (session.clinicalHistory.familyHistory as any) ?? [],
+            personalHistory: (session.clinicalHistory.personalHistory as any) ?? [],
+            reviewOfSystems: (session.clinicalHistory.reviewOfSystems as any) ?? [],
+            previousInvestigations: (session.clinicalHistory.previousInvestigations as any) ?? [],
+            ayushFields: (session.clinicalHistory.ayushFields as any) ?? null,
+            completedAt: session.clinicalHistory.completedAt?.toISOString() ?? null,
+            answers: session.clinicalHistory.answers.map((a) => ({
+              id: a.id,
+              clinicalHistoryId: a.clinicalHistoryId,
+              nodeId: a.nodeId,
+              section: a.section,
+              questionText: a.questionText,
+              questionTextLocalized: a.questionTextLocalized as any,
+              answerValue: a.answerValue,
+              isRedFlagTrigger: a.isRedFlagTrigger,
+              answeredAt: a.answeredAt.toISOString(),
+            })),
+          }
+        : mergedCurrentMeds.length > 0
+        ? {
+            id: `synth_hist_${session.id}`,
+            sessionId: session.id,
+            patientId: session.patient.id,
+            mode: 'GENERAL' as any,
+            chiefComplaint: 'Prescription & Documents Scanned at Kiosk',
+            hpi: [],
+            pastMedicalHistory: [],
+            pastSurgicalHistory: [],
+            currentMedications: mergedCurrentMeds,
+            drugAllergies: [],
+            familyHistory: [],
+            personalHistory: [],
+            reviewOfSystems: [],
+            previousInvestigations: [],
+            ayushFields: null,
+            completedAt: session.createdAt.toISOString(),
+            answers: [],
+          }
+        : null;
 
       return {
         sessionId: session.id,
@@ -137,37 +217,7 @@ export async function getSessionDetail(sessionId: string): Promise<SessionDetail
               grantedAt: session.consent.grantedAt?.toISOString() ?? null,
             }
           : null,
-        history: session.clinicalHistory
-          ? {
-              id: session.clinicalHistory.id,
-              sessionId: session.clinicalHistory.sessionId,
-              patientId: session.clinicalHistory.patientId,
-              mode: session.clinicalHistory.mode,
-              chiefComplaint: session.clinicalHistory.chiefComplaint,
-              hpi: (session.clinicalHistory.hpi as any) ?? [],
-              pastMedicalHistory: (session.clinicalHistory.pastMedicalHistory as any) ?? [],
-              pastSurgicalHistory: (session.clinicalHistory.pastSurgicalHistory as any) ?? [],
-              currentMedications: (session.clinicalHistory.currentMedications as any) ?? [],
-              drugAllergies: (session.clinicalHistory.drugAllergies as any) ?? [],
-              familyHistory: (session.clinicalHistory.familyHistory as any) ?? [],
-              personalHistory: (session.clinicalHistory.personalHistory as any) ?? [],
-              reviewOfSystems: (session.clinicalHistory.reviewOfSystems as any) ?? [],
-              previousInvestigations: (session.clinicalHistory.previousInvestigations as any) ?? [],
-              ayushFields: (session.clinicalHistory.ayushFields as any) ?? null,
-              completedAt: session.clinicalHistory.completedAt?.toISOString() ?? null,
-              answers: session.clinicalHistory.answers.map((a) => ({
-                id: a.id,
-                clinicalHistoryId: a.clinicalHistoryId,
-                nodeId: a.nodeId,
-                section: a.section,
-                questionText: a.questionText,
-                questionTextLocalized: a.questionTextLocalized as any,
-                answerValue: a.answerValue,
-                isRedFlagTrigger: a.isRedFlagTrigger,
-                answeredAt: a.answeredAt.toISOString(),
-              })),
-            }
-          : null,
+        history: effectiveHistory,
         alerts: session.alerts.map((a) => ({
           id: a.id,
           sessionId: a.sessionId,
@@ -181,7 +231,7 @@ export async function getSessionDetail(sessionId: string): Promise<SessionDetail
           acknowledgedAt: a.acknowledgedAt?.toISOString() ?? null,
           createdAt: a.createdAt.toISOString(),
         })),
-        documents: session.documents.map((d) => ({
+        documents: allDocuments.map((d) => ({
           id: d.id,
           sessionId: d.sessionId,
           patientId: d.patientId,
