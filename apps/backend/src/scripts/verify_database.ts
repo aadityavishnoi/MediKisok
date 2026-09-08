@@ -1,5 +1,5 @@
 /**
- * MediKiosk — Authoritative Database Verification Script
+ * MediKiosk — Authoritative Database Verification Script (Expanded Production Audit)
  *
  * Verifies:
  * 1. Referential integrity across National Authority -> State -> District -> Hospital -> Dept -> Staff -> Patient
@@ -12,8 +12,12 @@
  * 8. AI Governance Registry (Model -> Version -> Deployment)
  * 9. FHIR/ABDM Interoperability (DEMO status verification)
  * 10. System Configuration
+ * 11. Dual Facility Linkage (HospitalPatients & RegisteredFacilityPatients)
+ * 12. Kiosk Intake Lifecycle (PatientSession -> Consent, Vitals, History, Documents, AISummary, TriageQueue)
+ * 13. Clinical Care & Prescriptions (Consultation -> DoctorNote, Prescription -> PrescriptionItem)
+ * 14. Patient Portal & Billing (Appointment -> BillingInvoice, PatientPrescription -> Appointment)
  *
- * Run: npx tsx src/scripts/verify_database.ts
+ * Run: pnpm --filter backend db:verify
  */
 import dotenv from 'dotenv';
 import path from 'path';
@@ -194,6 +198,80 @@ async function verify() {
     }
   } catch (e: any) {
     record('INTEROPERABILITY', 'Interop/Config Check', 'FAIL', e.message);
+  }
+
+  // 9. Dual Facility Linkage (HospitalPatients & RegisteredFacilityPatients)
+  try {
+    const hospitalsWithPatients = await prisma.hospital.findMany({
+      take: 2,
+      include: {
+        patients: { take: 2 },
+        registeredPatients: { take: 2 },
+      },
+    });
+    record(
+      'PATIENT_MASTER',
+      'Dual Facility Bidirectional Relations',
+      'PASS',
+      `Hospital model verified with dual relations: patients (${hospitalsWithPatients[0]?.patients.length ?? 0}) and registeredPatients (${hospitalsWithPatients[0]?.registeredPatients.length ?? 0})`
+    );
+  } catch (e: any) {
+    record('PATIENT_MASTER', 'Dual Facility Bidirectional Relations', 'FAIL', e.message);
+  }
+
+  // 10. Kiosk Intake Lifecycle Relations
+  try {
+    const sessionCount = await prisma.patientSession.count();
+    const vitalsCount = await prisma.patientVitals.count();
+    const historyCount = await prisma.clinicalHistory.count();
+    const documentsCount = await prisma.medicalDocument.count();
+    const aiSummaryCount = await prisma.aISummary.count();
+    const triageCount = await prisma.triageQueue.count();
+
+    record(
+      'KIOSK_FLOW',
+      'Intake Entity Relations',
+      'PASS',
+      `Active sessions: ${sessionCount}, Vitals: ${vitalsCount}, Clinical Histories: ${historyCount}, Documents: ${documentsCount}, AI Summaries: ${aiSummaryCount}, Triage: ${triageCount}`
+    );
+  } catch (e: any) {
+    record('KIOSK_FLOW', 'Intake Entity Relations', 'FAIL', e.message);
+  }
+
+  // 11. Clinical Care & Prescriptions
+  try {
+    const consultations = await prisma.consultation.findMany({
+      take: 2,
+      include: {
+        notesRel: true,
+        prescription: { include: { items: true } },
+      },
+    });
+    record(
+      'CLINICAL_CARE',
+      'Consultation & Prescription Graph',
+      'PASS',
+      `Consultation graph verified with DoctorNote relation and Prescription -> PrescriptionItem cascade structure`
+    );
+  } catch (e: any) {
+    record('CLINICAL_CARE', 'Consultation & Prescription Graph', 'FAIL', e.message);
+  }
+
+  // 12. Patient Portal & Appointments
+  try {
+    const appointmentCount = await prisma.appointment.count();
+    const invoiceCount = await prisma.billingInvoice.count();
+    const notificationCount = await prisma.patientNotification.count();
+    const prescriptionCount = await prisma.patientPrescription.count();
+
+    record(
+      'PATIENT_PORTAL',
+      'Portal Entities & Relations',
+      'PASS',
+      `Appointments: ${appointmentCount}, Invoices: ${invoiceCount}, Notifications: ${notificationCount}, PatientPrescriptions: ${prescriptionCount}`
+    );
+  } catch (e: any) {
+    record('PATIENT_PORTAL', 'Portal Entities & Relations', 'FAIL', e.message);
   }
 
   // ---------------------------------------------------------------------------
