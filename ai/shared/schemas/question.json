@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ClinicalQuestion",
+  "type": "object",
+  "required": [
+    "questionId",
+    "section",
+    "questionText",
+    "questionType",
+    "priorityScore",
+    "clinicalRationale",
+    "redFlagTrigger"
+  ],
+  "properties": {
+    "questionId": { "type": "string" },
+    "section": {
+      "type": "string",
+      "enum": [
+        "chiefComplaint",
+        "hpi",
+        "pastMedicalHistory",
+        "pastSurgicalHistory",
+        "currentMedications",
+        "drugAllergies",
+        "familyHistory",
+        "personalHistory",
+        "reviewOfSystems",
+        "previousInvestigations",
+        "ayush",
+        "outbreakSurveillance"
+      ]
+    },
+    "questionText": { "type": "string" },
+    "questionTextLocalized": {
+      "type": "object",
+      "properties": {
+        "en": { "type": "string" },
+        "hi": { "type": "string" }
+      }
+    },
+    "questionType": {
+      "type": "string",
+      "enum": ["SINGLE_SELECT", "MULTI_SELECT", "BOOLEAN", "SCALE", "TEXT"]
+    },
+    "options": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["value", "label"],
+        "properties": {
+          "value": { "type": "string" },
+          "label": { "type": "string" },
+          "labelLocalized": { "type": "object" },
+          "isRedFlag": { "type": "boolean", "default": false }
+        }
+      }
+    },
+    "priorityScore": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "clinicalRationale": { "type": "string" },
+    "redFlagTrigger": { "type": "boolean", "default": false },
+    "relatedOutbreakDisease": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Drug",
+  "type": "object",
+  "required": ["medicineName", "dosage", "frequency", "duration"],
+  "properties": {
+    "medicineName": { "type": "string" },
+    "genericName": { "type": "string" },
+    "dosage": { "type": "string" },
+    "frequency": { "type": "string" },
+    "duration": { "type": "string" },
+    "instructions": { "type": "string" },
+    "route": { "type": "string", "enum": ["ORAL", "INJECTION", "TOPICAL", "INHALATION", "OTHER"], "default": "ORAL" },
+    "isNLEMEssential": { "type": "boolean", "default": false },
+    "isJanAushadhiAvailable": { "type": "boolean", "default": false },
+    "janAushadhiGenericName": { "type": "string" },
+    "cdscoSchedule": { "type": "string", "enum": ["SCHEDULE_H", "SCHEDULE_H1", "SCHEDULE_X", "OTC", "GENERAL"] },
+    "contraindications": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "drugInteractions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["interactingDrug", "severity", "effectDescription"],
+        "properties": {
+          "interactingDrug": { "type": "string" },
+          "severity": { "type": "string", "enum": ["MILD", "MODERATE", "SEVERE", "CONTRAINDICATED"] },
+          "effectDescription": { "type": "string" }
+        }
+      },
+      "default": []
+    }
+  },
+  "additionalProperties": false
+}

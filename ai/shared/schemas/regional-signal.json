@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RegionalSignal",
+  "type": "object",
+  "required": [
+    "regionId",
+    "disease",
+    "riskLevel",
+    "positivityRate",
+    "sampleSize",
+    "trend",
+    "confidence",
+    "generatedAt"
+  ],
+  "properties": {
+    "regionId": { "type": "string" },
+    "district": { "type": "string" },
+    "state": { "type": "string" },
+    "disease": { "type": "string" },
+    "icd10": { "type": "string" },
+    "riskLevel": {
+      "type": "string",
+      "enum": ["LOW", "MODERATE", "HIGH", "CRITICAL"]
+    },
+    "positivityRate": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "sampleSize": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "positiveCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "trend": {
+      "type": "string",
+      "enum": ["FALLING", "STABLE", "RISING", "OUTBREAK_SURGE"]
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["INSUFFICIENT_SAMPLE", "ADEQUATE_SAMPLE", "HIGH_CONFIDENCE"]
+    },
+    "wilsonInterval": {
+      "type": "object",
+      "properties": {
+        "lower": { "type": "number", "minimum": 0, "maximum": 1 },
+        "upper": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "baselinePrevalence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "epidemiologicalAlertMessage": { "type": "string" },
+    "generatedAt": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}
