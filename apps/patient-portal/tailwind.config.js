@@ -35,6 +35,9 @@ export default {
         sans: ['Plus Jakarta Sans', 'Inter', 'ui-sans-serif', 'system-ui'],
         display: ['Plus Jakarta Sans', 'Outfit', 'Inter', 'ui-sans-serif'],
       },
+      screens: {
+        xs: '480px',
+      },
       borderRadius: { '2xl': '16px' },
       boxShadow: { sm: '0 1px 3px rgba(15,23,42,0.06)' },
     },

@@ -3,6 +3,10 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
   body {
     font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
     background-color: #F8FAFC;
@@ -10,7 +14,18 @@
     margin: 0;
     padding: 0;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    min-height: 100vh;
   }
+}
+
+/* Hide scrollbar for clean horizontal swipe tabs while keeping scrollability */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Custom scrollbar */

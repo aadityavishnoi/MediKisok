@@ -473,6 +473,9 @@ export interface AppointmentEntity {
   reason: string;
   notes: string | null;
   cancellationReason: string | null;
+  location?: string | null;
+  virtualMeetingUrl?: string | null;
+  followUpInstructions?: string | null;
   createdAt: ISODateString;
   updatedAt: ISODateString;
 }
@@ -520,6 +523,9 @@ export interface PrescriptionMedicationItem {
   frequency: string;
   duration: string;
   instructions: string;
+  route?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface PrescriptionEntity {
@@ -533,6 +539,9 @@ export interface PrescriptionEntity {
   instructions: string | null;
   medications: PrescriptionMedicationItem[];
   pdfUrl: string | null;
+  status: 'Active' | 'Completed' | 'Expired';
+  startDate?: ISODateString;
+  endDate?: ISODateString;
   createdAt: ISODateString;
 }
 
@@ -544,7 +553,11 @@ export interface LabReportEntity {
   testDate: ISODateString;
   category: string;
   facilityName?: string | null;
+  doctorName?: string | null;
+  departmentName?: string | null;
   status: 'COMPLETED' | 'PENDING';
+  originalFilename?: string | null;
+  ocrText?: string | null;
   parameters: Array<{
     name: string;
     value: string;

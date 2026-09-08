@@ -80,16 +80,48 @@ export function cancelPatientAppointment(
   });
 }
 
-export function getAvailableAppointmentSlots(): Promise<AvailableSlotsResponse> {
-  return apiFetch<AvailableSlotsResponse>('/patient/available-slots');
+export function getAvailableAppointmentSlots(doctorId?: string, date?: string): Promise<AvailableSlotsResponse> {
+  const params = new URLSearchParams();
+  if (doctorId) params.set('doctorId', doctorId);
+  if (date) params.set('date', date);
+  const query = params.toString() ? `?${params.toString()}` : '';
+  return apiFetch<AvailableSlotsResponse>(`/patient/available-slots${query}`);
 }
 
-export function getPatientPrescriptions(): Promise<PrescriptionEntity[]> {
-  return apiFetch<PrescriptionEntity[]>('/patient/prescriptions');
+export function getPatientPrescriptions(status?: string): Promise<PrescriptionEntity[]> {
+  const query = status ? `?status=${encodeURIComponent(status)}` : '';
+  return apiFetch<PrescriptionEntity[]>(`/patient/prescriptions${query}`);
 }
 
-export function getPatientLabReports(): Promise<LabReportEntity[]> {
-  return apiFetch<LabReportEntity[]>('/patient/lab-reports');
+export function getPatientPrescriptionDetail(id: string): Promise<PrescriptionEntity> {
+  return apiFetch<PrescriptionEntity>(`/patient/prescriptions/${id}`);
+}
+
+export interface ReportQueryOptions {
+  search?: string;
+  type?: string;
+  category?: string;
+  startDate?: string;
+  endDate?: string;
+  sort?: 'newest' | 'oldest';
+}
+
+export function getPatientLabReports(options?: ReportQueryOptions): Promise<LabReportEntity[]> {
+  const params = new URLSearchParams();
+  if (options?.search) params.set('search', options.search);
+  if (options?.type) params.set('type', options.type);
+  if (options?.category) params.set('category', options.category);
+  if (options?.startDate) params.set('startDate', options.startDate);
+  if (options?.endDate) params.set('endDate', options.endDate);
+  if (options?.sort) params.set('sort', options.sort);
+  const query = params.toString() ? `?${params.toString()}` : '';
+  return apiFetch<LabReportEntity[]>(`/patient/reports${query}`);
+}
+
+export const getPatientReports = getPatientLabReports;
+
+export function getPatientReportDetail(id: string): Promise<LabReportEntity> {
+  return apiFetch<LabReportEntity>(`/patient/reports/${id}`);
 }
 
 export function getPatientMedicalRecords(): Promise<PatientMedicalRecordsResponse> {

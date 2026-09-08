@@ -54,4 +54,70 @@ describe('Patient Portal API Suite', () => {
     expect(Array.isArray(res.body.slots)).toBe(true);
     expect(res.body.slots.length).toBeGreaterThan(0);
   });
+
+  it('GET /api/patient/reports rejects unauthenticated requests with 401', async () => {
+    const res = await request(app).get('/api/patient/reports');
+    expect(res.status).toBe(401);
+  });
+
+  it('GET /api/patient/prescriptions rejects unauthenticated requests with 401', async () => {
+    const res = await request(app).get('/api/patient/prescriptions');
+    expect(res.status).toBe(401);
+  });
+
+  it('GET /api/patient/notifications rejects unauthenticated requests with 401', async () => {
+    const res = await request(app).get('/api/patient/notifications');
+    expect(res.status).toBe(401);
+  });
+
+  it('GET /api/patient/reports/:id rejects unauthorized IDOR access to non-existent or other patient reports with 404', async () => {
+    // Generate valid token for Patient A
+    const jwt = (await import('jsonwebtoken')).default;
+    const { env } = await import('../lib/env.js');
+    const tokenPatientA = jwt.sign(
+      { sub: 'patient-a-mock-id', role: 'PATIENT', name: 'Patient A' },
+      env.JWT_SECRET,
+      { expiresIn: '1h' },
+    );
+
+    const res = await request(app)
+      .get('/api/patient/reports/unauthorized-report-id-999')
+      .set('Authorization', `Bearer ${tokenPatientA}`);
+    expect(res.status).toBe(404);
+  });
+
+  it('GET /api/patient/prescriptions/:id rejects unauthorized IDOR access with 404', async () => {
+    const jwt = (await import('jsonwebtoken')).default;
+    const { env } = await import('../lib/env.js');
+    const tokenPatientA = jwt.sign(
+      { sub: 'patient-a-mock-id', role: 'PATIENT', name: 'Patient A' },
+      env.JWT_SECRET,
+      { expiresIn: '1h' },
+    );
+
+    const res = await request(app)
+      .get('/api/patient/prescriptions/unauthorized-rx-id-999')
+      .set('Authorization', `Bearer ${tokenPatientA}`);
+    expect(res.status).toBe(404);
+  });
+
+  it('POST /api/patient/appointments rejects booking on past dates with 400', async () => {
+    const jwt = (await import('jsonwebtoken')).default;
+    const { env } = await import('../lib/env.js');
+    const token = jwt.sign(
+      { sub: 'patient-test-id', role: 'PATIENT', name: 'Test Patient' },
+      env.JWT_SECRET,
+      { expiresIn: '1h' },
+    );
+
+    const res = await request(app)
+      .post('/api/patient/appointments')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        appointmentDate: '2020-01-01',
+        timeSlot: '10:00 AM',
+        reason: 'General Checkup',
+      });
+    expect(res.status).toBe(400);
+  });
 });

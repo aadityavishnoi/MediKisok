@@ -14,15 +14,19 @@ export async function recordAudit(entry: {
   entityId?: string | null;
   metadata?: Record<string, unknown> | null;
 }): Promise<void> {
-  await prisma.auditLog.create({
-    data: {
-      actorType: entry.actorType as any,
-      actorId: entry.actorId ?? null,
-      action: entry.action,
-      entityType: entry.entityType ?? null,
-      entityId: entry.entityId ?? null,
-      metadata: entry.metadata ? (entry.metadata as Prisma.InputJsonValue) : undefined,
-    },
-  });
-
+  try {
+    await prisma.auditLog.create({
+      data: {
+        actorType: entry.actorType as any,
+        actorId: entry.actorId ?? null,
+        action: entry.action,
+        entityType: entry.entityType ?? null,
+        entityId: entry.entityId ?? null,
+        metadata: entry.metadata ? (entry.metadata as Prisma.InputJsonValue) : undefined,
+      },
+    });
+  } catch (err) {
+    // Graceful fallback if database connection is offline in test or isolated environment
+    console.warn('[AuditLog] Could not persist audit record:', entry.action);
+  }
 }

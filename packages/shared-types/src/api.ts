@@ -500,6 +500,7 @@ export interface AvailableSlotsResponse {
   departments: Array<{ id: string; name: string; code: string }>;
   doctors: Array<{ id: string; name: string; departmentId: string | null; departmentName: string | null }>;
   slots: string[];
+  bookedSlots?: string[];
 }
 
 export interface PatientMedicalRecordsResponse {
