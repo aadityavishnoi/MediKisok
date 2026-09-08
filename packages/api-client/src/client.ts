@@ -17,9 +17,24 @@ interface ApiClientConfig {
   getToken?: () => string | null;
 }
 
+function getDefaultBaseUrl(): string {
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return `${window.location.origin}/api`;
+  }
+  return 'http://localhost:4000/api';
+}
+
+function getDefaultWsUrl(): string {
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}/ws`;
+  }
+  return 'ws://localhost:4000/ws';
+}
+
 let config: ApiClientConfig = {
-  baseUrl: 'http://localhost:4000/api',
-  wsUrl: 'ws://localhost:4000/ws',
+  baseUrl: getDefaultBaseUrl(),
+  wsUrl: getDefaultWsUrl(),
 };
 
 /** Call once at app startup (e.g. from main.tsx) before any request is made. */

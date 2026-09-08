@@ -7,6 +7,17 @@ const distDir = path.join(rootDir, 'dist');
 
 console.log('🚀 [MediKiosk] Building all applications for Vercel deployment...');
 
+// Generate Prisma Client for serverless backend API
+try {
+  console.log('⚡ Generating Prisma Client for CockroachDB...');
+  execSync('pnpm --filter=backend prisma:generate', {
+    stdio: 'inherit',
+    cwd: rootDir,
+  });
+} catch {
+  console.log('ℹ️ Prisma client already generated or locked on local machine.');
+}
+
 // Run pnpm build for all 5 frontend applications
 execSync('pnpm --filter=@medikiosk/patient-kiosk --filter=patient-kiosk --filter=@medikiosk/doctor-dashboard --filter=doctor-dashboard --filter=@medikiosk/hospital-admin --filter=hospital-admin --filter=@medikiosk/rfid-portal --filter=rfid-portal --filter=@medikiosk/central-admin --filter=central-admin run build', {
   stdio: 'inherit',

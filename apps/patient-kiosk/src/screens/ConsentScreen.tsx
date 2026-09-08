@@ -42,7 +42,7 @@ export function ConsentScreen({ sessionId, language, onDecision }: ConsentScreen
     const text = t.points.join('. ');
     const gttsLang = GTTS_LANG[language] || 'en';
     const encodedText = encodeURIComponent(text);
-    const proxyUrl = `http://localhost:4000/api/tts?text=${encodedText}&lang=${gttsLang}`;
+    const proxyUrl = `/api/tts?text=${encodedText}&lang=${gttsLang}`;
 
     const audio = new Audio(proxyUrl);
     audioRef.current = audio;

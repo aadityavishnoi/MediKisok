@@ -58,7 +58,7 @@ function speakNow(code: string) {
 
     // Method 1: Backend TTS proxy (fetches Google TTS server-side, no CORS issues)
     const encodedText = encodeURIComponent(text);
-    const proxyUrl = `http://localhost:4000/api/tts?text=${encodedText}&lang=${gttsLang}`;
+    const proxyUrl = `/api/tts?text=${encodedText}&lang=${gttsLang}`;
 
     if (typeof Audio !== 'undefined') {
       const audio = new Audio(proxyUrl);

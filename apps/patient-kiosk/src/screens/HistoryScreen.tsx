@@ -14,7 +14,7 @@ const GTTS_LANG: Record<string, string> = {
 function speakText(text: string, language: Language) {
   const gttsLang = GTTS_LANG[language] || 'en';
   const encodedText = encodeURIComponent(text);
-  const audio = new Audio(`http://localhost:4000/api/tts?text=${encodedText}&lang=${gttsLang}`);
+  const audio = new Audio(`/api/tts?text=${encodedText}&lang=${gttsLang}`);
   audio.play().catch(() => {
     if ('speechSynthesis' in window) {
       const u = new SpeechSynthesisUtterance(text);
