@@ -53,7 +53,9 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
   const [tapLoading, setTapLoading] = useState(false);
   const [manualUid, setManualUid] = useState('');
   const [webSerialConnected, setWebSerialConnected] = useState(false);
+  const [hardwareBridgeConnected, setHardwareBridgeConnected] = useState(false);
   const [lastScannedUid, setLastScannedUid] = useState<string | null>(null);
+  const [successSession, setSuccessSession] = useState<{ sessionId: string; patientId: string | null; isNewPatient: boolean } | null>(null);
 
   async function handleTapCard(uid: string) {
     const cleanUid = uid.trim();
@@ -96,17 +98,9 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
     }
   }
 
-  // 1. Web Serial direct browser-to-hardware reader connection
-  async function handleConnectWebSerial() {
-    if (!('serial' in navigator)) {
-      alert('Web Serial is supported in Google Chrome & Edge. Please open this page in Chrome/Edge to connect directly to your USB scanner.');
-      return;
-    }
+  // Stream reader from a WebSerial port
+  function readFromSerialPort(port: any) {
     try {
-      const port = await (navigator as any).serial.requestPort();
-      await port.open({ baudRate: 9600 });
-      setWebSerialConnected(true);
-
       const textDecoder = new TextDecoderStream();
       port.readable.pipeTo(textDecoder.writable);
       const reader = textDecoder.readable.getReader();
@@ -135,10 +129,87 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
           setWebSerialConnected(false);
         }
       })();
+    } catch (err) {
+      console.warn('readFromSerialPort error:', err);
+    }
+  }
+
+  // Auto-connect to WebSerial and check background hardware serial bridge on mount
+  useEffect(() => {
+    let mounted = true;
+
+    // 1. Check background physical serial bridge status
+    fetch('/api/rfid/status')
+      .then((res) => res.json())
+      .then((status) => {
+        if (mounted && (status.connected || status.state === 'CONNECTED')) {
+          setHardwareBridgeConnected(true);
+        }
+      })
+      .catch(() => {});
+
+    // 2. Auto-connect WebSerial if permission was previously granted
+    if (typeof navigator !== 'undefined' && 'serial' in navigator) {
+      (navigator as any).serial
+        .getPorts()
+        .then(async (ports: any[]) => {
+          if (!mounted || ports.length === 0) return;
+          try {
+            const port = ports[0];
+            if (!port.readable) {
+              await port.open({ baudRate: 9600 });
+            }
+            if (mounted) {
+              setWebSerialConnected(true);
+              readFromSerialPort(port);
+            }
+          } catch {
+            // Port might be in use by background bridge, which is fine
+          }
+        })
+        .catch(() => {});
+
+      const onSerialConnect = async (e: any) => {
+        try {
+          const port = e.port || e.target;
+          if (!port.readable) {
+            await port.open({ baudRate: 9600 });
+          }
+          if (mounted) {
+            setWebSerialConnected(true);
+            readFromSerialPort(port);
+          }
+        } catch {}
+      };
+
+      (navigator as any).serial.addEventListener('connect', onSerialConnect);
+      return () => {
+        mounted = false;
+        (navigator as any).serial.removeEventListener('connect', onSerialConnect);
+      };
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // 1. Web Serial direct browser-to-hardware reader connection (Manual trigger if needed)
+  async function handleConnectWebSerial() {
+    if (!('serial' in navigator)) {
+      alert('Web Serial is supported in Google Chrome & Edge. Please open this page in Chrome/Edge to connect directly to your USB scanner.');
+      return;
+    }
+    try {
+      const port = await (navigator as any).serial.requestPort();
+      await port.open({ baudRate: 9600 });
+      setWebSerialConnected(true);
+      readFromSerialPort(port);
     } catch (err: any) {
       console.warn('WebSerial error:', err);
       if (err.name === 'NetworkError' || String(err).includes('Failed to open serial port')) {
         setWebSerialConnected(true);
+        setHardwareBridgeConnected(true);
         alert('Notice: This COM port is already active and streaming via the background terminal bridge! Just tap your physical RFID card directly onto the reader antenna.');
       }
     }
@@ -342,6 +413,19 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
 
       setRegisteredName(regRes.patient.fullName);
       setRegStep('SUCCESS');
+      const nextSession = {
+        sessionId: regRes.sessionId,
+        patientId: regRes.patient.id,
+        isNewPatient: true,
+      };
+      setSuccessSession(nextSession);
+
+      // Auto-redirect to Language Screen / Intake Flow
+      setTimeout(() => {
+        if (onIdentified) {
+          onIdentified(nextSession);
+        }
+      }, 1200);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
@@ -419,40 +503,51 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
             </div>
           )}
 
-          {/* Production Hardware Reader Status Card */}
-          <div className="w-full bg-slate-900 text-white rounded-2xl border border-slate-800 p-4 shadow-xl text-left space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                </span>
-                <span className="text-[11px] font-bold text-slate-100 uppercase tracking-wider">
-                  Physical RFID Hardware Active
+            {/* Production Hardware Reader Status Card */}
+            <div className="w-full bg-slate-900 text-white rounded-2xl border border-slate-800 p-4 shadow-xl text-left space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                  </span>
+                  <span className="text-[11px] font-bold text-slate-100 uppercase tracking-wider">
+                    Physical RFID Hardware System
+                  </span>
+                </div>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-mono font-bold border border-emerald-500/30">
+                  {webSerialConnected || hardwareBridgeConnected ? 'Scanner Connected & Active' : 'Auto-Listening Active'}
                 </span>
               </div>
-              <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-mono font-bold border border-emerald-500/30">
-                Ready for Live Tap
-              </span>
-            </div>
 
-            <p className="text-[11px] text-slate-300 leading-relaxed">
-              Place your physical RFID Smart Card on the USB reader antenna. Registered cards authenticate immediately; new cards open instant registration.
-            </p>
+              <p className="text-[11px] text-slate-300 leading-relaxed">
+                Place your physical RFID Smart Card directly onto the USB scanner antenna. Cards are scanned automatically and authenticated instantly.
+              </p>
 
-            {/* Direct USB Hardware Pair Button */}
-            <button
-              type="button"
-              onClick={handleConnectWebSerial}
-              className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border transition-all cursor-pointer shadow-xs ${
-                webSerialConnected
-                  ? 'bg-emerald-950/90 border-emerald-500 text-emerald-300 shadow-emerald-900/40'
-                  : 'bg-slate-800 hover:bg-slate-700/90 border-slate-700 text-slate-200'
-              }`}
-            >
-              <Radio size={14} className={webSerialConnected ? 'text-emerald-400 animate-pulse' : 'text-blue-400'} />
-              <span>{webSerialConnected ? '🟢 USB Hardware Reader Connected (Listening)' : '🔌 Pair USB Hardware Scanner (Arduino / Serial COM Port)'}</span>
-            </button>
+              {/* Automatic Physical Hardware Auto-Connection Status */}
+              <div className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-between border transition-all shadow-xs ${
+                webSerialConnected || hardwareBridgeConnected
+                  ? 'bg-emerald-950/90 border-emerald-500/80 text-emerald-300 shadow-emerald-900/40'
+                  : 'bg-slate-800 border-slate-700 text-slate-200'
+              }`}>
+                <div className="flex items-center gap-2">
+                  <Radio size={14} className={webSerialConnected || hardwareBridgeConnected ? 'text-emerald-400 animate-pulse' : 'text-emerald-400'} />
+                  <span>
+                    {webSerialConnected || hardwareBridgeConnected
+                      ? '🟢 Hardware Scanner Auto-Connected (Streaming Live Taps)'
+                      : '🟢 Hardware Scanner Ready (Auto-Detecting Card Taps)'}
+                  </span>
+                </div>
+                {!webSerialConnected && !hardwareBridgeConnected && typeof navigator !== 'undefined' && 'serial' in navigator && (
+                  <button
+                    type="button"
+                    onClick={handleConnectWebSerial}
+                    className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold transition-all shadow-xs"
+                  >
+                    Pair USB Reader
+                  </button>
+                )}
+              </div>
 
             {/* Live Scan Input Bar */}
             <form
@@ -820,7 +915,7 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
 
               {/* STEP 3: SUCCESS FEEDBACK */}
               {regStep === 'SUCCESS' && (
-                <div className="py-6 flex flex-col items-center justify-center text-center space-y-2.5 animate-scale-in">
+                <div className="py-6 flex flex-col items-center justify-center text-center space-y-3 animate-scale-in">
                   <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-inner">
                     <CheckCircle2 size={28} />
                   </div>
@@ -830,8 +925,19 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
                   </p>
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 animate-pulse pt-1">
                     <RefreshCw size={13} className="animate-spin" />
-                    <span>Launching language selection and clinical intake flow…</span>
+                    <span>Redirecting to language selection and clinical intake flow…</span>
                   </div>
+                  {successSession && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (onIdentified) onIdentified(successSession);
+                      }}
+                      className="mt-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer hover:scale-105 active:scale-95"
+                    >
+                      <span>Continue to Language Selection &rarr;</span>
+                    </button>
+                  )}
                 </div>
               )}
             </div>

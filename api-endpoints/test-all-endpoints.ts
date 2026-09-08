@@ -203,6 +203,43 @@ async function runSuite() {
     // -------------------------------------------------------------------------
     console.log('\n--- [STEP 4] Patient Kiosk: Registration, Token Binding & Queue ---');
 
+    await step('Physical RFID Hardware Status Check (GET /api/rfid/status)', async () => {
+      const res = await fetch(`${baseUrl}/api/rfid/status`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+      const data = await res.json();
+      if (typeof data.connected !== 'boolean') throw new Error('Expected connected boolean');
+    });
+
+    await step('Clinical AI Symptom Normalization - Vernacular (POST /api/ai/normalize-symptoms)', async () => {
+      const res = await fetch(`${baseUrl}/api/ai/normalize-symptoms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: 'mujhe bahut tez bukhar aur khansi hai 3 din se',
+          language: 'hi',
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+      const data = await res.json();
+      if (!data.success) throw new Error('Normalization failed');
+      if (data.suggestedCategory !== 'fever') throw new Error(`Expected fever category, got ${data.suggestedCategory}`);
+    });
+
+    await step('Clinical AI Symptom Normalization - Red Flag / Emergency (POST /api/ai/normalize-symptoms)', async () => {
+      const res = await fetch(`${baseUrl}/api/ai/normalize-symptoms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: 'sudden crushing chest pain radiating to left arm and severe breathlessness',
+          language: 'en',
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+      const data = await res.json();
+      if (!data.isEmergency) throw new Error('Expected emergency flag to be true for crushing chest pain');
+      if (data.suggestedCategory !== 'chest-pain') throw new Error(`Expected chest-pain category, got ${data.suggestedCategory}`);
+    });
+
     await step('Register Patient and Bind RFID Token (POST /api/patients/register-kiosk)', async () => {
       const res = await fetch(`${baseUrl}/api/patients/register-kiosk`, {
         method: 'POST',

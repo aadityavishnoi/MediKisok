@@ -203,4 +203,79 @@ aiRouter.post('/consultations/:id/complete', async (req, res, next) => {
   }
 });
 
+/**
+ * POST /api/ai/normalize-symptoms
+ * Clinical AI Symptom Extraction & Normalization
+ * Analyzes free-text or multilingual speech transcripts, extracts standardized
+ * clinical symptom tokens, maps categories, and flags emergency triage triggers.
+ */
+aiRouter.post('/ai/normalize-symptoms', async (req, res, next) => {
+  try {
+    const { text, words } = req.body;
+    const clinicalAiPath = '../../../../ai/clinical-ai/src/index.js';
+    const { SymptomNormalizer } = await (import(clinicalAiPath) as Promise<any>);
+
+    const rawString = typeof text === 'string' ? text : '';
+    const tokenList = (Array.isArray(words) && words.length > 0)
+      ? words
+      : rawString.toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, ' ').split(/\s+/).filter(Boolean);
+
+    const normalized = SymptomNormalizer.normalizeList(tokenList);
+
+    // Smart triage category inference from extracted clinical tokens
+    let suggestedCategory: 'chest-pain' | 'breathing-difficulty' | 'fever' | 'abdominal-pain' | 'headache' | 'general-fallback' = 'general-fallback';
+    let isEmergency = false;
+
+    for (const sym of normalized) {
+      if (sym.isRedFlag) isEmergency = true;
+      if (sym.symptomCode === 'SYMPT_CHEST_PAIN' || sym.symptomCode === 'SYMPT_PALPITATIONS') {
+        suggestedCategory = 'chest-pain';
+        isEmergency = true;
+        break;
+      }
+      if (sym.symptomCode === 'SYMPT_DYSPNEA') {
+        suggestedCategory = 'breathing-difficulty';
+        isEmergency = true;
+        break;
+      }
+      if (sym.symptomCode === 'SYMPT_FEVER' || sym.symptomCode === 'SYMPT_CHILLS') {
+        suggestedCategory = 'fever';
+      } else if (sym.symptomCode === 'SYMPT_ABDO_PAIN' || sym.symptomCode === 'SYMPT_VOMITING' || sym.symptomCode === 'SYMPT_DIARRHEA') {
+        if (suggestedCategory === 'general-fallback') suggestedCategory = 'abdominal-pain';
+      } else if (sym.symptomCode === 'SYMPT_HEADACHE') {
+        if (suggestedCategory === 'general-fallback') suggestedCategory = 'headache';
+      }
+    }
+
+    const lower = rawString.toLowerCase();
+    if (suggestedCategory === 'general-fallback') {
+      if (lower.includes('chest') || lower.includes('heart') || lower.includes('seene') || lower.includes('sine')) {
+        suggestedCategory = 'chest-pain';
+        isEmergency = true;
+      } else if (lower.includes('breath') || lower.includes('saas') || lower.includes('suffocat') || lower.includes('dyspnea')) {
+        suggestedCategory = 'breathing-difficulty';
+        isEmergency = true;
+      } else if (lower.includes('fever') || lower.includes('bukhar') || lower.includes('temperature') || lower.includes('chills')) {
+        suggestedCategory = 'fever';
+      } else if (lower.includes('stomach') || lower.includes('pet') || lower.includes('abdomin') || lower.includes('vomit') || lower.includes('ulti')) {
+        suggestedCategory = 'abdominal-pain';
+      } else if (lower.includes('head') || lower.includes('sar') || lower.includes('migraine') || lower.includes('dizz')) {
+        suggestedCategory = 'headache';
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      rawText: rawString,
+      normalizedSymptoms: normalized,
+      suggestedCategory,
+      isEmergency,
+      tokensExtracted: normalized.length,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+
 

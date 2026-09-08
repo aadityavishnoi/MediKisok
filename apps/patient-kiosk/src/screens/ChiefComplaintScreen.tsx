@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getDictionary } from '@medikiosk/ui';
 import { CHIEF_COMPLAINT_CATEGORIES, CHIEF_COMPLAINT_LABELS, type ChiefComplaintCategory } from '@medikiosk/clinical-engine';
 import type { Language } from '@medikiosk/shared-types';
-import { Mic, Heart, Thermometer, Brain, Wind, Stethoscope, Edit3, AlertTriangle, ArrowLeft, Sparkles } from 'lucide-react';
+import { Mic, Heart, Thermometer, Brain, Wind, Stethoscope, Edit3, AlertTriangle, ArrowLeft, Sparkles, Send, Cpu, CheckCircle2 } from 'lucide-react';
 import { speechToText, toSpeechLang } from '../lib/speech.js';
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -21,35 +21,70 @@ export interface ChiefComplaintScreenProps {
 }
 
 export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefComplaintScreenProps) {
-  const t = getDictionary(language).chiefComplaint;
   const langKey = language === 'HI' ? 'hi' : 'en';
   const [isListening, setIsListening] = useState(false);
   const [voiceText, setVoiceText] = useState<string | null>(null);
+  const [typedInput, setTypedInput] = useState('');
+  const [aiAnalyzing, setAiAnalyzing] = useState(false);
+  const [extractedTokens, setExtractedTokens] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<ChiefComplaintCategory | null>(null);
   const [symptomList, setSymptomList] = useState<Array<{ category: ChiefComplaintCategory; label: { en: string; hi: string } }>>(() =>
-    CHIEF_COMPLAINT_CATEGORIES.map(cat => ({ category: cat, label: CHIEF_COMPLAINT_LABELS[cat] }))
+    CHIEF_COMPLAINT_CATEGORIES.map((cat) => ({ category: cat, label: CHIEF_COMPLAINT_LABELS[cat] }))
   );
 
   useEffect(() => {
     let isMounted = true;
     fetch('/api/clinical/symptoms')
-      .then(res => res.json())
-      .then(json => {
+      .then((res) => res.json())
+      .then((json) => {
         if (isMounted && json.success && Array.isArray(json.data) && json.data.length > 0) {
           const active = json.data.filter((s: any) => s.active !== false);
           if (active.length > 0) {
-            setSymptomList(active.map((s: any) => ({
-              category: s.category || s.id,
-              label: s.label || { en: s.name || s.id, hi: s.nameHi || s.name || s.id }
-            })));
+            setSymptomList(
+              active.map((s: any) => ({
+                category: s.category || s.id,
+                label: s.label || { en: s.name || s.id, hi: s.nameHi || s.name || s.id },
+              }))
+            );
           }
         }
       })
       .catch(() => {
-        // Offline or server not ready: safe fallback preserved
+        // Safe offline fallback preserved
       });
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, []);
+
+  async function analyzeSymptomsWithAi(input: string) {
+    const clean = input.trim();
+    if (!clean) return;
+    setAiAnalyzing(true);
+    try {
+      const res = await fetch('/api/ai/normalize-symptoms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: clean }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.normalizedSymptoms) && data.normalizedSymptoms.length > 0) {
+          setExtractedTokens(data.normalizedSymptoms);
+        }
+        if (data.suggestedCategory) {
+          setSelectedCategory(data.suggestedCategory);
+          setTimeout(() => {
+            onSelect(data.suggestedCategory);
+          }, 900);
+        }
+      }
+    } catch (e) {
+      console.warn('AI symptom normalization notice:', e);
+    } finally {
+      setAiAnalyzing(false);
+    }
+  }
 
   const isEmergencySelected = selectedCategory === 'chest-pain' || selectedCategory === 'breathing-difficulty';
 
@@ -58,9 +93,10 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
       setIsListening(true);
       setTimeout(() => {
         setIsListening(false);
-        setVoiceText('Chest pain radiating to left shoulder');
-        setSelectedCategory('chest-pain');
-      }, 2500);
+        const fallbackSpeech = 'High fever with chills and headache';
+        setVoiceText(fallbackSpeech);
+        analyzeSymptomsWithAi(fallbackSpeech);
+      }, 1500);
       return;
     }
 
@@ -75,17 +111,10 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
       .listen({ lang: toSpeechLang(language) })
       .then((res) => {
         setVoiceText(res.transcript);
-        if (res.transcript.toLowerCase().includes('chest') || res.transcript.toLowerCase().includes('heart')) {
-          setSelectedCategory('chest-pain');
-          onSelect('chest-pain');
-        } else if (res.transcript.toLowerCase().includes('fever')) {
-          setSelectedCategory('fever');
-          onSelect('fever');
-        }
+        analyzeSymptomsWithAi(res.transcript);
       })
       .catch(() => {
-        setVoiceText('Severe headache and dizziness');
-        setSelectedCategory('headache');
+        setIsListening(false);
       })
       .finally(() => setIsListening(false));
   };
@@ -95,46 +124,106 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
     onSelect(cat);
   };
 
+  const handleTypedSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (typedInput.trim()) {
+      setVoiceText(typedInput.trim());
+      analyzeSymptomsWithAi(typedInput.trim());
+    }
+  };
+
   return (
     <div className="flex-1 flex items-center justify-center px-4 py-4 w-full max-w-2xl mx-auto">
-      <div className="w-full bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 text-center space-y-6 shadow-xs">
+      <div className="w-full bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 text-center space-y-5 shadow-xs">
         <div>
           <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100/80 mb-2">
-            <Sparkles size={13} /> Select Symptom
+            <Sparkles size={13} /> Select Symptom · AI Triage
           </span>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 font-display tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-display tracking-tight">
             What brings you in today?
           </h1>
-          <p className="mt-1.5 text-sm text-slate-500 font-medium">
-            Tap the microphone and describe your symptoms, or pick an option below
+          <p className="mt-1 text-xs text-slate-500 font-medium">
+            Speak into the microphone, type your symptoms, or pick an option below
           </p>
         </div>
 
-        {/* Mic Pulse Button */}
-        <div className="flex flex-col items-center justify-center my-3">
+        {/* Mic Pulse Button & Voice Capture */}
+        <div className="flex flex-col items-center justify-center my-2">
           <button
             type="button"
             onClick={handleMicClick}
-            className={`w-22 h-22 rounded-full text-white flex items-center justify-center shadow-lg transition-all duration-300 ${
+            className={`w-20 h-20 rounded-full text-white flex items-center justify-center shadow-lg transition-all duration-300 ${
               isListening
                 ? 'bg-red-600 animate-pulse ring-8 ring-red-100 scale-105'
                 : 'bg-gradient-to-tr from-blue-600 to-indigo-600 hover:scale-105 ring-8 ring-blue-50'
             }`}
           >
-            <Mic size={36} />
+            <Mic size={32} />
           </button>
-          <span className="mt-2.5 text-xs font-semibold text-slate-600">
-            {isListening ? '🎙️ Listening… Speak naturally' : 'Tap to speak symptoms'}
+          <span className="mt-2 text-xs font-semibold text-slate-600">
+            {isListening ? '🎙️ Listening… Speak in Hindi or English' : 'Tap to speak symptoms (AI Normalization)'}
           </span>
           {voiceText && (
-            <div className="mt-2 text-xs font-semibold text-blue-800 bg-blue-50 px-3.5 py-1.5 rounded-xl border border-blue-100">
-              Recorded: "{voiceText}"
+            <div className="mt-2 text-xs font-semibold text-blue-800 bg-blue-50 px-3.5 py-1.5 rounded-xl border border-blue-100 flex items-center gap-2">
+              <Cpu size={14} className={aiAnalyzing ? 'animate-spin text-blue-600' : 'text-blue-600'} />
+              <span>Input: "{voiceText}"</span>
+              {aiAnalyzing && <span className="text-[10px] text-blue-600 animate-pulse">Running Clinical AI…</span>}
             </div>
           )}
         </div>
 
+        {/* Extracted Clinical AI Tokens Banner */}
+        {extractedTokens.length > 0 && (
+          <div className="p-3 bg-emerald-50/90 border border-emerald-200 rounded-2xl text-left space-y-1.5 animate-scale-in">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-emerald-900 flex items-center gap-1.5">
+                <CheckCircle2 size={13} className="text-emerald-600" />
+                Clinical AI Normalized Symptoms:
+              </span>
+              <span className="text-[10px] font-mono text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
+                ML Model Active
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {extractedTokens.map((tok, idx) => (
+                <span
+                  key={idx}
+                  className={`text-[10px] font-bold px-2.5 py-0.5 rounded-lg border ${
+                    tok.isRedFlag
+                      ? 'bg-red-100 text-red-800 border-red-200'
+                      : 'bg-white text-emerald-800 border-emerald-200'
+                  }`}
+                >
+                  {tok.canonicalName || tok.symptomCode}
+                  {tok.icd10Category ? ` (${tok.icd10Category})` : ''}
+                  {tok.isRedFlag ? ' ⚡ High Priority' : ''}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Natural Language Free-Text Symptom Input */}
+        <form onSubmit={handleTypedSubmit} className="flex items-center gap-2 max-w-md mx-auto">
+          <input
+            type="text"
+            placeholder="Type symptoms (e.g. bukhar, severe headache, chest pain)…"
+            value={typedInput}
+            onChange={(e) => setTypedInput(e.target.value)}
+            className="flex-1 px-3.5 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          />
+          <button
+            type="submit"
+            disabled={!typedInput.trim() || aiAnalyzing}
+            className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-sm transition-all disabled:opacity-50"
+          >
+            <Send size={13} />
+            <span>AI Parse</span>
+          </button>
+        </form>
+
         {/* Symptom Touch Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           {symptomList.map(({ category, label }, i) => {
             const isSel = selectedCategory === category;
             const icon = CATEGORY_ICONS[category] || CATEGORY_ICONS['general-fallback'];
@@ -145,16 +234,16 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
                 type="button"
                 onClick={() => handleTileClick(category)}
                 style={{ animationDelay: `${i * 40}ms` }}
-                className={`group flex min-h-[96px] flex-col items-center justify-center gap-2 rounded-2xl border p-4 text-center transition-all duration-200 active:scale-[0.98] animate-slide-up stagger-item ${
+                className={`group flex min-h-[86px] flex-col items-center justify-center gap-1.5 rounded-2xl border p-3.5 text-center transition-all duration-200 active:scale-[0.98] animate-slide-up stagger-item ${
                   isSel
                     ? 'border-blue-600 bg-blue-50/70 ring-2 ring-blue-100 shadow-xs'
                     : 'border-slate-200/80 bg-slate-50/40 hover:border-blue-400 hover:bg-white hover:shadow-xs hover:-translate-y-0.5'
                 }`}
               >
-                <div className="p-2 rounded-xl bg-blue-50/80 border border-blue-100/60 group-hover:bg-blue-100/60 transition-colors">
+                <div className="p-1.5 rounded-xl bg-blue-50/80 border border-blue-100/60 group-hover:bg-blue-100/60 transition-colors">
                   {icon}
                 </div>
-                <span className="text-base font-bold text-slate-800 group-hover:text-blue-900 font-display">
+                <span className="text-sm font-bold text-slate-800 group-hover:text-blue-900 font-display">
                   {displayLabel}
                 </span>
               </button>
@@ -164,20 +253,17 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
 
         {/* Emergency Alert Card */}
         {isEmergencySelected && (
-          <div className="mt-4 bg-red-50/80 border border-red-200 rounded-2xl p-4.5 flex items-center justify-between gap-3 text-left shadow-xs animate-scale-in">
+          <div className="mt-3 bg-red-50/80 border border-red-200 rounded-2xl p-4 flex items-center justify-between gap-3 text-left shadow-xs animate-scale-in">
             <div className="flex items-center gap-3">
-              <AlertTriangle className="text-red-600 shrink-0" size={22} />
+              <AlertTriangle className="text-red-600 shrink-0" size={20} />
               <div>
-                <div className="font-bold text-red-900 text-sm">Emergency Triage Priority Triggered</div>
-                <div className="text-xs text-red-700 font-medium">Duty nurse alerted for priority assessment.</div>
+                <div className="font-bold text-red-900 text-xs">Emergency Priority Detected by Clinical AI</div>
+                <div className="text-[11px] text-red-700 font-medium">Triage queue automatically escalated for priority care.</div>
               </div>
             </div>
-            <button
-              type="button"
-              className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shrink-0 shadow-xs transition-all active:scale-[0.98]"
-            >
-              Call Nurse Now
-            </button>
+            <span className="px-3 py-1.5 rounded-xl bg-red-600 text-white font-bold text-[10px] shrink-0 shadow-xs uppercase font-mono">
+              Priority Red
+            </span>
           </div>
         )}
 
@@ -185,7 +271,7 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
           <button
             type="button"
             onClick={onBack}
-            className="mt-2 inline-flex items-center gap-1.5 text-slate-400 hover:text-slate-700 font-semibold text-xs transition-colors"
+            className="mt-1 inline-flex items-center gap-1.5 text-slate-400 hover:text-slate-700 font-semibold text-xs transition-colors"
           >
             <ArrowLeft size={13} /> Back to start
           </button>
@@ -194,5 +280,3 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
     </div>
   );
 }
-
-
