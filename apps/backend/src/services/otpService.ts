@@ -38,13 +38,17 @@ export class OtpService {
 
     // Dispatch via TextBee Android Phone SMS Gateway (100% Free & Verified Real SIM SMS)
     const textbeeApiKey =
-      process.env.TEXTBEE_API_KEY && process.env.TEXTBEE_API_KEY !== 'txb_PmYNoZxGzXS10wKgi1kdnnMliCvfpWNY'
+      process.env.TEXTBEE_API_KEY &&
+      process.env.TEXTBEE_API_KEY !== 'txb_PmYNoZxGzXS10wKgi1kdnnMliCvfpWNY' &&
+      process.env.TEXTBEE_API_KEY !== 'txb_9LK7dSkLAKsxSHUPtlDkQ3HLYLS7fDR7'
         ? process.env.TEXTBEE_API_KEY
-        : 'txb_9LK7dSkLAKsxSHUPtlDkQ3HLYLS7fDR7';
+        : 'txb_LH5C4FJelzaa0dGMTzJvJkYn0DoXVbSC';
     const textbeeDeviceId =
-      process.env.TEXTBEE_DEVICE_ID && process.env.TEXTBEE_DEVICE_ID !== '6a9eac8accb6c72709c589e0'
+      process.env.TEXTBEE_DEVICE_ID &&
+      process.env.TEXTBEE_DEVICE_ID !== '6a9eac8accb6c72709c589e0' &&
+      process.env.TEXTBEE_DEVICE_ID !== '6aa07fb6ccb6c7270942b550'
         ? process.env.TEXTBEE_DEVICE_ID
-        : '6aa07fb6ccb6c7270942b550';
+        : '6aa089deccb6c727094aa3d2';
 
     if (!textbeeApiKey || !textbeeDeviceId) {
       console.warn('⚠️ [TextBee Gateway]: Missing TEXTBEE_API_KEY or TEXTBEE_DEVICE_ID in .env');
