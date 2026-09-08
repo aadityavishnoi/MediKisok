@@ -8,7 +8,7 @@ import type {
   NextQuestionRequest,
   NextQuestionResponse,
   SuspectedDifferential,
-} from '../../shared/types/index';
+} from '../../../shared/types/index';
 import { CLINICAL_QUESTION_GRAPH } from '../graph/ClinicalQuestionGraph';
 import { SymptomNormalizer } from '../normalization/SymptomNormalizer';
 

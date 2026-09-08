@@ -1,0 +1,37 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "source": "DDXPlus-NeurIPS2022",
+    "target": "MediKiosk Intake Ranking"
+  },
+  "probabilities": {
+    "FEVER_ACUTE": {
+      "p_given_viral_resp": 0.85,
+      "p_given_dengue": 0.96,
+      "p_given_pneumonia": 0.88,
+      "p_given_acs": 0.05,
+      "icd10": "R50.9"
+    },
+    "COUGH_ACUTE": {
+      "p_given_viral_resp": 0.9,
+      "p_given_dengue": 0.15,
+      "p_given_pneumonia": 0.92,
+      "p_given_acs": 0.1,
+      "icd10": "R05"
+    },
+    "DYSPNEA_ACUTE": {
+      "p_given_viral_resp": 0.4,
+      "p_given_dengue": 0.1,
+      "p_given_pneumonia": 0.85,
+      "p_given_acs": 0.7,
+      "icd10": "R06.0"
+    },
+    "PRECORDIAL_CHEST_PAIN": {
+      "p_given_viral_resp": 0.08,
+      "p_given_dengue": 0.05,
+      "p_given_pneumonia": 0.35,
+      "p_given_acs": 0.95,
+      "icd10": "R07.9"
+    }
+  }
+}
