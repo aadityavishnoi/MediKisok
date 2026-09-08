@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Cpu, ShieldAlert, CheckCircle2, Lock, AlertTriangle, RefreshCw, Layers, Key, ShieldCheck, Search, Filter } from 'lucide-react';
 
 interface RfidTokenBatch {
@@ -23,6 +23,27 @@ export function RfidNationalRegistryModule() {
   const [batches, setBatches] = useState<RfidTokenBatch[]>(INITIAL_BATCHES);
   const [scanUid, setScanUid] = useState('');
   const [scanResult, setScanResult] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadInventory() {
+      try {
+        const res = await fetch('/api/rfid/inventory');
+        if (res.ok) {
+          const data = await res.json();
+          if (mounted && Array.isArray(data.batches) && data.batches.length > 0) {
+            setBatches(data.batches);
+          }
+        }
+      } catch (err) {
+        console.warn('Live RFID inventory fetch failed, using fallback batches:', err);
+      }
+    }
+    loadInventory();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const totalCardsInCirculation = batches.reduce((sum, b) => sum + b.totalCards, 0);
 

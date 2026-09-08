@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { requireAuth, requireRole, type RequestWithUser } from '../middleware/userAuth.js';
-
+import { recordAudit } from '../lib/audit.js';
+import { ActorType } from '@medikiosk/shared-types';
 import { env } from '../lib/env.js';
 
 export const adminRouter = Router();
@@ -472,4 +473,197 @@ adminRouter.post(
     res.status(201).json({ success: true, kiosk });
   }),
 );
+
+/**
+ * GET /api/admin/system-configs
+ * Returns dynamic platform configuration from SystemConfig table
+ */
+adminRouter.get(
+  '/admin/system-configs',
+  ...requireCentralAdmin,
+  asyncHandler(async (_req, res) => {
+    const configs = await prisma.systemConfig.findMany({
+      where: { facilityId: null },
+    });
+    const configMap: Record<string, any> = {};
+    for (const c of configs) {
+      configMap[c.configKey] = c.configValue;
+    }
+
+    res.json({
+      success: true,
+      KIOSK_INACTIVITY_TIMEOUT_SECONDS: configMap.KIOSK_INACTIVITY_TIMEOUT_SECONDS ?? 45,
+      DOCTOR_SESSION_TIMEOUT_MINUTES: configMap.DOCTOR_SESSION_TIMEOUT_MINUTES ?? 120,
+      OFFLINE_SYNC_THRESHOLD_HOURS: configMap.OFFLINE_SYNC_THRESHOLD_HOURS ?? 24,
+      VOICE_INPUT_CONFIDENCE_THRESHOLD: configMap.VOICE_INPUT_CONFIDENCE_THRESHOLD ?? 0.85,
+      FEATURE_FLAGS: configMap.FEATURE_FLAGS ?? {
+        OCR_ENABLED: true,
+        VOICE_INPUT_ENABLED: true,
+        RFID_ENABLED: true,
+        AI_TRIAGE_ENABLED: true,
+        SURVEILLANCE_ENABLED: true,
+      },
+      configs,
+    });
+  }),
+);
+
+/**
+ * PUT /api/admin/system-configs/:key
+ * Upsert dynamic platform configuration
+ */
+adminRouter.put(
+  '/admin/system-configs/:key',
+  ...requireCentralAdmin,
+  asyncHandler(async (req, res) => {
+    const { key } = req.params;
+    const { value, category } = req.body;
+    const user = (req as any).user;
+
+    const existing = await prisma.systemConfig.findFirst({
+      where: { facilityId: null, configKey: key },
+    });
+
+    let config;
+    if (existing) {
+      config = await prisma.systemConfig.update({
+        where: { id: existing.id },
+        data: {
+          configValue: value as any,
+          category: category || existing.category,
+          updatedBy: user?.sub,
+        },
+      });
+    } else {
+      config = await prisma.systemConfig.create({
+        data: {
+          facilityId: null,
+          configKey: key,
+          configValue: value as any,
+          category: category || 'SYSTEM_CONFIG',
+          updatedBy: user?.sub,
+        },
+      });
+    }
+
+    await recordAudit({
+      actorType: ActorType.ADMIN,
+      actorId: user?.sub,
+      action: 'SYSTEM_CONFIG_UPDATED',
+      entityType: 'SystemConfig',
+      entityId: key,
+      metadata: { key, value },
+    });
+
+    res.json({ success: true, config });
+  }),
+);
+
+/**
+ * GET /api/admin/incidents
+ * Query live operational infrastructure alerts
+ */
+adminRouter.get(
+  '/admin/incidents',
+  ...requireCentralAdmin,
+  asyncHandler(async (_req, res) => {
+    const alerts = await prisma.operationalAlert.findMany({
+      include: {
+        hospital: { select: { id: true, name: true, state: true, district: true } },
+        device: { select: { id: true, deviceCode: true, location: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+
+    res.json({ total: alerts.length, incidents: alerts });
+  }),
+);
+
+/**
+ * POST /api/admin/incidents
+ * Register a new operational infrastructure incident
+ */
+const incidentCreateSchema = z.object({
+  facilityId: z.string().min(1),
+  deviceId: z.string().optional(),
+  alertType: z.enum([
+    'KIOSK_OFFLINE',
+    'RFID_READER_FAILURE',
+    'QUEUE_OVERLOAD',
+    'DEVICE_ERROR',
+    'NETWORK_LATENCY',
+    'PRINTER_PAPER_LOW',
+  ]).default('RFID_READER_FAILURE'),
+  severity: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).default('MEDIUM'),
+  message: z.string().min(3),
+});
+
+adminRouter.post(
+  '/admin/incidents',
+  ...requireCentralAdmin,
+  asyncHandler(async (req, res) => {
+    const data = incidentCreateSchema.parse(req.body);
+    const user = (req as any).user;
+
+    const alert = await prisma.operationalAlert.create({
+      data: {
+        facilityId: data.facilityId,
+        deviceId: data.deviceId,
+        alertType: data.alertType as any,
+        severity: data.severity as any,
+        message: data.message,
+      },
+      include: {
+        hospital: { select: { id: true, name: true, state: true } },
+      },
+    });
+
+    await recordAudit({
+      actorType: ActorType.ADMIN,
+      actorId: user?.sub,
+      facilityId: data.facilityId,
+      action: 'INCIDENT_REPORTED',
+      entityType: 'OperationalAlert',
+      entityId: alert.id,
+      metadata: { alertType: data.alertType, severity: data.severity },
+    });
+
+    res.status(201).json({ success: true, incident: alert });
+  }),
+);
+
+/**
+ * POST /api/admin/incidents/:id/resolve
+ * Resolve an operational incident
+ */
+adminRouter.post(
+  '/admin/incidents/:id/resolve',
+  ...requireCentralAdmin,
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const user = (req as any).user;
+
+    const updated = await prisma.operationalAlert.update({
+      where: { id },
+      data: {
+        acknowledged: true,
+        acknowledgedAt: new Date(),
+        acknowledgedBy: user?.sub || 'Central Admin',
+      },
+    });
+
+    await recordAudit({
+      actorType: ActorType.ADMIN,
+      actorId: user?.sub,
+      facilityId: updated.facilityId,
+      action: 'INCIDENT_RESOLVED',
+      entityType: 'OperationalAlert',
+      entityId: id,
+    });
+
+    res.json({ success: true, incident: updated });
+  }),
+);
+
 

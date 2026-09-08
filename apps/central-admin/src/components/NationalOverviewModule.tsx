@@ -42,22 +42,19 @@ export function NationalOverviewModule({ searchQuery }: NationalOverviewModulePr
   }, []);
 
   const stateData = metrics?.regionalDistribution?.length
-    ? DEFAULT_STATE_DATA.map((s) => {
-        const match = metrics.regionalDistribution.find((r: any) =>
-          r.state?.toLowerCase().includes(s.state.toLowerCase()) || s.state.toLowerCase().includes(r.state?.toLowerCase())
-        );
-        if (match) {
-          return {
-            ...s,
-            facilities: match.facilities,
-            volume: match.sessionsToday ? `${match.sessionsToday} (Live)` : s.volume,
-          };
-        }
-        return s;
-      })
+    ? metrics.regionalDistribution.map((match: any) => ({
+        state: match.state || 'National Facility',
+        facilities: match.facilities,
+        kiosks: Math.max(match.facilities, 1),
+        volume: `${match.sessionsToday || 0} Sessions`,
+        wait: '10-15 min',
+        occupancy: 'Normal',
+        trend: '↑ Live Sync',
+        color: 'text-emerald-600',
+      }))
     : DEFAULT_STATE_DATA;
 
-  const filtered = stateData.filter((s) => s.state.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filtered = stateData.filter((s: any) => s.state.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
     <div className="space-y-6">
@@ -76,7 +73,7 @@ export function NationalOverviewModule({ searchQuery }: NationalOverviewModulePr
           </div>
           <div className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Public Hospitals Monitored</div>
           <div className="text-3xl font-extrabold text-slate-900 mt-1 font-display">
-            {metrics ? metrics.overview.totalFacilities : '1,482'}
+            {metrics ? metrics.overview.totalFacilities : '—'}
           </div>
         </div>
 
@@ -88,12 +85,12 @@ export function NationalOverviewModule({ searchQuery }: NationalOverviewModulePr
             <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded border ${
               isLive ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200'
             }`}>
-              {isLive ? '● Live Fleet' : '99.94% Online'}
+              {isLive ? '● Live Fleet' : 'Fleet Status'}
             </span>
           </div>
           <div className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Active RFID Intake Kiosks</div>
           <div className="text-3xl font-extrabold text-slate-900 mt-1 font-display">
-            {metrics ? metrics.overview.activeKiosks : '12,450'}
+            {metrics ? metrics.overview.activeKiosks : '—'}
           </div>
         </div>
 
@@ -103,12 +100,12 @@ export function NationalOverviewModule({ searchQuery }: NationalOverviewModulePr
               <Users size={20} />
             </div>
             <span className="text-xs font-bold text-emerald-600 flex items-center gap-0.5">
-              <ArrowUpRight size={14} /> {isLive ? 'Real-time' : '5.8%'}
+              <ArrowUpRight size={14} /> {isLive ? 'Real-time' : 'Database'}
             </span>
           </div>
           <div className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Registered Patient Intake</div>
           <div className="text-3xl font-extrabold text-slate-900 mt-1 font-display">
-            {metrics ? metrics.overview.registeredPatients : '842,910'}
+            {metrics ? metrics.overview.registeredPatients : '—'}
           </div>
         </div>
 
@@ -156,7 +153,7 @@ export function NationalOverviewModule({ searchQuery }: NationalOverviewModulePr
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filtered.map((r, i) => (
+                {filtered.map((r: any, i: number) => (
                   <tr key={r.state} className="hover:bg-slate-50 transition-colors animate-slide-up stagger-item" style={{ animationDelay: `${i * 30}ms` }}>
                     <td className="py-3.5 font-bold text-slate-900 flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-blue-500" />

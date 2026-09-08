@@ -23,6 +23,7 @@ import { queueRouter } from './routes/queue.js';
 import { prescriptionsRouter } from './routes/prescriptions.js';
 import { surveillanceRouter } from './routes/surveillance.js';
 import { interoperabilityRouter } from './routes/interoperability.js';
+import { clinicalRouter } from './routes/clinical.js';
 
 export function createApp() {
   const app = express();
@@ -57,6 +58,7 @@ export function createApp() {
     prescriptionsRouter,
     surveillanceRouter,
     interoperabilityRouter,
+    clinicalRouter,
   ];
 
   for (const r of routers) {

@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getDictionary } from '@medikiosk/ui';
 import { CHIEF_COMPLAINT_CATEGORIES, CHIEF_COMPLAINT_LABELS, type ChiefComplaintCategory } from '@medikiosk/clinical-engine';
 import type { Language } from '@medikiosk/shared-types';
 import { Mic, Heart, Thermometer, Brain, Wind, Stethoscope, Edit3, AlertTriangle, ArrowLeft, Sparkles } from 'lucide-react';
 import { speechToText, toSpeechLang } from '../lib/speech.js';
 
-const CATEGORY_ICONS: Record<ChiefComplaintCategory, React.ReactNode> = {
+const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   'chest-pain': <Heart className="w-7 h-7 text-blue-600 group-hover:scale-110 transition-transform" />,
   'breathing-difficulty': <Wind className="w-7 h-7 text-blue-600 group-hover:scale-110 transition-transform" />,
   'abdominal-pain': <Stethoscope className="w-7 h-7 text-blue-600 group-hover:scale-110 transition-transform" />,
@@ -26,6 +26,30 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
   const [isListening, setIsListening] = useState(false);
   const [voiceText, setVoiceText] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<ChiefComplaintCategory | null>(null);
+  const [symptomList, setSymptomList] = useState<Array<{ category: ChiefComplaintCategory; label: { en: string; hi: string } }>>(() =>
+    CHIEF_COMPLAINT_CATEGORIES.map(cat => ({ category: cat, label: CHIEF_COMPLAINT_LABELS[cat] }))
+  );
+
+  useEffect(() => {
+    let isMounted = true;
+    fetch('/api/clinical/symptoms')
+      .then(res => res.json())
+      .then(json => {
+        if (isMounted && json.success && Array.isArray(json.data) && json.data.length > 0) {
+          const active = json.data.filter((s: any) => s.active !== false);
+          if (active.length > 0) {
+            setSymptomList(active.map((s: any) => ({
+              category: s.category || s.id,
+              label: s.label || { en: s.name || s.id, hi: s.nameHi || s.name || s.id }
+            })));
+          }
+        }
+      })
+      .catch(() => {
+        // Offline or server not ready: safe fallback preserved
+      });
+    return () => { isMounted = false; };
+  }, []);
 
   const isEmergencySelected = selectedCategory === 'chest-pain' || selectedCategory === 'breathing-difficulty';
 
@@ -111,8 +135,10 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
 
         {/* Symptom Touch Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {CHIEF_COMPLAINT_CATEGORIES.map((category, i) => {
+          {symptomList.map(({ category, label }, i) => {
             const isSel = selectedCategory === category;
+            const icon = CATEGORY_ICONS[category] || CATEGORY_ICONS['general-fallback'];
+            const displayLabel = label?.[langKey] || label?.en || category;
             return (
               <button
                 key={category}
@@ -126,10 +152,10 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
                 }`}
               >
                 <div className="p-2 rounded-xl bg-blue-50/80 border border-blue-100/60 group-hover:bg-blue-100/60 transition-colors">
-                  {CATEGORY_ICONS[category]}
+                  {icon}
                 </div>
                 <span className="text-base font-bold text-slate-800 group-hover:text-blue-900 font-display">
-                  {CHIEF_COMPLAINT_LABELS[category][langKey]}
+                  {displayLabel}
                 </span>
               </button>
             );

@@ -370,6 +370,113 @@ async function runSuite() {
       const logs = data.auditLogs || data.logs || [];
       if (!Array.isArray(logs) || logs.length === 0) throw new Error('Expected recorded audit logs in CockroachDB');
     });
+
+    // -------------------------------------------------------------------------
+    // STEP 9: Dynamic Configuration, Clinical Content & Operational Incidents
+    // -------------------------------------------------------------------------
+    console.log('\n--- [STEP 9] Dynamic Clinical Protocols, Diseases & System Configs ---');
+
+    await step('Dynamic Symptoms Registry (GET /api/clinical/symptoms & POST /api/clinical/symptoms)', async () => {
+      const getRes = await fetch(`${baseUrl}/api/clinical/symptoms`);
+      if (!getRes.ok) throw new Error(`HTTP ${getRes.status}`);
+      const getData = await getRes.json();
+      if (!Array.isArray(getData.data) || getData.data.length === 0) throw new Error('Expected symptom list');
+
+      const postRes = await fetch(`${baseUrl}/api/clinical/symptoms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: 'test-dizziness',
+          name: 'Dizziness and Vertigo',
+          localizedLabels: { en: 'Dizziness and Vertigo', hi: 'चक्कर आना' },
+          category: 'NEUROLOGICAL',
+          isEmergency: false,
+          mappedTreeId: 'headache',
+          icon: 'Brain',
+        }),
+      });
+      if (!postRes.ok) throw new Error(`HTTP ${postRes.status}: ${await postRes.text()}`);
+    });
+
+    await step('Dynamic Clinical Protocol Governance (GET & POST /api/clinical/protocols)', async () => {
+      const getRes = await fetch(`${baseUrl}/api/clinical/protocols`);
+      if (!getRes.ok) throw new Error(`HTTP ${getRes.status}`);
+      const getData = await getRes.json();
+      if (!Array.isArray(getData.protocols)) throw new Error('Expected protocols list');
+
+      const postRes = await fetch(`${baseUrl}/api/clinical/protocols`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: 'PROT-TEST-01',
+          name: 'Hyperglycemic Emergency Protocol',
+          version: 'v1.0',
+          jurisdiction: 'National Default',
+          mandatoryQuestions: 4,
+          redFlagTriggers: ['RBS > 400 mg/dL', 'Kussmaul breathing'],
+        }),
+      });
+      if (!postRes.ok) throw new Error(`HTTP ${postRes.status}: ${await postRes.text()}`);
+    });
+
+    await step('Dynamic Disease Registry (GET & POST /api/surveillance/diseases)', async () => {
+      const getRes = await fetch(`${baseUrl}/api/surveillance/diseases`);
+      if (!getRes.ok) throw new Error(`HTTP ${getRes.status}`);
+      const getData = await getRes.json();
+      if (!Array.isArray(getData.diseases)) throw new Error('Expected diseases list');
+
+      const postRes = await fetch(`${baseUrl}/api/surveillance/diseases`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: 'A09',
+          name: 'Infectious Gastroenteritis',
+          category: 'GASTROINTESTINAL',
+          severity: 'MODERATE',
+          surveillanceEnabled: true,
+        }),
+      });
+      if (!postRes.ok) throw new Error(`HTTP ${postRes.status}: ${await postRes.text()}`);
+    });
+
+    await step('Dynamic System Configuration & RBAC Timeouts (GET & PUT /api/admin/system-configs)', async () => {
+      const getRes = await fetch(`${baseUrl}/api/admin/system-configs`);
+      if (!getRes.ok) throw new Error(`HTTP ${getRes.status}`);
+      const getData = await getRes.json();
+      if (typeof getData.KIOSK_INACTIVITY_TIMEOUT_SECONDS !== 'number') {
+        throw new Error('Expected timeout setting');
+      }
+
+      const putRes = await fetch(`${baseUrl}/api/admin/system-configs/KIOSK_INACTIVITY_TIMEOUT_SECONDS`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: 60, category: 'KIOSK_SETTINGS' }),
+      });
+      if (!putRes.ok) throw new Error(`HTTP ${putRes.status}: ${await putRes.text()}`);
+    });
+
+    let testIncidentId: string | undefined;
+    await step('Operational Incident Lifecycle (POST & Resolve /api/admin/incidents)', async () => {
+      const createRes = await fetch(`${baseUrl}/api/admin/incidents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          facilityId: testHospitalId,
+          message: 'Automated Test: RFID antenna mismatch alert',
+          severity: 'HIGH',
+          alertType: 'RFID_READER_FAILURE',
+        }),
+      });
+      if (!createRes.ok) throw new Error(`HTTP ${createRes.status}: ${await createRes.text()}`);
+      const createData = await createRes.json();
+      testIncidentId = createData.incident?.id;
+      if (!testIncidentId) throw new Error('Missing incident ID');
+
+      const resolveRes = await fetch(`${baseUrl}/api/admin/incidents/${testIncidentId}/resolve`, {
+        method: 'POST',
+      });
+      if (!resolveRes.ok) throw new Error(`HTTP ${resolveRes.status}: ${await resolveRes.text()}`);
+    });
   } finally {
     server.close();
   }

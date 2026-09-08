@@ -152,7 +152,7 @@ export function DiseaseOutbreakModule() {
               )}
             </div>
             <p className="text-xs text-slate-600 mt-1 max-w-2xl leading-relaxed">
-              Automated anomaly detection engine analyzing real-time symptom dictations across 12,450 kiosks for sudden epidemiological clusters.
+              Automated anomaly detection engine analyzing real-time symptom dictations across all operational kiosks for sudden epidemiological clusters.
             </p>
           </div>
         </div>

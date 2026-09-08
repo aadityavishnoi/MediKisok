@@ -298,6 +298,11 @@ surveillanceRouter.get('/surveillance/central-admin/overview', async (req, res, 
     const lucknowRisk = SurveillanceService.getRegionalRisk('IN-UP-LUCKNOW');
     const puneRisk = SurveillanceService.getRegionalRisk('IN-MH-PUNE');
 
+    const hospitalCount = await prisma.hospital.count({ where: { facilityStatus: 'ACTIVE' } });
+    const totalConsultations = await prisma.consultation.count();
+    const totalSignals = await prisma.diseaseOutbreakSignal.count();
+    const totalIngestedRecords = Math.max(totalConsultations + totalSignals, 1);
+
     res.json({
       modelVersion: 'surveillance-model-v2.1',
       forecastModelVersion: 'forecast-model-v2.1',
@@ -306,7 +311,7 @@ surveillanceRouter.get('/surveillance/central-admin/overview', async (req, res, 
       nationalOverview: {
         activeOutbreakClusters: 4,
         monitoredDistrictsCount: 38,
-        sentinelFacilitiesReporting: 142,
+        sentinelFacilitiesReporting: Math.max(hospitalCount, 1),
         overallNationalRisk: 'MODERATE_ELEVATED',
       },
       diseaseActivity: [
@@ -379,7 +384,7 @@ surveillanceRouter.get('/surveillance/central-admin/overview', async (req, res, 
         },
       ],
       dataQuality: {
-        totalIngestedRecords: 1240,
+        totalIngestedRecords,
         qualityScore: 0.98,
         validationStatus: 'PASS',
         unrecordedDenominatorsHandledSafely: true,
@@ -394,4 +399,104 @@ surveillanceRouter.get('/surveillance/central-admin/overview', async (req, res, 
     next(err);
   }
 });
+
+const DEFAULT_DISEASES = [
+  { code: 'A90', name: 'Dengue Fever', localizedNames: { en: 'Dengue Fever', hi: 'डेंगू बुखार' }, category: 'VECTOR_BORNE', severity: 'HIGH', surveillanceEnabled: true, active: true },
+  { code: 'B54', name: 'Malaria', localizedNames: { en: 'Malaria', hi: 'मलेरिया' }, category: 'VECTOR_BORNE', severity: 'HIGH', surveillanceEnabled: true, active: true },
+  { code: 'A01', name: 'Typhoid Fever', localizedNames: { en: 'Typhoid Fever', hi: 'टाइफाइड बुखार' }, category: 'WATER_BORNE', severity: 'MODERATE', surveillanceEnabled: true, active: true },
+  { code: 'J20', name: 'Acute Bronchitis', localizedNames: { en: 'Acute Bronchitis', hi: 'तीव्र ब्रोंकाइटिस' }, category: 'RESPIRATORY', severity: 'MODERATE', surveillanceEnabled: true, active: true },
+  { code: 'A92.0', name: 'Chikungunya', localizedNames: { en: 'Chikungunya', hi: 'चिकनगुनिया' }, category: 'VECTOR_BORNE', severity: 'MODERATE', surveillanceEnabled: true, active: true },
+  { code: 'U07.1', name: 'COVID-19', localizedNames: { en: 'COVID-19', hi: 'कोविड-19' }, category: 'RESPIRATORY', severity: 'CRITICAL', surveillanceEnabled: true, active: true },
+  { code: 'A00', name: 'Cholera', localizedNames: { en: 'Cholera', hi: 'हैज़ा' }, category: 'WATER_BORNE', severity: 'CRITICAL', surveillanceEnabled: true, active: true },
+];
+
+/**
+ * GET /api/surveillance/diseases
+ * Database-backed Disease Registry
+ */
+surveillanceRouter.get('/surveillance/diseases', async (_req, res, next) => {
+  try {
+    const config = await prisma.systemConfig.findFirst({
+      where: { configKey: 'MONITORED_DISEASES' },
+    });
+
+    if (config && Array.isArray(config.configValue)) {
+      res.json({ success: true, diseases: config.configValue });
+      return;
+    }
+
+    res.json({ success: true, diseases: DEFAULT_DISEASES });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /api/surveillance/diseases
+ * Register or update monitored disease in registry
+ */
+surveillanceRouter.post('/surveillance/diseases', async (req, res, next) => {
+  try {
+    const { code, name, localizedNames, category, severity, surveillanceEnabled } = req.body;
+    if (!code || !name) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Disease code and name required' } });
+      return;
+    }
+
+    const currentConfig = await prisma.systemConfig.findFirst({
+      where: { configKey: 'MONITORED_DISEASES' },
+    });
+
+    let currentList = DEFAULT_DISEASES;
+    if (currentConfig && Array.isArray(currentConfig.configValue)) {
+      currentList = currentConfig.configValue as any[];
+    }
+
+    const filtered = currentList.filter((d) => d.code !== code);
+    const newDisease = {
+      code,
+      name,
+      localizedNames: localizedNames || { en: name, hi: name },
+      category: category || 'INFECTIOUS',
+      severity: severity || 'MODERATE',
+      surveillanceEnabled: surveillanceEnabled ?? true,
+      active: true,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const updatedList = [...filtered, newDisease];
+
+    const existing = await prisma.systemConfig.findFirst({
+      where: { facilityId: null, configKey: 'MONITORED_DISEASES' },
+    });
+    if (existing) {
+      await prisma.systemConfig.update({
+        where: { id: existing.id },
+        data: { configValue: updatedList as any },
+      });
+    } else {
+      await prisma.systemConfig.create({
+        data: {
+          facilityId: null,
+          configKey: 'MONITORED_DISEASES',
+          configValue: updatedList as any,
+          category: 'SURVEILLANCE_CONFIG',
+        },
+      });
+    }
+
+    await recordAudit({
+      actorType: ActorType.ADMIN,
+      action: 'DISEASE_REGISTERED',
+      entityType: 'DiseaseRegistry',
+      entityId: code,
+      metadata: { code, name, category },
+    });
+
+    res.status(201).json({ success: true, disease: newDisease });
+  } catch (err) {
+    next(err);
+  }
+});
+
 
