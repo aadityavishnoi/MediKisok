@@ -86,4 +86,38 @@ describe('GET /api/doctor/dashboard', () => {
     expect(row.chiefComplaint).toBe('Chest pain');
     expect(row.highestAlertSeverity).toBe('HIGH');
   });
+
+  it('deduplicates dashboard — same patient with multiple sessions appears only once', async () => {
+    // Regression test for: "double data kyu aa rha haii"
+    // Root cause: PatientSession.findMany returns N rows for one patient (one per scan/session),
+    // the backend must deduplicate to exactly 1 row per patient in the queue.
+    const token = await loginAsDemoDoctor();
+
+    // Create 2 active sessions for demo-patient-001 in DB
+    const s1 = await prisma.patientSession.create({
+      data: {
+        patientId: 'demo-patient-001',
+        status: 'ROUTED',
+        identifiedVia: 'RFID',
+      },
+    });
+
+    const s2 = await prisma.patientSession.create({
+      data: {
+        patientId: 'demo-patient-001',
+        status: 'ROUTED',
+        identifiedVia: 'RFID',
+      },
+    });
+
+    const dashboard = await request(app).get('/api/doctor/dashboard').set('Authorization', `Bearer ${token}`);
+    expect(dashboard.status).toBe(200);
+
+    const patientRows = dashboard.body.sessions.filter(
+      (s: { patient: { id: string } }) => s.patient?.id === 'demo-patient-001',
+    );
+    // CRITICAL: exactly 1 row per patient regardless of session count
+    expect(patientRows.length).toBe(1);
+    expect(patientRows[0].sessionId).toBe(s2.id);
+  });
 });

@@ -26,8 +26,8 @@ const envSchema = z.object({
   RFID_SERIAL_PORT: z.string().default('COM3'),
   RFID_SERIAL_BAUD: z.coerce.number().default(9600),
   RFID_DEBOUNCE_MS: z.coerce.number().default(1500),
-  IMAGEKIT_PUBLIC_KEY: z.string().default('public_Z2qmufLC1Jhah2JkxHp7S613EG8='),
-  IMAGEKIT_PRIVATE_KEY: z.string().default('private_uFRBrN9V/PDJWEVQV0Cs0wsVLO4='),
+  IMAGEKIT_PUBLIC_KEY: z.string().optional().default(''),
+  IMAGEKIT_PRIVATE_KEY: z.string().optional().default(''),
   IMAGEKIT_URL_ENDPOINT: z.string().default('https://ik.imagekit.io/aadityavishnoi'),
 });
 
