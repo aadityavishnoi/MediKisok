@@ -7,6 +7,7 @@ import { RegionalSignalSchema, RegionalSignal } from './regional_signal_schema';
 import { QuestionPriority } from './question_schema';
 
 export const NextQuestionApiRequestSchema = z.object({
+  sessionId: z.string().optional(),
   patient: z.object({
     age: z.number().int().min(0).max(130),
     gender: z.string().min(1),

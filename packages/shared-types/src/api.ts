@@ -372,3 +372,50 @@ export interface AuthLoginResponse {
 }
 
 export type { DocumentType, IdentificationMethod, DeviceStatus };
+
+// ---------------------------------------------------------------------------
+// Clinical AI / Dynamic Questioning
+// ---------------------------------------------------------------------------
+
+export type QuestionPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+export type SurveillanceRiskLevel = 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
+export type SurveillanceConfidence =
+  | 'INSUFFICIENT_SAMPLE'
+  | 'LOW_CONFIDENCE'
+  | 'MODERATE_CONFIDENCE'
+  | 'ADEQUATE_SAMPLE'
+  | 'HIGH_CONFIDENCE'
+  | 'VERY_HIGH';
+
+export interface RegionalSignal {
+  regionId?: string;
+  disease: string;
+  riskLevel: SurveillanceRiskLevel;
+  positivityRate: number;
+  sampleSize?: number;
+  trend?: string;
+  confidence: SurveillanceConfidence;
+  generatedAt?: string;
+}
+
+export interface NextQuestionApiRequest {
+  sessionId?: string;
+  patient: {
+    age: number;
+    gender: string;
+  };
+  symptoms: string[];
+  answers: Record<string, string | boolean | number>;
+  regionalSignals?: RegionalSignal[];
+}
+
+export interface NextQuestionApiResponse {
+  nextQuestion: {
+    id: string;
+    text: string;
+    priority: QuestionPriority;
+  } | null;
+  reason: string;
+  safetyFlags: string[];
+  requiresDoctorReview: true;
+}

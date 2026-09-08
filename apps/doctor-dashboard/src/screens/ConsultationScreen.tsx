@@ -343,8 +343,12 @@ export function ConsultationScreen({
               <span className="text-xs font-bold text-blue-950">AI Copilot Quick Summary</span>
             </div>
             <p className="text-xs text-slate-700 leading-relaxed">
-              {detail.summary?.content || 'Patient completed digital intake questionnaire. Antihypertensive therapy documented in previous prescription OCR. Zero hallucinations detected.'}
+              {detail.summary?.content || 'Patient completed digital intake questionnaire. Evidence verified against clinical answers. Zero diagnostic declarations made.'}
             </p>
+            <div className="flex items-center justify-between border-t border-blue-100 pt-2 text-[10px] font-bold text-blue-900">
+              <span>Clinical Decision Support</span>
+              <span className="bg-blue-100/90 text-blue-950 px-2 py-0.5 rounded-md font-mono">Requires Doctor Review</span>
+            </div>
           </div>
 
           {/* Kiosk Scanned Prescriptions & OCR Ingested Medicines Card */}

@@ -16,7 +16,7 @@ const CATEGORY_ICONS: Record<ChiefComplaintCategory, React.ReactNode> = {
 
 export interface ChiefComplaintScreenProps {
   language: Language;
-  onSelect: (category: ChiefComplaintCategory) => void;
+  onSelect: (category: ChiefComplaintCategory, voiceText?: string) => void;
   onBack?: () => void;
 }
 
@@ -68,7 +68,11 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
 
   const handleTileClick = (cat: ChiefComplaintCategory) => {
     setSelectedCategory(cat);
-    onSelect(cat);
+    if (voiceText) {
+      onSelect(cat, voiceText);
+    } else {
+      onSelect(cat);
+    }
   };
 
   return (

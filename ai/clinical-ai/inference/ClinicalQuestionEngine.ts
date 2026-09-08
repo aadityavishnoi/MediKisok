@@ -9,6 +9,7 @@ import {
   NextQuestionApiResponse,
   NextQuestionApiRequestSchema,
 } from '../schemas/api_schema';
+import { RegionalSignal } from '../schemas/regional_signal_schema';
 import { CLINICAL_QUESTION_GRAPH } from '../question-engine/ClinicalQuestionGraph';
 import { SymptomNormalizer } from '../preprocessing/normalize_symptoms';
 import { QuestionPrioritizer } from '../question-engine/QuestionPrioritizer';
@@ -32,7 +33,7 @@ export class ClinicalQuestionEngine {
       CLINICAL_QUESTION_GRAPH,
       normalizedSymptoms,
       answers,
-      regionalSignals,
+      regionalSignals as unknown as RegionalSignal[],
     );
 
     if (!prioritization.selectedQuestion) {

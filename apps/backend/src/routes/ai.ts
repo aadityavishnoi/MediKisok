@@ -97,6 +97,7 @@ aiRouter.post('/ai/next-question', async (req, res, next) => {
       const signals = payload.regionalSignal ? [payload.regionalSignal] : [];
 
       payload = {
+        sessionId: ps.sessionId,
         patient: {
           age: typeof ps.demographics?.age === 'number' ? ps.demographics.age : 30,
           gender: ps.demographics?.gender ? String(ps.demographics.gender) : 'M',
@@ -110,7 +111,7 @@ aiRouter.post('/ai/next-question', async (req, res, next) => {
     // Validate request schema
     const parseResult = NextQuestionApiRequestSchema.safeParse(payload);
     if (!parseResult.success) {
-      const issueMessages = parseResult.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
+      const issueMessages = parseResult.error.issues.map((i: any) => `${i.path.join('.')}: ${i.message}`).join('; ');
       res.status(400).json({
         error: {
           code: 'BAD_REQUEST',
@@ -121,6 +122,75 @@ aiRouter.post('/ai/next-question', async (req, res, next) => {
     }
 
     const evaluation = ClinicalQuestionEngine.evaluateNextQuestion(parseResult.data);
+
+    // If sessionId provided, persist answers to session state and notify doctor dashboard
+    const { sessionId } = parseResult.data;
+    if (sessionId) {
+      try {
+        const { demoStore } = await import('../lib/demoStore.js');
+        const demoSession = demoStore.getSession(sessionId);
+        if (demoSession) {
+          demoStore.updateSession(sessionId, {
+            answers: { ...demoSession.answers, ...parseResult.data.answers },
+            status: evaluation.nextQuestion ? 'IN_HISTORY' : 'DOCUMENTS',
+            historyCompleted: !evaluation.nextQuestion,
+            chiefComplaintCategory: parseResult.data.symptoms[0] || demoSession.chiefComplaintCategory,
+          });
+        }
+
+        // Try updating database clinicalHistory if available
+        try {
+          const session = await prisma.patientSession.findUnique({ where: { id: sessionId } });
+          if (session && session.patientId) {
+            await prisma.clinicalHistory.upsert({
+              where: { sessionId },
+              update: {
+                chiefComplaint: parseResult.data.symptoms.join(', '),
+                completedAt: evaluation.nextQuestion ? null : new Date(),
+              },
+              create: {
+                sessionId,
+                patientId: session.patientId,
+                mode: session.mode,
+                chiefComplaint: parseResult.data.symptoms.join(', '),
+                completedAt: evaluation.nextQuestion ? null : new Date(),
+              },
+            });
+
+            // If safety flags triggered, log alert for doctor review
+            if (evaluation.safetyFlags.length > 0) {
+              await prisma.alert.create({
+                data: {
+                  sessionId,
+                  patientId: session.patientId,
+                  severity: evaluation.safetyFlags.some((f: string) => f.includes('URGENT') || f.includes('CRITICAL'))
+                    ? 'CRITICAL'
+                    : 'HIGH',
+                  message: evaluation.safetyFlags.join('; '),
+                  triggerType: 'AI_CLINICAL_SCREENING',
+                },
+              });
+            }
+          }
+        } catch {
+          // Ignore DB connection errors if running in standalone/demo mode
+        }
+
+        // Broadcast real-time update to doctor dashboard
+        const { wsHub } = await import('../ws/hub.js');
+        wsHub.broadcast({
+          type: 'SESSION_UPDATED',
+          payload: {
+            sessionId,
+            status: evaluation.nextQuestion ? 'IN_HISTORY' : 'DOCUMENTS',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      } catch {
+        // Silently continue if real-time broadcast fails
+      }
+    }
+
     res.status(200).json(evaluation);
   } catch (err) {
     next(err);

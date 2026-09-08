@@ -8,6 +8,7 @@ import { IdleTimeoutGuard } from '../components/IdleTimeoutGuard.js';
 import { LanguageScreen } from './LanguageScreen.js';
 import { ConsentScreen } from './ConsentScreen.js';
 import { ChiefComplaintScreen } from './ChiefComplaintScreen.js';
+import { DynamicHistoryScreen } from './DynamicHistoryScreen.js';
 import { HistoryScreen } from './HistoryScreen.js';
 import { DocumentUploadScreen } from './DocumentUploadScreen.js';
 import { toUserMessage } from '../lib/errors.js';
@@ -17,6 +18,7 @@ type FlowStage =
   | { name: 'CONSENT' }
   | { name: 'DECLINED' }
   | { name: 'CHIEF_COMPLAINT' }
+  | { name: 'DYNAMIC_HISTORY'; symptoms: string[] }
   | { name: 'HISTORY'; question: HistoryQuestion; redFlagActive: boolean }
   | { name: 'SCAN' }
   | { name: 'DONE' };
@@ -26,6 +28,7 @@ const STEP_BY_STAGE: Record<FlowStage['name'], KioskStepId> = {
   CONSENT: 'CONSENT',
   DECLINED: 'CONSENT',
   CHIEF_COMPLAINT: 'CHIEF_COMPLAINT',
+  DYNAMIC_HISTORY: 'HISTORY',
   HISTORY: 'HISTORY',
   SCAN: 'SCAN',
   DONE: 'DONE',
@@ -41,16 +44,10 @@ export function PatientFlow({ sessionId, wsState }: PatientFlowProps) {
   const [language, setLanguage] = useState<Language>(Language.EN);
   const [startError, setStartError] = useState<string | null>(null);
 
-  async function handleSelectComplaint(category: ChiefComplaintCategory) {
+  function handleSelectComplaint(category: ChiefComplaintCategory, voiceText?: string) {
     setStartError(null);
-    try {
-      const result = await startHistory({ sessionId, mode: Mode.GENERAL, chiefComplaintCategory: category });
-      if (result.question) {
-        setStage({ name: 'HISTORY', question: result.question, redFlagActive: false });
-      }
-    } catch (err) {
-      setStartError(toUserMessage(err, getDictionary(language)));
-    }
+    const symptoms = [category, voiceText].filter(Boolean) as string[];
+    setStage({ name: 'DYNAMIC_HISTORY', symptoms });
   }
 
   let content;
@@ -89,6 +86,16 @@ export function PatientFlow({ sessionId, wsState }: PatientFlowProps) {
           </div>
         )}
       </>
+    );
+  } else if (stage.name === 'DYNAMIC_HISTORY') {
+    content = (
+      <DynamicHistoryScreen
+        sessionId={sessionId}
+        language={language}
+        initialSymptoms={stage.symptoms}
+        onComplete={() => setStage({ name: 'SCAN' })}
+        onEmergencyEscalate={() => setStage({ name: 'DONE' })}
+      />
     );
   } else if (stage.name === 'HISTORY') {
     content = (

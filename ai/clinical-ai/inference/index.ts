@@ -2,14 +2,14 @@
  * MediKiosk Clinical AI - Public Inference Module Exports
  */
 
-export * from '../schemas/clinical_concepts';
-export * from '../schemas/question_schema';
-export * from '../schemas/regional_signal_schema';
-export * from '../schemas/api_schema';
-export * from '../preprocessing/normalize_symptoms';
-export * from '../question-engine/ClinicalQuestionGraph';
-export * from '../question-engine/RedFlagDetector';
-export * from '../question-engine/RegionalModifier';
-export * from '../question-engine/InformationGain';
-export * from '../question-engine/QuestionPrioritizer';
-export * from './ClinicalQuestionEngine';
+export * from '../schemas/clinical_concepts.js';
+export * from '../schemas/question_schema.js';
+export * from '../schemas/regional_signal_schema.js';
+export * from '../schemas/api_schema.js';
+export * from '../preprocessing/normalize_symptoms.js';
+export * from '../question-engine/ClinicalQuestionGraph.js';
+export * from '../question-engine/RedFlagDetector.js';
+export * from '../question-engine/RegionalModifier.js';
+export * from '../question-engine/InformationGain.js';
+export * from '../question-engine/QuestionPrioritizer.js';
+export * from './ClinicalQuestionEngine.js';

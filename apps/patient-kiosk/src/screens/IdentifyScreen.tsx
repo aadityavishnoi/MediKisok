@@ -40,7 +40,7 @@ export interface IdentifyScreenProps {
 const CONNECTION_CONFIG: Record<WsConnectionState, { color: string; label: string }> = {
   open: { color: 'bg-emerald-500', label: tc.connected },
   connecting: { color: 'bg-amber-400', label: tc.connecting },
-  closed: { color: 'bg-emerald-500', label: 'Cloud Sync Ready' },
+  closed: { color: 'bg-amber-400', label: tc.reconnecting },
 };
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
@@ -428,11 +428,11 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                 </span>
                 <span className="text-[11px] font-bold text-slate-100 uppercase tracking-wider">
-                  Physical RFID Hardware Active
+                  Physical RFID Hardware Scanner Active
                 </span>
               </div>
               <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-mono font-bold border border-emerald-500/30">
-                Ready for Live Tap
+                Live Reader Ready
               </span>
             </div>
 
