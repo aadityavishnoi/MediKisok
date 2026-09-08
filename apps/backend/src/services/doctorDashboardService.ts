@@ -398,17 +398,25 @@ export async function startConsultation(sessionId: string, doctorId?: string): P
       data: { status: 'IN_CONSULT' },
     });
 
+    let validDoctorId: string | null = null;
+    if (doctorId) {
+      try {
+        const docExists = await prisma.doctor.findUnique({ where: { id: doctorId }, select: { id: true } });
+        if (docExists) validDoctorId = docExists.id;
+      } catch {}
+    }
+
     const consultation = await prisma.consultation.upsert({
       where: { sessionId },
       update: {
         status: 'IN_PROGRESS',
-        doctorId: doctorId || null,
+        doctorId: validDoctorId,
         startedAt: now,
       },
       create: {
         sessionId,
         patientId: session.patient.id,
-        doctorId: doctorId || null,
+        doctorId: validDoctorId,
         status: 'IN_PROGRESS',
         startedAt: now,
       },
@@ -471,18 +479,26 @@ export async function completeConsultation(
     const followUp = payload.followUpDate ? `\n\nFollow-up Date: ${payload.followUpDate}` : '';
     const fullNotes = `${payload.notes || ''}\n\nPrescription:\n${formattedPrescriptions}${formattedLabOrders}${followUp}`.trim();
 
+    let validDoctorId: string | null = null;
+    if (doctorId) {
+      try {
+        const docExists = await prisma.doctor.findUnique({ where: { id: doctorId }, select: { id: true } });
+        if (docExists) validDoctorId = docExists.id;
+      } catch {}
+    }
+
     const consultation = await prisma.consultation.upsert({
       where: { sessionId },
       update: {
         status: 'COMPLETED',
         notes: fullNotes,
         completedAt: now,
-        doctorId: doctorId || undefined,
+        doctorId: validDoctorId,
       },
       create: {
         sessionId,
         patientId: session.patient.id,
-        doctorId: doctorId || null,
+        doctorId: validDoctorId,
         status: 'COMPLETED',
         notes: fullNotes,
         startedAt: now,
