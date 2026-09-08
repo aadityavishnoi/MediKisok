@@ -104,6 +104,7 @@ export const QueueStatus = {
   COMPLETED: 'COMPLETED',
   NO_SHOW: 'NO_SHOW',
   CANCELLED: 'CANCELLED',
+  TRANSFERRED: 'TRANSFERRED',
 } as const;
 export type QueueStatus = (typeof QueueStatus)[keyof typeof QueueStatus];
 
@@ -263,15 +264,6 @@ export const QueuePriority = {
 } as const;
 export type QueuePriority = (typeof QueuePriority)[keyof typeof QueuePriority];
 
-export const QueueStatus = {
-  WAITING: 'WAITING',
-  CALLED: 'CALLED',
-  IN_CONSULTATION: 'IN_CONSULTATION',
-  COMPLETED: 'COMPLETED',
-  NO_SHOW: 'NO_SHOW',
-  TRANSFERRED: 'TRANSFERRED',
-} as const;
-export type QueueStatus = (typeof QueueStatus)[keyof typeof QueueStatus];
 
 export const KioskOperationalMode = {
   GENERAL_OPD: 'GENERAL_OPD',

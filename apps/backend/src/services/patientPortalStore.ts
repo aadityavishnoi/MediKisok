@@ -648,7 +648,7 @@ export async function storeFindAppointments(patientId: string, status?: string):
         reason: a.reason,
         notes: a.notes,
         cancellationReason: a.cancellationReason,
-        location: a.department?.wingOrBlock ? `${a.department.name} (${a.department.wingOrBlock})` : 'AIIMS Main OPD Block',
+        location: a.department?.floor ? `${a.department.name} (${a.department.floor})` : 'AIIMS Main OPD Block',
         createdAt: a.createdAt.toISOString(),
         updatedAt: a.updatedAt.toISOString(),
       }));
@@ -696,6 +696,44 @@ export async function storeCreateAppointment(data: {
       include: { doctor: true, facility: true, department: true },
     });
     if (created) {
+      // Auto-create Billing Invoice in DB
+      try {
+        const invoiceNumber = `INV-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+        await prisma.billingInvoice.create({
+          data: {
+            patientId: data.patientId,
+            appointmentId: created.id,
+            invoiceNumber,
+            description: `OPD Consultation Fee - ${created.department?.name ?? 'General Clinic'}`,
+            department: created.department?.name ?? 'General OPD',
+            totalAmount: 250.0,
+            discountAmount: 0.0,
+            netAmount: 250.0,
+            status: 'PENDING',
+            items: [
+              { description: 'OPD Specialist Consultation', quantity: 1, unitPrice: 250.0, amount: 250.0 },
+            ],
+          },
+        });
+      } catch (invErr) {
+        console.warn('[Billing] Could not persist invoice:', invErr);
+      }
+
+      // Auto-create Notification in DB
+      try {
+        await prisma.patientNotification.create({
+          data: {
+            patientId: data.patientId,
+            title: 'Appointment Confirmed',
+            message: `Your appointment with ${created.doctor?.name ?? 'Doctor'} for ${data.timeSlot} on ${data.appointmentDate.toISOString().split('T')[0]} has been confirmed.`,
+            type: 'APPOINTMENT_CONFIRMED',
+            actionUrl: '/appointments',
+          },
+        });
+      } catch (notifErr) {
+        console.warn('[Notification] Could not persist notification:', notifErr);
+      }
+
       return {
         id: created.id,
         patientId: created.patientId,
@@ -713,7 +751,7 @@ export async function storeCreateAppointment(data: {
         reason: created.reason,
         notes: created.notes,
         cancellationReason: created.cancellationReason,
-        location: created.department?.wingOrBlock ? `${created.department.name} (${created.department.wingOrBlock})` : 'AIIMS Main OPD Block',
+        location: created.department?.floor ? `${created.department.name} (${created.department.floor})` : 'AIIMS Main OPD Block',
         createdAt: created.createdAt.toISOString(),
         updatedAt: created.updatedAt.toISOString(),
       };
@@ -877,19 +915,21 @@ export async function storeCancelAppointment(
 }
 
 export async function storeFindPrescriptions(patientId: string, status?: string): Promise<PrescriptionEntity[]> {
+  const list: PrescriptionEntity[] = [];
+
   try {
     const dbRx = await prisma.patientPrescription.findMany({
       where: { patientId },
       include: { doctor: true },
       orderBy: { prescriptionDate: 'desc' },
     });
+    const now = new Date();
     if (dbRx && dbRx.length > 0) {
-      const now = new Date();
-      return dbRx.map((p) => {
+      for (const p of dbRx) {
         const rxDate = new Date(p.prescriptionDate);
         const diffDays = (now.getTime() - rxDate.getTime()) / (1000 * 3600 * 24);
         const compStatus = diffDays > 30 ? 'Expired' : diffDays > 14 ? 'Completed' : 'Active';
-        return {
+        list.push({
           id: p.id,
           patientId: p.patientId,
           doctorId: p.doctorId,
@@ -904,8 +944,51 @@ export async function storeFindPrescriptions(patientId: string, status?: string)
           startDate: p.prescriptionDate.toISOString(),
           endDate: new Date(rxDate.getTime() + 14 * 86400000).toISOString(),
           createdAt: p.createdAt.toISOString(),
-        };
-      });
+        });
+      }
+    }
+
+    const clinicalRx = await prisma.prescription.findMany({
+      where: { patientId },
+      include: { doctor: true, items: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (clinicalRx && clinicalRx.length > 0) {
+      for (const rx of clinicalRx) {
+        if (list.some((item) => item.id === rx.id)) continue;
+        const rxDate = new Date(rx.createdAt);
+        const diffDays = (now.getTime() - rxDate.getTime()) / (1000 * 3600 * 24);
+        const compStatus = rx.dispensed ? 'Completed' : diffDays > 30 ? 'Expired' : 'Active';
+        list.push({
+          id: rx.id,
+          patientId: rx.patientId,
+          doctorId: rx.doctorId,
+          doctorName: rx.doctor?.name ?? null,
+          appointmentId: null,
+          prescriptionDate: rx.createdAt.toISOString(),
+          diagnosis: rx.diagnosis,
+          instructions: rx.clinicalNotes ?? (rx.followUpDays ? `Follow up in ${rx.followUpDays} days` : 'Take as directed'),
+          medications: rx.items.map((item) => ({
+            name: item.medicineName,
+            dosage: item.dosage || 'Standard',
+            frequency: String(item.frequency),
+            duration: `${item.durationDays} days`,
+            instructions: item.instructions ?? '',
+            route: item.timing ?? 'Oral',
+          })),
+          pdfUrl: `/api/patient/prescriptions/${rx.id}/download`,
+          status: compStatus,
+          startDate: rx.createdAt.toISOString(),
+          endDate: new Date(rxDate.getTime() + (rx.followUpDays || 7) * 86400000).toISOString(),
+          createdAt: rx.createdAt.toISOString(),
+        });
+      }
+    }
+
+    if (list.length > 0) {
+      return status
+        ? list.filter((p) => p.status.toLowerCase() === status.toLowerCase())
+        : list;
     }
   } catch {
     // Database offline fallback
@@ -948,6 +1031,40 @@ export async function storeFindPrescriptionById(id: string, patientId: string): 
         startDate: p.prescriptionDate.toISOString(),
         endDate: new Date(rxDate.getTime() + 14 * 86400000).toISOString(),
         createdAt: p.createdAt.toISOString(),
+      };
+    }
+
+    const rx = await prisma.prescription.findFirst({
+      where: { id, patientId },
+      include: { doctor: true, items: true },
+    });
+    if (rx) {
+      const now = new Date();
+      const rxDate = new Date(rx.createdAt);
+      const diffDays = (now.getTime() - rxDate.getTime()) / (1000 * 3600 * 24);
+      const compStatus = rx.dispensed ? 'Completed' : diffDays > 30 ? 'Expired' : 'Active';
+      return {
+        id: rx.id,
+        patientId: rx.patientId,
+        doctorId: rx.doctorId,
+        doctorName: rx.doctor?.name ?? null,
+        appointmentId: null,
+        prescriptionDate: rx.createdAt.toISOString(),
+        diagnosis: rx.diagnosis,
+        instructions: rx.clinicalNotes ?? (rx.followUpDays ? `Follow up in ${rx.followUpDays} days` : 'Take as directed'),
+        medications: rx.items.map((item) => ({
+          name: item.medicineName,
+          dosage: item.dosage || 'Standard',
+          frequency: String(item.frequency),
+          duration: `${item.durationDays} days`,
+          instructions: item.instructions ?? '',
+          route: item.timing ?? 'Oral',
+        })),
+        pdfUrl: `/api/patient/prescriptions/${rx.id}/download`,
+        status: compStatus,
+        startDate: rx.createdAt.toISOString(),
+        endDate: new Date(rxDate.getTime() + (rx.followUpDays || 7) * 86400000).toISOString(),
+        createdAt: rx.createdAt.toISOString(),
       };
     }
   } catch {
@@ -1239,19 +1356,51 @@ export async function storeMarkAllNotificationsRead(patientId: string): Promise<
   }
 }
 
-export function getAllBookedSlots(doctorId?: string, date?: string): string[] {
+export async function getAllBookedSlots(doctorId?: string, date?: string): Promise<string[]> {
   const booked: string[] = [];
   if (!date) return booked;
 
-  const targetDateStr = new Date(date).toISOString().split('T')[0];
-  for (const appt of APPOINTMENTS_MAP.values()) {
-    if (appt.status === 'CANCELLED') continue;
-    const apptDateStr = new Date(appt.appointmentDate).toISOString().split('T')[0];
-    if (apptDateStr === targetDateStr) {
-      if (!doctorId || appt.doctorId === doctorId) {
-        booked.push(appt.timeSlot);
+  try {
+    const targetDate = new Date(date);
+    const startOfDay = new Date(targetDate);
+    startOfDay.setUTCHours(0, 0, 0, 0);
+    const endOfDay = new Date(targetDate);
+    endOfDay.setUTCHours(23, 59, 59, 999);
+
+    const where: any = {
+      appointmentDate: { gte: startOfDay, lte: endOfDay },
+      status: { notIn: ['CANCELLED'] },
+    };
+    if (doctorId) where.doctorId = doctorId;
+
+    const dbAppts = await prisma.appointment.findMany({
+      where,
+      select: { timeSlot: true },
+    });
+
+    for (const a of dbAppts) {
+      if (a.timeSlot && !booked.includes(a.timeSlot)) {
+        booked.push(a.timeSlot);
       }
     }
+  } catch {
+    // Database offline fallback
   }
+
+  try {
+    const targetDateStr = new Date(date).toISOString().split('T')[0];
+    for (const appt of APPOINTMENTS_MAP.values()) {
+      if (appt.status === 'CANCELLED') continue;
+      const apptDateStr = new Date(appt.appointmentDate).toISOString().split('T')[0];
+      if (apptDateStr === targetDateStr) {
+        if (!doctorId || appt.doctorId === doctorId) {
+          if (!booked.includes(appt.timeSlot)) {
+            booked.push(appt.timeSlot);
+          }
+        }
+      }
+    }
+  } catch {}
+
   return booked;
 }

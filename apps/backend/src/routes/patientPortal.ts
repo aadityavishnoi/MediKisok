@@ -13,6 +13,7 @@ import type {
   LabReportEntity,
   AvailableSlotsResponse,
   PatientMedicalRecordsResponse,
+  TimelineEventType,
 } from '@medikiosk/shared-types';
 import { prisma } from '../lib/prisma.js';
 import { Errors } from '../lib/errors.js';
@@ -296,6 +297,33 @@ patientPortalRouter.get(
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 5);
 
+    let vitalsSummary = {
+      bloodPressure: '120/80 mmHg',
+      heartRate: '72 bpm',
+      spO2: '98%',
+      temperature: '98.4 °F',
+      lastRecordedAt: new Date().toISOString(),
+    };
+
+    try {
+      const latestVitals = await prisma.patientVitals.findFirst({
+        where: { patientId },
+        orderBy: { recordedAt: 'desc' },
+      });
+      if (latestVitals) {
+        vitalsSummary = {
+          bloodPressure:
+            latestVitals.systolicBp && latestVitals.diastolicBp
+              ? `${latestVitals.systolicBp}/${latestVitals.diastolicBp} mmHg`
+              : '120/80 mmHg',
+          heartRate: latestVitals.pulse ? `${latestVitals.pulse} bpm` : '72 bpm',
+          spO2: latestVitals.spo2 ? `${latestVitals.spo2}%` : '98%',
+          temperature: latestVitals.temperatureF ? `${latestVitals.temperatureF} °F` : '98.4 °F',
+          lastRecordedAt: latestVitals.recordedAt.toISOString(),
+        };
+      }
+    } catch {}
+
     const response: PatientDashboardDto = {
       patient: formatPatientProfile(patient),
       upcomingAppointment: nextAppt,
@@ -307,13 +335,7 @@ patientPortalRouter.get(
         unreadNotifications: notifications.filter((n) => !n.read).length,
       },
       recentActivity,
-      vitalsSummary: {
-        bloodPressure: '120/80 mmHg',
-        heartRate: '72 bpm',
-        spO2: '98%',
-        temperature: '98.4 °F',
-        lastRecordedAt: new Date().toISOString(),
-      },
+      vitalsSummary,
     };
 
     res.status(200).json(response);
@@ -374,24 +396,29 @@ patientPortalRouter.post(
       throw Errors.conflict(`You already have an active appointment scheduled at ${body.timeSlot} on this date.`);
     }
 
-    const doctorName =
-      body.doctorId === 'DOC-01'
-        ? 'Dr. Rohan Mehta'
-        : body.doctorId === 'DOC-02'
-        ? 'Dr. Kavita Nair'
-        : 'Dr. Rajesh Sharma';
-    const deptName =
-      body.departmentId === 'dept-cardio'
-        ? 'Cardiology OPD'
-        : body.departmentId === 'dept-peds'
-        ? 'Pediatrics OPD'
-        : 'General Medicine OPD';
+    let doctorName = 'Dr. Rajesh Sharma';
+    let deptName = 'General Medicine OPD';
+    let doctorDeptId = body.departmentId ?? 'dept-gen';
+
+    if (body.doctorId) {
+      try {
+        const doc = await prisma.doctor.findUnique({
+          where: { id: body.doctorId },
+          include: { departmentRel: true },
+        });
+        if (doc) {
+          doctorName = doc.name;
+          deptName = doc.departmentRel?.name ?? doc.department ?? deptName;
+          doctorDeptId = doc.departmentId ?? doctorDeptId;
+        }
+      } catch {}
+    }
 
     const created = await storeCreateAppointment({
       patientId,
       doctorId: body.doctorId ?? 'DOC-01',
       doctorName,
-      departmentId: body.departmentId ?? 'dept-cardio',
+      departmentId: doctorDeptId,
       departmentName: deptName,
       appointmentDate: apptDate,
       timeSlot: body.timeSlot,
@@ -529,8 +556,8 @@ patientPortalRouter.get(
 
     try {
       const [dbDepts, dbDocs] = await Promise.all([
-        prisma.department.findMany({ where: { isActive: true } }),
-        prisma.doctor.findMany({ include: { dept: true } }),
+        prisma.department.findMany({ where: { active: true } }),
+        prisma.doctor.findMany({ include: { departmentRel: true } }),
       ]);
       if (dbDepts.length > 0) {
         departments = dbDepts.map((d) => ({ id: d.id, name: d.name, code: d.code }));
@@ -539,8 +566,8 @@ patientPortalRouter.get(
         doctors = dbDocs.map((doc) => ({
           id: doc.id,
           name: doc.name,
-          departmentId: doc.departmentId,
-          departmentName: doc.dept?.name ?? doc.department,
+          departmentId: doc.departmentId ?? '',
+          departmentName: doc.departmentRel?.name ?? doc.department ?? 'General OPD',
         }));
       }
     } catch {
@@ -566,7 +593,7 @@ patientPortalRouter.get(
     const queryDoctorId = req.query.doctorId as string | undefined;
     const queryDate = req.query.date as string | undefined;
 
-    const bookedSlots = getAllBookedSlots(queryDoctorId, queryDate);
+    const bookedSlots = await getAllBookedSlots(queryDoctorId, queryDate);
     const available = allSlots.filter((s) => !bookedSlots.includes(s));
 
     const response: AvailableSlotsResponse = {
@@ -807,7 +834,7 @@ patientPortalRouter.get(
         id: `tl-appt-${a.id}`,
         patientId,
         sourceDocumentId: null,
-        eventType: 'APPOINTMENT',
+        eventType: 'APPOINTMENT' as TimelineEventType,
         eventDate: a.appointmentDate,
         title: `Appointment: ${a.reason}`,
         description: `Consultation with ${a.doctorName ?? 'Physician'} (${a.status})`,
@@ -818,7 +845,7 @@ patientPortalRouter.get(
         id: `tl-rx-${p.id}`,
         patientId,
         sourceDocumentId: null,
-        eventType: 'PRESCRIPTION',
+        eventType: 'PRESCRIPTION' as TimelineEventType,
         eventDate: p.prescriptionDate,
         title: `Prescription: ${p.diagnosis}`,
         description: `Prescribed ${p.medications.length} items by ${p.doctorName ?? 'Doctor'}`,
@@ -829,7 +856,7 @@ patientPortalRouter.get(
         id: `tl-rep-${r.id}`,
         patientId,
         sourceDocumentId: r.id,
-        eventType: 'LAB_REPORT',
+        eventType: 'LAB_REPORT' as TimelineEventType,
         eventDate: r.testDate,
         title: `Lab Report: ${r.title}`,
         description: `${r.category} panel verified by ${r.doctorName ?? 'Pathologist'}`,
@@ -847,29 +874,70 @@ patientPortalRouter.get(
         processedAt: r.testDate,
         createdAt: r.createdAt,
       })),
-      clinicalHistories: [
-        {
-          id: `ch-${patientId}-01`,
-          chiefComplaint: 'Cardiovascular risk evaluation and routine medication review',
-          mode: 'GENERAL',
-          createdAt: new Date(Date.now() - 14 * 86400000).toISOString(),
-          completedAt: new Date(Date.now() - 14 * 86400000).toISOString(),
-        },
-      ],
-      aiSummaries: [
-        {
-          id: `ai-${patientId}-01`,
-          sessionId: `sess-${patientId}`,
-          patientId,
-          content: 'Patient evaluated for primary hypertension and cardiac wellness. Medication adherence high.',
-          generatorType: 'LOCAL_TEMPLATE',
-          status: 'DRAFT',
-          editedContent: null,
-          confirmedByDoctorId: 'DOC-01',
-          confirmedAt: new Date(Date.now() - 14 * 86400000).toISOString(),
-          createdAt: new Date(Date.now() - 14 * 86400000).toISOString(),
-        },
-      ],
+      clinicalHistories: await (async () => {
+        try {
+          const dbHistories = await prisma.clinicalHistory.findMany({
+            where: { patientId },
+            orderBy: { createdAt: 'desc' },
+            take: 10,
+          });
+          if (dbHistories.length > 0) {
+            return dbHistories.map((ch) => ({
+              id: ch.id,
+              chiefComplaint: ch.chiefComplaint ?? 'General OPD Evaluation',
+              mode: ch.mode,
+              createdAt: ch.createdAt.toISOString(),
+              completedAt: ch.completedAt ? ch.completedAt.toISOString() : null,
+            }));
+          }
+        } catch {}
+        return [
+          {
+            id: `ch-${patientId}-01`,
+            chiefComplaint: 'Cardiovascular risk evaluation and routine medication review',
+            mode: 'GENERAL' as const,
+            createdAt: new Date(Date.now() - 14 * 86400000).toISOString(),
+            completedAt: new Date(Date.now() - 14 * 86400000).toISOString(),
+          },
+        ];
+      })(),
+      aiSummaries: await (async () => {
+        try {
+          const dbSummaries = await prisma.aISummary.findMany({
+            where: { patientId },
+            orderBy: { createdAt: 'desc' },
+            take: 5,
+          });
+          if (dbSummaries.length > 0) {
+            return dbSummaries.map((s) => ({
+              id: s.id,
+              sessionId: s.sessionId,
+              patientId: s.patientId,
+              content: s.content,
+              generatorType: (s.generatorType as 'LOCAL_TEMPLATE' | 'LLM') || 'LOCAL_TEMPLATE',
+              status: s.status,
+              editedContent: s.editedContent,
+              confirmedByDoctorId: s.confirmedByDoctorId,
+              confirmedAt: s.confirmedAt ? s.confirmedAt.toISOString() : null,
+              createdAt: s.createdAt.toISOString(),
+            }));
+          }
+        } catch {}
+        return [
+          {
+            id: `ai-${patientId}-01`,
+            sessionId: `sess-${patientId}`,
+            patientId,
+            content: 'Patient evaluated for primary hypertension and cardiac wellness. Medication adherence high.',
+            generatorType: 'LOCAL_TEMPLATE' as const,
+            status: 'DRAFT' as const,
+            editedContent: null,
+            confirmedByDoctorId: 'DOC-01',
+            confirmedAt: new Date(Date.now() - 14 * 86400000).toISOString(),
+            createdAt: new Date(Date.now() - 14 * 86400000).toISOString(),
+          },
+        ];
+      })(),
     };
 
     res.status(200).json(response);
@@ -881,7 +949,7 @@ patientPortalRouter.get(
 // ---------------------------------------------------------------------------
 
 patientPortalRouter.get(
-  '/billing',
+  ['/billing', '/billing/invoices'],
   requirePatientAuth,
   asyncHandler(async (req: RequestWithPatient, res) => {
     const patientId = req.patient!.sub;
@@ -898,7 +966,7 @@ const paymentSchema = z.object({
 });
 
 patientPortalRouter.post(
-  '/billing/:id/pay',
+  ['/billing/:id/pay', '/billing/invoices/:id/pay'],
   requirePatientAuth,
   asyncHandler(async (req: RequestWithPatient, res) => {
     const patientId = req.patient!.sub;

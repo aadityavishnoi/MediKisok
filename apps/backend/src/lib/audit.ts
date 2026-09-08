@@ -32,5 +32,4 @@ export async function recordAudit(entry: {
     // Non-blocking — audit failures must never crash the application.
     console.warn('[AuditLog] Could not persist audit record:', entry.action);
   }
-  }
 }

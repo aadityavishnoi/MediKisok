@@ -70,7 +70,6 @@ export interface HardwareStatusChangedEvent {
   };
 }
 
-<<<<<<< HEAD
 export interface HospitalStatusChangedEvent {
   type: 'HOSPITAL_STATUS_CHANGED';
   payload: {
@@ -187,7 +186,6 @@ export interface HospitalIncidentUpdatedEvent {
 export interface QueueUpdatedEvent {
   type: 'QUEUE_UPDATED';
   payload: {
-<<<<<<< HEAD
     queueId: string;
     hospitalId: string;
     status: string;

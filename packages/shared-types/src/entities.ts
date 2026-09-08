@@ -482,7 +482,7 @@ export interface AppointmentEntity {
   status: AppointmentStatus;
   reason: string;
   notes: string | null;
-  cancellationReason: string | null;
+  cancellationReason?: string | null;
   location?: string | null;
   virtualMeetingUrl?: string | null;
   followUpInstructions?: string | null;
@@ -500,7 +500,7 @@ export interface BillingInvoiceItem {
 export interface BillingInvoiceEntity {
   id: string;
   patientId: string;
-  appointmentId: string | null;
+  appointmentId?: string | null;
   invoiceNumber: string;
   description: string;
   department: string | null;
