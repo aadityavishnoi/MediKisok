@@ -106,8 +106,8 @@ export class RfidSerialBridge {
   private customOnScan?: (uid: string) => Promise<void> | void;
   private customOnStatusChange?: (state: BridgeConnectionState, portPath: string) => void;
 
-  private port: SerialPort | null = null;
-  private parser: ReadlineParser | null = null;
+  private port: any = null;
+  private parser: any = null;
   private state: BridgeConnectionState = 'DISCONNECTED';
   private reconnectTimer: NodeJS.Timeout | null = null;
   private isStopped = false;
@@ -212,7 +212,7 @@ export class RfidSerialBridge {
       try {
         const ports = await RfidSerialBridge.listAvailablePorts();
         const ch340OrArduino = ports.find(
-          (p) => (p.friendlyName && /CH340|Arduino|USB-SERIAL/i.test(p.friendlyName)) ||
+          (p: any) => (p.friendlyName && /CH340|Arduino|USB-SERIAL/i.test(p.friendlyName)) ||
                  (p.manufacturer && /wch|arduino/i.test(p.manufacturer)) ||
                  (p.vendorId && /1a86/i.test(p.vendorId))
         );
@@ -275,7 +275,7 @@ export class RfidSerialBridge {
         this.handleDisconnect();
       });
 
-      this.port.open((err) => {
+      this.port.open((err: any) => {
         if (err) {
           console.warn(`[RFID Serial] Could not open ${this.portPath}: ${err.message}`);
           this.handleDisconnect();
@@ -327,7 +327,7 @@ export class RfidSerialBridge {
         try {
           const ports = await RfidSerialBridge.listAvailablePorts();
           const ch340 = ports.find(
-            (p) => (p.friendlyName && /CH340|Arduino/i.test(p.friendlyName)) ||
+            (p: any) => (p.friendlyName && /CH340|Arduino/i.test(p.friendlyName)) ||
                    (p.manufacturer && /wch|arduino/i.test(p.manufacturer)) ||
                    (p.vendorId && /1a86/i.test(p.vendorId))
           );

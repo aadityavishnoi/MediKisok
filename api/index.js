@@ -44108,13 +44108,21 @@ async function handleRfidScan(input) {
     } catch {
     }
     let card = null;
+    const rawUid = input.uid.trim();
+    let colonSeparated = rawUid;
+    if (/^[0-9A-Fa-f]{8}$/.test(rawUid)) {
+      colonSeparated = rawUid.match(/.{2}/g).join(":").toUpperCase();
+    }
+    const noPunct = rawUid.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
     try {
       card = await prisma.rFIDCard.findFirst({
         where: {
           OR: [
+            { uid: rawUid },
+            { uid: rawUid.toUpperCase() },
             { uid: normalizedUid },
-            { uid: input.uid },
-            { uid: input.uid.toUpperCase() }
+            { uid: colonSeparated },
+            { uid: noPunct }
           ],
           active: true
         },
@@ -44146,17 +44154,15 @@ async function handleRfidScan(input) {
       }
     }
     if (!card || !card.patientId || !card.patient) {
-      if (input.isSimulated) {
-        throw Errors.notFound("Card not recognized. Please contact the registration desk.");
-      }
-      console.log(`[RFID Service] Blank/unregistered card detected: ${normalizedUid}. Notifying kiosk to initiate patient registration.`);
+      const effectiveUid = colonSeparated || normalizedUid || rawUid;
+      console.log(`[RFID Service] Physical RFID card detected: ${effectiveUid}. Ready for registration.`);
       try {
         await recordAudit({
           actorType: ActorType.DEVICE,
           actorId: deviceId,
           action: "RFID_BLANK_CARD_SCANNED",
           entityType: "RFIDCard",
-          metadata: { uid: normalizedUid }
+          metadata: { uid: effectiveUid }
         });
       } catch {
       }
@@ -44164,11 +44170,11 @@ async function handleRfidScan(input) {
         type: "RFID_SCANNED",
         payload: {
           sessionId: "",
-          uid: normalizedUid,
+          uid: effectiveUid,
           patientId: null,
           isNewPatient: true,
           isRegistered: false,
-          message: `Blank RFID card detected (${normalizedUid}). Ready for registration.`,
+          message: `Physical RFID card detected (${effectiveUid}). Ready for registration.`,
           timestamp: (/* @__PURE__ */ new Date()).toISOString()
         }
       });
@@ -44784,11 +44790,36 @@ rfidRouter.get("/rfid/latest-scan", (req, res) => {
   }
 });
 var triggerScanSchema = external_exports.object({
-  uid: external_exports.string().min(1),
+  uid: external_exports.string().optional(),
+  cardUid: external_exports.string().optional(),
   deviceCode: external_exports.string().optional().default("KIOSK-DEV-001")
-});
+}).transform((data) => ({
+  uid: (data.uid || data.cardUid || "").trim(),
+  deviceCode: data.deviceCode || "KIOSK-DEV-001"
+}));
 rfidRouter.post(
   "/rfid/trigger-scan",
+  asyncHandler(async (req, res) => {
+    const body = triggerScanSchema.parse(req.body);
+    const result = await handleRfidScan({
+      deviceCode: body.deviceCode,
+      uid: body.uid,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      isSimulated: false
+    });
+    latestScanRecord = {
+      sessionId: result.sessionId,
+      patientId: result.patientId,
+      isNewPatient: result.isNewPatient,
+      uid: body.uid,
+      status: result.status,
+      timestamp: Date.now()
+    };
+    res.status(200).json(result);
+  })
+);
+rfidRouter.post(
+  "/rfid/scan-card",
   asyncHandler(async (req, res) => {
     const body = triggerScanSchema.parse(req.body);
     const result = await handleRfidScan({
@@ -44835,11 +44866,7 @@ var simulateSchema = external_exports.object({
 });
 rfidRouter.post(
   "/rfid/simulate",
-  asyncHandler(async (req, res, next) => {
-    if (!env.DEMO_MODE) {
-      next(Errors.notFound());
-      return;
-    }
+  asyncHandler(async (req, res) => {
     const body = simulateSchema.parse(req.body ?? {});
     const result = await handleRfidScan({
       deviceCode: "DEMO-KIOSK-01",

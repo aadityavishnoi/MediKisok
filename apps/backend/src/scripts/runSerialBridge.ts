@@ -30,7 +30,7 @@ async function main() {
       console.log(`   * ${p.path} [${p.manufacturer}] (VID: ${p.vendorId}, PID: ${p.productId})`);
     }
     const ch340OrArduino = availablePorts.find(
-      (p) => (p.friendlyName && /CH340|Arduino/i.test(p.friendlyName)) ||
+      (p: any) => (p.friendlyName && /CH340|Arduino/i.test(p.friendlyName)) ||
              (p.manufacturer && /wch|arduino/i.test(p.manufacturer)) ||
              (p.vendorId && /1a86/i.test(p.vendorId))
     );
@@ -41,7 +41,7 @@ async function main() {
   const cliPortArg = process.argv[2];
   let targetPort = autoDetectedPort || process.env.RFID_SERIAL_PORT || env.RFID_SERIAL_PORT || 'COM7';
   if (cliPortArg) {
-    const matched = availablePorts.find((p) => p.path.toUpperCase() === cliPortArg.toUpperCase());
+    const matched = availablePorts.find((p: any) => p.path.toUpperCase() === cliPortArg.toUpperCase());
     if (matched) {
       targetPort = matched.path;
     } else if (autoDetectedPort) {

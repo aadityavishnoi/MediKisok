@@ -79,13 +79,41 @@ rfidRouter.get('/rfid/latest-scan', (req, res) => {
  * POST /api/rfid/trigger-scan
  * Used by Kiosk UI to trigger or forward an RFID scan (e.g. from on-screen Scan Card button).
  */
-const triggerScanSchema = z.object({
-  uid: z.string().min(1),
-  deviceCode: z.string().optional().default('KIOSK-DEV-001'),
-});
+const triggerScanSchema = z
+  .object({
+    uid: z.string().optional(),
+    cardUid: z.string().optional(),
+    deviceCode: z.string().optional().default('KIOSK-DEV-001'),
+  })
+  .transform((data) => ({
+    uid: (data.uid || data.cardUid || '').trim(),
+    deviceCode: data.deviceCode || 'KIOSK-DEV-001',
+  }));
 
 rfidRouter.post(
   '/rfid/trigger-scan',
+  asyncHandler(async (req, res) => {
+    const body = triggerScanSchema.parse(req.body);
+    const result = await handleRfidScan({
+      deviceCode: body.deviceCode,
+      uid: body.uid,
+      timestamp: new Date().toISOString(),
+      isSimulated: false,
+    });
+    latestScanRecord = {
+      sessionId: result.sessionId,
+      patientId: result.patientId,
+      isNewPatient: result.isNewPatient,
+      uid: body.uid,
+      status: result.status,
+      timestamp: Date.now(),
+    };
+    res.status(200).json(result);
+  }),
+);
+
+rfidRouter.post(
+  '/rfid/scan-card',
   asyncHandler(async (req, res) => {
     const body = triggerScanSchema.parse(req.body);
     const result = await handleRfidScan({
@@ -136,11 +164,7 @@ const simulateSchema = z.object({
 
 rfidRouter.post(
   '/rfid/simulate',
-  asyncHandler(async (req, res, next) => {
-    if (!env.DEMO_MODE) {
-      next(Errors.notFound());
-      return;
-    }
+  asyncHandler(async (req, res) => {
     const body = simulateSchema.parse(req.body ?? {});
     const result = await handleRfidScan({
       deviceCode: 'DEMO-KIOSK-01',

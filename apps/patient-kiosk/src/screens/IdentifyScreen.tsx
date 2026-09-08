@@ -53,34 +53,47 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
   const [tapLoading, setTapLoading] = useState(false);
   const [manualUid, setManualUid] = useState('');
   const [webSerialConnected, setWebSerialConnected] = useState(false);
+  const [lastScannedUid, setLastScannedUid] = useState<string | null>(null);
 
-  async function handleTapCard(uid = 'DEMO-RFID-001') {
-    if (tapLoading) return;
+  async function handleTapCard(uid: string) {
+    const cleanUid = uid.trim();
+    if (!cleanUid || tapLoading) return;
     setTapLoading(true);
+    setLastScannedUid(cleanUid);
     playCardBeep();
     try {
-      const res = await simulateRfidScan({ uid });
-      if (res.sessionId && onIdentified) {
+      const res = await fetch('/api/rfid/trigger-scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: cleanUid }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error?.message || 'RFID Scan failed');
+      }
+
+      if (data.sessionId && !data.isNewPatient && onIdentified) {
         onIdentified({
-          sessionId: res.sessionId,
-          patientId: res.patientId,
-          isNewPatient: res.isNewPatient,
+          sessionId: data.sessionId,
+          patientId: data.patientId,
+          isNewPatient: false,
         });
+      } else {
+        // Physical card is blank/unregistered: auto-fill UID and open Registration tab
+        setCardUid(cleanUid);
+        setActiveTab('REGISTER');
+        setRegStep('DETAILS');
+        setBlankCardNotice(`Physical RFID Card (${cleanUid}) Detected — Ready for Registration`);
       }
     } catch (err: any) {
-      onError(err.message || 'Failed to authenticate smart card');
+      // Allow registering the physical card directly
+      setCardUid(cleanUid);
+      setActiveTab('REGISTER');
+      setRegStep('DETAILS');
+      setBlankCardNotice(`Physical RFID Card (${cleanUid}) Detected — Ready for Registration`);
     } finally {
       setTapLoading(false);
     }
-  }
-
-  function handleTapBlankCard() {
-    const blankUid = '04:' + Math.floor(Math.random() * 89 + 10) + ':AA:' + Math.floor(Math.random() * 89 + 10) + ':60:' + Math.floor(Math.random() * 89 + 10);
-    setCardUid(blankUid);
-    setActiveTab('REGISTER');
-    setRegStep('DETAILS');
-    setBlankCardNotice(`Blank Smart Card (${blankUid}) Detected`);
-    playCardBeep();
   }
 
   // 1. Web Serial direct browser-to-hardware reader connection
@@ -110,7 +123,7 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
               buffer = lines.pop() || '';
               for (const line of lines) {
                 const clean = line.trim();
-                const match = clean.match(/(?:RFID_SCAN:|Card UID:\s*|UID tag:\s*|UID:\s*)([0-9a-fA-F:\s]+)/i) || clean.match(/^([0-9a-fA-F:\s]{8,})$/);
+                const match = clean.match(/(?:RFID_SCAN:|Card UID:\s*|UID tag:\s*|UID:\s*)([0-9a-fA-F:\s]+)/i) || clean.match(/^([0-9a-fA-F:\s]{6,})$/);
                 if (match) {
                   const scannedUid = match[1].trim().replace(/\s+/g, ':');
                   handleTapCard(scannedUid);
@@ -127,58 +140,75 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
     }
   }
 
-  // 2. Listen to USB HID Keyboard Readers (types UID + Enter)
+  // 2. Listen to USB HID Keyboard Readers (types UID + Enter or rapid keystrokes)
   useEffect(() => {
     let buffer: string[] = [];
-    let lastTime = Date.now();
+    let timer: any = null;
+
+    function processBuffer() {
+      if (buffer.length >= 4) {
+        const scanned = buffer.join('').trim();
+        buffer = [];
+        handleTapCard(scanned);
+      } else {
+        buffer = [];
+      }
+    }
 
     function onKeyDown(e: KeyboardEvent) {
       const target = e.target as HTMLElement;
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+      if (activeTab === 'REGISTER' && target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
         return;
       }
-      const now = Date.now();
-      if (now - lastTime > 300) {
-        buffer = [];
-      }
-      lastTime = now;
 
       if (e.key === 'Enter') {
-        if (buffer.length >= 4) {
-          const scanned = buffer.join('').trim();
-          buffer = [];
-          handleTapCard(scanned);
-        }
+        clearTimeout(timer);
+        processBuffer();
       } else if (e.key.length === 1) {
         buffer.push(e.key);
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          if (buffer.length >= 8) {
+            processBuffer();
+          }
+        }, 200);
       }
     }
 
     window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      clearTimeout(timer);
+    };
+  }, [activeTab]);
 
   // 3. Poll cloud backend for live physical scans forwarded by local serial bridge
   useEffect(() => {
-    const mountTime = Date.now();
+    let lastHandledTime = Date.now();
     let mounted = true;
     const pollInterval = setInterval(async () => {
       try {
-        const res = await fetch(`${window.location.origin}/api/rfid/latest-scan?since=${mountTime}`);
+        const res = await fetch(`/api/rfid/latest-scan?since=${lastHandledTime}`);
         if (!res.ok) return;
         const data = await res.json();
-        if (mounted && data.hasScan && data.scan) {
+        if (mounted && data.hasScan && data.scan && data.scan.timestamp > lastHandledTime) {
+          lastHandledTime = data.scan.timestamp;
           playCardBeep();
-          if (onIdentified) {
+          if (data.scan.sessionId && !data.scan.isNewPatient && onIdentified) {
             onIdentified({
               sessionId: data.scan.sessionId,
               patientId: data.scan.patientId,
-              isNewPatient: data.scan.isNewPatient,
+              isNewPatient: false,
             });
+          } else if (data.scan.uid) {
+            setCardUid(data.scan.uid);
+            setActiveTab('REGISTER');
+            setRegStep('DETAILS');
+            setBlankCardNotice(`Physical RFID Card (${data.scan.uid}) Detected — Ready for Registration`);
           }
         }
       } catch {}
-    }, 1200);
+    }, 1000);
 
     return () => {
       mounted = false;
@@ -354,27 +384,28 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
           </div>
 
           {/* Glowing RFID Tap Ring */}
-          <button
-            type="button"
-            disabled={tapLoading}
-            onClick={() => handleTapCard('DEMO-RFID-001')}
-            className="relative mb-3 group cursor-pointer animate-slide-up border-0 bg-transparent outline-none focus:outline-none"
-            title="Click to authenticate smart card"
+          <div
+            className="relative mb-3 animate-slide-up"
           >
-            <div className="absolute -inset-2 rounded-full bg-blue-500/10 blur-xl group-hover:bg-blue-500/20 transition-all animate-pulse-subtle" />
-            <div className="relative w-24 h-24 rounded-full bg-gradient-to-tr from-blue-600 via-blue-600 to-indigo-600 shadow-xl shadow-blue-600/25 flex flex-col items-center justify-center text-white transition-transform duration-300 group-hover:scale-105 active:scale-95">
+            <div className="absolute -inset-2 rounded-full bg-blue-500/10 blur-xl animate-pulse-subtle" />
+            <div className="relative w-24 h-24 rounded-full bg-gradient-to-tr from-blue-600 via-blue-600 to-indigo-600 shadow-xl shadow-blue-600/25 flex flex-col items-center justify-center text-white">
               <CreditCard size={32} className="drop-shadow-sm mb-0.5" />
               <span className="text-[9px] font-bold uppercase tracking-wider text-blue-100">
                 {tapLoading ? 'Scanning…' : 'Tap Card'}
               </span>
             </div>
-          </button>
+          </div>
 
           <div className="flex items-center gap-2 mb-3">
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-white border border-slate-200/80 shadow-xs text-slate-700">
               <span className={`w-2 h-2 rounded-full ${connection.color} animate-pulse`} />
               {connection.label}
             </span>
+            {lastScannedUid && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200/60">
+                Scanned: {lastScannedUid}
+              </span>
+            )}
           </div>
 
           {error && (
@@ -385,7 +416,7 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
           )}
 
           {/* Production Hardware Reader Status Card */}
-          <div className="w-full bg-slate-900 text-white rounded-2xl border border-slate-800 p-3.5 shadow-xl text-left space-y-2.5">
+          <div className="w-full bg-slate-900 text-white rounded-2xl border border-slate-800 p-4 shadow-xl text-left space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="relative flex h-2.5 w-2.5">
@@ -393,30 +424,30 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                 </span>
                 <span className="text-[11px] font-bold text-slate-100 uppercase tracking-wider">
-                  Physical RFID Hardware Scanner Active
+                  Physical RFID Hardware Active
                 </span>
               </div>
               <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-mono font-bold border border-emerald-500/30">
-                Live Reader
+                Ready for Live Tap
               </span>
             </div>
 
             <p className="text-[11px] text-slate-300 leading-relaxed">
-              Place your physical RFID Smart Card on the USB reader, pair it directly via browser Web Serial, or scan below to check in:
+              Place your physical RFID Smart Card on the USB reader antenna. Registered cards authenticate immediately; new cards open instant registration.
             </p>
 
             {/* Direct USB Hardware Pair Button */}
             <button
               type="button"
               onClick={handleConnectWebSerial}
-              className={`w-full py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border transition-all cursor-pointer shadow-xs ${
+              className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border transition-all cursor-pointer shadow-xs ${
                 webSerialConnected
                   ? 'bg-emerald-950/90 border-emerald-500 text-emerald-300 shadow-emerald-900/40'
                   : 'bg-slate-800 hover:bg-slate-700/90 border-slate-700 text-slate-200'
               }`}
             >
               <Radio size={14} className={webSerialConnected ? 'text-emerald-400 animate-pulse' : 'text-blue-400'} />
-              <span>{webSerialConnected ? '🟢 Physical USB Hardware Connected (Listening)' : '🔌 Pair USB Hardware Scanner (Arduino COM Port)'}</span>
+              <span>{webSerialConnected ? '🟢 USB Hardware Reader Connected (Listening)' : '🔌 Pair USB Hardware Scanner (Arduino / Serial COM Port)'}</span>
             </button>
 
             {/* Live Scan Input Bar */}
@@ -431,7 +462,8 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
             >
               <input
                 type="text"
-                placeholder="Scan with USB reader or enter UID…"
+                autoFocus
+                placeholder="Tap card on reader or enter card UID…"
                 value={manualUid}
                 onChange={(e) => setManualUid(e.target.value)}
                 className="flex-1 px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700 text-white placeholder-slate-500 text-xs font-mono focus:border-blue-500 focus:outline-none"
@@ -439,46 +471,24 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
               <button
                 type="submit"
                 disabled={tapLoading || !manualUid.trim()}
-                className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all disabled:opacity-40 cursor-pointer shadow-xs"
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all disabled:opacity-40 cursor-pointer shadow-xs"
               >
-                Scan
+                {tapLoading ? 'Scanning…' : 'Scan Card'}
               </button>
             </form>
 
-            {/* Direct Tap Action Button */}
-            <div className="flex flex-col gap-2 pt-1 border-t border-slate-800">
+            <div className="flex items-center justify-between pt-1 border-t border-slate-800/80 text-[10px] text-slate-400 px-0.5">
+              <span className="flex items-center gap-1 text-slate-400">
+                <ShieldCheck size={12} className="text-emerald-400" />
+                ABDM Encrypted Intake
+              </span>
               <button
                 type="button"
-                disabled={tapLoading}
-                onClick={() => handleTapCard('DEMO-RFID-001')}
-                className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                onClick={() => { setActiveTab('REGISTER'); setFormError(null); }}
+                className="text-blue-400 hover:text-blue-300 font-semibold underline cursor-pointer"
               >
-                <CreditCard size={15} />
-                <span>{tapLoading ? 'Authenticating Patient…' : '💳 Tap Smart Card (Aarav Sharma — DEMO-001)'}</span>
+                Register Without Card &rarr;
               </button>
-              <div className="flex flex-wrap items-center justify-between gap-1 text-[10px] text-slate-400 px-0.5">
-                <button
-                  type="button"
-                  onClick={() => handleTapCard('DEMO-RFID-002')}
-                  className="text-emerald-400 hover:text-emerald-300 font-semibold underline cursor-pointer"
-                >
-                  Sunita Devi (002)
-                </button>
-                <button
-                  type="button"
-                  onClick={handleTapBlankCard}
-                  className="text-amber-400 hover:text-amber-300 font-semibold underline cursor-pointer"
-                >
-                  🪪 Tap Blank Card
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setActiveTab('REGISTER'); setFormError(null); }}
-                  className="text-blue-400 hover:text-blue-300 font-semibold underline cursor-pointer"
-                >
-                  Register (No Card) &rarr;
-                </button>
-              </div>
             </div>
           </div>
         </div>

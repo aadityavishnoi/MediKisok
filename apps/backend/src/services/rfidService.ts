@@ -104,15 +104,23 @@ export async function handleRfidScan(input: RfidScanInput): Promise<RfidScanResp
   } catch {}
 
   let card: any = null;
+  const rawUid = input.uid.trim();
+  let colonSeparated = rawUid;
+  if (/^[0-9A-Fa-f]{8}$/.test(rawUid)) {
+    colonSeparated = rawUid.match(/.{2}/g)!.join(':').toUpperCase();
+  }
+  const noPunct = rawUid.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
 
   // 1. Check CockroachDB for real registered card
   try {
     card = await prisma.rFIDCard.findFirst({
       where: {
         OR: [
+          { uid: rawUid },
+          { uid: rawUid.toUpperCase() },
           { uid: normalizedUid },
-          { uid: input.uid },
-          { uid: input.uid.toUpperCase() },
+          { uid: colonSeparated },
+          { uid: noPunct },
         ],
         active: true,
       },
@@ -146,13 +154,10 @@ export async function handleRfidScan(input: RfidScanInput): Promise<RfidScanResp
     }
   }
 
-  // 3. BLANK / UNREGISTERED CARD DETECTED
+  // 3. BLANK / UNREGISTERED PHYSICAL CARD DETECTED
   if (!card || !card.patientId || !card.patient) {
-    if (input.isSimulated) {
-      throw Errors.notFound('Card not recognized. Please contact the registration desk.');
-    }
-
-    console.log(`[RFID Service] Blank/unregistered card detected: ${normalizedUid}. Notifying kiosk to initiate patient registration.`);
+    const effectiveUid = colonSeparated || normalizedUid || rawUid;
+    console.log(`[RFID Service] Physical RFID card detected: ${effectiveUid}. Ready for registration.`);
 
     try {
       await recordAudit({
@@ -160,20 +165,20 @@ export async function handleRfidScan(input: RfidScanInput): Promise<RfidScanResp
         actorId: deviceId,
         action: 'RFID_BLANK_CARD_SCANNED',
         entityType: 'RFIDCard',
-        metadata: { uid: normalizedUid },
+        metadata: { uid: effectiveUid },
       });
     } catch {}
 
-    // Broadcast to Kiosk & Doctor Dashboard that a blank card is ready to be bound
+    // Broadcast to Kiosk & Doctor Dashboard that this card is ready to be registered
     wsHub.broadcast({
       type: 'RFID_SCANNED',
       payload: {
         sessionId: '',
-        uid: normalizedUid,
+        uid: effectiveUid,
         patientId: null,
         isNewPatient: true,
         isRegistered: false,
-        message: `Blank RFID card detected (${normalizedUid}). Ready for registration.`,
+        message: `Physical RFID card detected (${effectiveUid}). Ready for registration.`,
         timestamp: new Date().toISOString(),
       },
     });
