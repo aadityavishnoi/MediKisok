@@ -10,12 +10,14 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:4000',
+        target: 'https://medikiosk-xa4l.onrender.com',
         changeOrigin: true,
+        secure: false,
       },
       '/ws': {
-        target: 'ws://localhost:4000',
+        target: 'wss://medikiosk-xa4l.onrender.com',
         ws: true,
+        changeOrigin: true,
       },
     },
   },

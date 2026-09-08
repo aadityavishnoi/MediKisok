@@ -435,13 +435,13 @@ export function DocumentUploadScreen({ sessionId, patientId, language, onComplet
         }
       }
 
-      // 6. If still no camera frame (e.g. phone DroidCam app stopped or closed), fall back to realistic clinical intake sample so the kiosk workflow is never blocked
+      // 6. If still no camera frame (e.g. phone DroidCam app camera is busy/locked by another app or closed), fall back to clinical sample
       if (!base64Image) {
         base64Image = createSampleClinicalDocument(docType);
         setDiscoveryMsg(
           isHindi
-            ? `फोन DroidCam बंद या अनुपलब्ध है। डेमो प्रिस्क्रिप्शन/दस्तावेज़ के साथ जारी रखा जा रहा है।`
-            : `Phone DroidCam closed or unreachable at ${phoneIp}. Running OCR demonstration with clinical sample.`
+            ? `फोन DroidCam व्यस्त है (कैमरा किसी अन्य ऐप या टैब में उपयोग हो रहा है)। फोन पर DroidCam Stop करके Start करें।`
+            : `Phone DroidCam is busy/occupied at ${phoneIp} (camera in use by another tab or app). Tap 'Stop' & 'Start' in the DroidCam phone app to reset.`
         );
       }
 
