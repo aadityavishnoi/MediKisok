@@ -191,13 +191,19 @@ export function DocumentUploadScreen({ sessionId, patientId, language, onComplet
     setScanStatusMessage(isHindi ? 'AI विज़न और इमेज प्रोसेसिंग जारी है…' : 'Analyzing camera snapshot with Gemini Vision…');
 
     try {
+      // Strip data URL prefix so backend Gemini API gets pure base64
+      const pureBase64 = base64Image
+        ? base64Image.replace(/^data:[^;]+;base64,/, '')
+        : undefined;
+
       const payload = JSON.stringify({
-        imageBase64: base64Image || undefined,
+        imageBase64: pureBase64 || undefined,
         phoneIp: passedPhoneIp,
         sessionId,
         patientId,
         type: docType === 'prescription' ? 'PRESCRIPTION' : docType === 'lab' ? 'LAB_REPORT' : 'OTHER',
         filename: `scan_${docType}_${Date.now()}.jpg`,
+        mimeType: 'image/jpeg',
       });
 
       let response: Response | null = null;
@@ -227,10 +233,9 @@ export function DocumentUploadScreen({ sessionId, patientId, language, onComplet
           if (res.ok) {
             response = res;
             break;
-          } else if (res.status !== 404 && res.status !== 502 && res.status !== 504) {
-            response = res;
-            break;
           }
+          // On 400/500 from a reachable server, record last error but keep trying other URLs
+          lastErr = new Error(`HTTP ${res.status} from ${url}`);
         } catch (e) {
           lastErr = e;
         }
@@ -258,16 +263,15 @@ export function DocumentUploadScreen({ sessionId, patientId, language, onComplet
       }
 
       // If backend was unreachable or returned an error, run direct client-side Gemini Vision OCR on the image
-      if (base64Image && base64Image.length > 100) {
-        const clientApiKey =
-          import.meta.env?.VITE_GEMINI_API_KEY ||
-          'AQ.Ab8RN6JFDbb6gvsL275LT3bLV2eud3eEmjqJZZCtEey6DtMubQ';
+      // pureBase64 is already stripped of data URL prefix above
+      if (pureBase64 && pureBase64.length > 100) {
+        const clientApiKey = import.meta.env?.VITE_GEMINI_API_KEY as string | undefined;
         if (clientApiKey) {
           try {
             setScanStatusMessage('Processing via Direct Gemini Multimodal Vision…');
             const clientOcr = new GeminiVisionOcrService({ apiKey: clientApiKey });
             const clientResult = await clientOcr.processDocumentImage(
-              base64Image,
+              pureBase64,
               'image/jpeg',
               docType === 'prescription' ? 'PRESCRIPTION' : docType === 'lab' ? 'LAB_REPORT' : 'OTHER'
             );

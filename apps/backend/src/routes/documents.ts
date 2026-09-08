@@ -56,8 +56,13 @@ documentsRouter.post('/documents/scan', async (req, res, next) => {
       }
     }
 
-    if (!imageBase64) {
-      res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'Missing imageBase64 document image' } });
+    // Strip data URL prefix if present (e.g. "data:image/jpeg;base64,...")
+    if (imageBase64 && typeof imageBase64 === 'string') {
+      imageBase64 = imageBase64.replace(/^data:[^;]+;base64,/, '');
+    }
+
+    if (!imageBase64 || imageBase64.length < 50) {
+      res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'Missing or empty imageBase64 document image' } });
       return;
     }
 
