@@ -58,7 +58,14 @@ export function DashboardScreen({
   const refresh = useCallback(async () => {
     try {
       const result = await getDoctorDashboard();
-      setSessions(result.sessions);
+      const seen = new Set<string>();
+      const deduped = (result.sessions || []).filter((s) => {
+        if (!s.patient?.id) return true;
+        if (seen.has(s.patient.id)) return false;
+        seen.add(s.patient.id);
+        return true;
+      });
+      setSessions(deduped);
       setError(null);
     } catch (err) {
       if (err instanceof ApiClientError && err.status === 401) {

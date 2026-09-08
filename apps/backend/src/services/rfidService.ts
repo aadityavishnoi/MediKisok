@@ -196,23 +196,37 @@ export async function handleRfidScan(input: RfidScanInput): Promise<RfidScanResp
   // 4. REGISTERED PATIENT DETECTED
   let sessionId = `session-${card.patientId || Date.now()}`;
   try {
-    const session = await prisma.patientSession.create({
-      data: {
+    // Check if patient already has an active session from the last 2 hours to avoid duplicate queue entries
+    const existingActiveSession = await prisma.patientSession.findFirst({
+      where: {
         patientId: card.patientId,
-        deviceId,
-        status: SessionStatus.IDENTIFIED,
-        isDemo: card.isDemo,
-        identifiedVia: IdentificationMethod.RFID,
+        status: { notIn: [SessionStatus.COMPLETED, SessionStatus.ABANDONED] },
+        createdAt: { gte: new Date(Date.now() - 2 * 60 * 60 * 1000) },
       },
+      orderBy: { updatedAt: 'desc' },
     });
-    sessionId = session.id;
+
+    if (existingActiveSession) {
+      sessionId = existingActiveSession.id;
+    } else {
+      const session = await prisma.patientSession.create({
+        data: {
+          patientId: card.patientId,
+          deviceId,
+          status: SessionStatus.IDENTIFIED,
+          isDemo: card.isDemo,
+          identifiedVia: IdentificationMethod.RFID,
+        },
+      });
+      sessionId = session.id;
+    }
 
     await recordAudit({
       actorType: ActorType.DEVICE,
       actorId: deviceId,
       action: 'RFID_IDENTIFIED',
       entityType: 'PatientSession',
-      entityId: session.id,
+      entityId: sessionId,
       metadata: { isNewPatient: false, isSimulated: input.isSimulated, uid: normalizedUid },
     });
   } catch (err) {

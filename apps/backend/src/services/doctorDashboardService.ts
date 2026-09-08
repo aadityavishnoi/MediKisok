@@ -61,7 +61,10 @@ const DEMO_SESSIONS_FALLBACK: DoctorDashboardSessionRow[] = [
 export async function getDoctorDashboard(): Promise<DoctorDashboardResponse> {
   try {
     const sessions = await prisma.patientSession.findMany({
-      where: { patientId: { not: null } },
+      where: {
+        patientId: { not: null },
+        status: { notIn: ['IDENTIFIED', 'ABANDONED'] },
+      },
       orderBy: { updatedAt: 'desc' },
       take: 50,
       include: {
@@ -71,22 +74,30 @@ export async function getDoctorDashboard(): Promise<DoctorDashboardResponse> {
       },
     });
 
+    // Deduplicate: Each patient must only appear once in the Doctor Dashboard queue
+    const seenPatientIds = new Set<string>();
+    const uniqueSessions = [];
+    for (const s of sessions) {
+      if (s.patient && !seenPatientIds.has(s.patient.id)) {
+        seenPatientIds.add(s.patient.id);
+        uniqueSessions.push(s);
+      }
+    }
+
     return {
-      sessions: sessions
-        .filter((s) => s.patient !== null)
-        .map((s) => ({
-          sessionId: s.id,
-          patient: {
-            id: s.patient!.id,
-            fullName: s.patient!.fullName,
-            dateOfBirth: s.patient!.dateOfBirth?.toISOString() ?? null,
-            gender: s.patient!.gender,
-          },
-          status: s.status,
-          chiefComplaint: s.clinicalHistory?.chiefComplaint ?? null,
-          highestAlertSeverity: highestSeverity(s.alerts),
-          updatedAt: s.updatedAt.toISOString(),
-        })),
+      sessions: uniqueSessions.map((s) => ({
+        sessionId: s.id,
+        patient: {
+          id: s.patient!.id,
+          fullName: s.patient!.fullName,
+          dateOfBirth: s.patient!.dateOfBirth?.toISOString() ?? null,
+          gender: s.patient!.gender,
+        },
+        status: s.status,
+        chiefComplaint: s.clinicalHistory?.chiefComplaint ?? null,
+        highestAlertSeverity: highestSeverity(s.alerts),
+        updatedAt: s.updatedAt.toISOString(),
+      })),
     };
   } catch (err) {
     console.warn('[doctorDashboardService] DB query failed:', err);

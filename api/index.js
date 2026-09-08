@@ -44261,22 +44261,34 @@ async function handleRfidScan(input) {
     }
     let sessionId = `session-${card.patientId || Date.now()}`;
     try {
-      const session = await prisma.patientSession.create({
-        data: {
+      const existingActiveSession = await prisma.patientSession.findFirst({
+        where: {
           patientId: card.patientId,
-          deviceId,
-          status: SessionStatus.IDENTIFIED,
-          isDemo: card.isDemo,
-          identifiedVia: IdentificationMethod.RFID
-        }
+          status: { notIn: [SessionStatus.COMPLETED, SessionStatus.ABANDONED] },
+          createdAt: { gte: new Date(Date.now() - 2 * 60 * 60 * 1e3) }
+        },
+        orderBy: { updatedAt: "desc" }
       });
-      sessionId = session.id;
+      if (existingActiveSession) {
+        sessionId = existingActiveSession.id;
+      } else {
+        const session = await prisma.patientSession.create({
+          data: {
+            patientId: card.patientId,
+            deviceId,
+            status: SessionStatus.IDENTIFIED,
+            isDemo: card.isDemo,
+            identifiedVia: IdentificationMethod.RFID
+          }
+        });
+        sessionId = session.id;
+      }
       await recordAudit({
         actorType: ActorType.DEVICE,
         actorId: deviceId,
         action: "RFID_IDENTIFIED",
         entityType: "PatientSession",
-        entityId: session.id,
+        entityId: sessionId,
         metadata: { isNewPatient: false, isSimulated: input.isSimulated, uid: normalizedUid }
       });
     } catch (err) {
@@ -46639,7 +46651,10 @@ var DEMO_SESSIONS_FALLBACK = [
 async function getDoctorDashboard() {
   try {
     const sessions = await prisma.patientSession.findMany({
-      where: { patientId: { not: null } },
+      where: {
+        patientId: { not: null },
+        status: { notIn: ["IDENTIFIED", "ABANDONED"] }
+      },
       orderBy: { updatedAt: "desc" },
       take: 50,
       include: {
@@ -46648,8 +46663,16 @@ async function getDoctorDashboard() {
         alerts: { select: { severity: true } }
       }
     });
+    const seenPatientIds = /* @__PURE__ */ new Set();
+    const uniqueSessions = [];
+    for (const s of sessions) {
+      if (s.patient && !seenPatientIds.has(s.patient.id)) {
+        seenPatientIds.add(s.patient.id);
+        uniqueSessions.push(s);
+      }
+    }
     return {
-      sessions: sessions.filter((s) => s.patient !== null).map((s) => ({
+      sessions: uniqueSessions.map((s) => ({
         sessionId: s.id,
         patient: {
           id: s.patient.id,
