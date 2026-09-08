@@ -74,3 +74,15 @@ export async function checkRxSafety(payload: {
     return null;
   }
 }
+
+export async function getConsultationAiContext(sessionId: string): Promise<any | null> {
+  try {
+    const res = await fetch(`/api/ai/consultation/${encodeURIComponent(sessionId)}/context`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.context;
+  } catch {
+    return null;
+  }
+}
+
