@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Camera,
   CheckCircle2,
@@ -16,6 +16,7 @@ import {
   Upload,
   Cloud,
   ExternalLink,
+  Radio,
 } from 'lucide-react';
 import type { Language } from '@medikiosk/shared-types';
 import { FallbackOcrService, type ExtractedField } from '@medikiosk/ai-service';
@@ -42,7 +43,8 @@ interface ScannedResult {
   imagekitUrl?: string;
 }
 
-export function DocumentUploadScreen({ sessionId, patientId, onComplete, onSkip }: DocumentUploadScreenProps) {
+export function DocumentUploadScreen({ sessionId, patientId, language, onComplete, onSkip }: DocumentUploadScreenProps) {
+  const isHindi = language === 'HI';
   const [docType, setDocType] = useState<'prescription' | 'lab' | 'id'>('prescription');
   const [scanning, setScanning] = useState(false);
   const [scanStatusMessage, setScanStatusMessage] = useState('Initializing AI OCR Engine…');
@@ -52,29 +54,35 @@ export function DocumentUploadScreen({ sessionId, patientId, onComplete, onSkip 
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [discoveryMsg, setDiscoveryMsg] = useState<string | null>(null);
   const [scanErrorMessage, setScanErrorMessage] = useState<string | null>(null);
+  const [useProxyFeed, setUseProxyFeed] = useState(false);
+  const [streamNonce, setStreamNonce] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Read saved IP from localStorage or environment, fallback to 192.168.29.211:4747
+  // Read saved IP from localStorage or environment, fallback to 127.0.0.1:4747 or 192.168.29.211:4747
   const [phoneIp, setPhoneIp] = useState(() => {
     if (typeof window !== 'undefined' && window.localStorage) {
       const saved = localStorage.getItem('medikiosk_droidcam_ip');
       if (saved) return saved;
     }
-    return (import.meta.env?.VITE_DROIDCAM_IP as string) || '192.168.29.211:4747';
+    return (import.meta.env?.VITE_DROIDCAM_IP as string) || '127.0.0.1:4747';
   });
 
   const handlePhoneIpChange = (val: string) => {
     setPhoneIp(val);
+    setUseProxyFeed(false);
     if (typeof window !== 'undefined' && window.localStorage) {
       localStorage.setItem('medikiosk_droidcam_ip', val);
     }
   };
 
-  const handleAutoDiscover = async () => {
+  const handleAutoDiscover = useCallback(async (customTarget?: string) => {
     setIsDiscovering(true);
-    setDiscoveryMsg('Scanning local Wi-Fi for phone…');
+    setDiscoveryMsg(isHindi ? 'DroidCam की खोज जारी है (USB / Wi-Fi)...' : 'Scanning network & USB for DroidCam…');
     try {
-      const res = await fetch('/api/devices/find-droidcam');
+      const url = customTarget
+        ? `/api/devices/find-droidcam?target=${encodeURIComponent(customTarget)}`
+        : '/api/devices/find-droidcam';
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         if (data.ip) {
@@ -83,20 +91,85 @@ export function DocumentUploadScreen({ sessionId, patientId, onComplete, onSkip 
           if (typeof window !== 'undefined' && window.localStorage) {
             localStorage.setItem('medikiosk_droidcam_ip', target);
           }
-          setDiscoveryMsg(`Found phone at ${target}!`);
-          setTimeout(() => setDiscoveryMsg(null), 4000);
+          setIsIpMode(true);
+          setScanErrorMessage(null);
+          setStreamNonce((n) => n + 1);
+          setDiscoveryMsg(
+            data.mode === 'USB'
+              ? (isHindi ? `⚡ DroidCam USB कनेक्टेड (localhost:${data.port || 4747})!` : `⚡ DroidCam USB Connected via localhost:${data.port || 4747}!`)
+              : (isHindi ? `📱 DroidCam फोन मिला: ${target}!` : `📱 DroidCam Phone Found at ${target}!`)
+          );
+          setTimeout(() => setDiscoveryMsg(null), 5000);
           return;
         }
       }
-      setDiscoveryMsg('Phone not detected on Wi-Fi. Check DroidCam app is open.');
-      setTimeout(() => setDiscoveryMsg(null), 4000);
+      setDiscoveryMsg(
+        isHindi
+          ? 'कोई DroidCam डिवाइस स्वचालित रूप से नहीं मिला। कृपया फोन में दिख रहा IP दर्ज करें।'
+          : 'No DroidCam device found automatically. Check that DroidCam is open or enter your phone IP.'
+      );
+      setTimeout(() => setDiscoveryMsg(null), 5000);
     } catch {
-      setDiscoveryMsg('Discovery failed. Verify phone & laptop are on same Wi-Fi.');
-      setTimeout(() => setDiscoveryMsg(null), 4000);
+      setDiscoveryMsg(
+        isHindi
+          ? 'डिस्कवरी विफल। कृपया नेटवर्क जांचें।'
+          : 'Discovery request failed. Verify network connection.'
+      );
+      setTimeout(() => setDiscoveryMsg(null), 5000);
+    } finally {
+      setIsDiscovering(false);
+    }
+  }, [isHindi]);
+
+  const handleConnectIp = async (ipToConnect: string) => {
+    const clean = ipToConnect.trim();
+    if (!clean) return;
+    setIsDiscovering(true);
+    setDiscoveryMsg(isHindi ? `${clean} से कनेक्ट हो रहा है…` : `Connecting to ${clean}…`);
+    try {
+      const res = await fetch('/api/devices/probe-droidcam', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ip: clean }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        const target = `${data.ip}:${data.port || 4747}`;
+        setPhoneIp(target);
+        if (typeof window !== 'undefined' && window.localStorage) {
+          localStorage.setItem('medikiosk_droidcam_ip', target);
+        }
+        setIsIpMode(true);
+        setScanErrorMessage(null);
+        setStreamNonce((n) => n + 1);
+        setDiscoveryMsg(isHindi ? `DroidCam कनेक्टेड: ${target}` : `DroidCam connected at ${target}!`);
+        setTimeout(() => setDiscoveryMsg(null), 4000);
+      } else {
+        setScanErrorMessage(
+          isHindi
+            ? `DroidCam ${clean} से कनेक्ट नहीं हो सका। सुनिश्चित करें कि फोन में DroidCam ऐप खुला है।`
+            : `Could not connect to ${clean}. Make sure DroidCam is open on your phone.`
+        );
+      }
+    } catch (err: any) {
+      setScanErrorMessage(`Connection error: ${err.message}`);
     } finally {
       setIsDiscovering(false);
     }
   };
+
+  useEffect(() => {
+    // Auto-discover DroidCam on mount
+    handleAutoDiscover();
+  }, [handleAutoDiscover]);
+
+  useEffect(() => {
+    if (!isIpMode || !useProxyFeed) return;
+    const interval = setInterval(() => {
+      setStreamNonce((n) => n + 1);
+    }, 750);
+    return () => clearInterval(interval);
+  }, [isIpMode, useProxyFeed]);
 
   const ipImageRef = useRef<HTMLImageElement | null>(null);
 
@@ -263,7 +336,10 @@ export function DocumentUploadScreen({ sessionId, patientId, onComplete, onSkip 
   };
 
   const cleanIpUrl = formatIp(phoneIp);
-  const videoFeedUrl = cleanIpUrl.endsWith('/video') ? cleanIpUrl : `${cleanIpUrl}/video`;
+  const rawVideoFeedUrl = cleanIpUrl.endsWith('/video') ? cleanIpUrl : `${cleanIpUrl}/video`;
+  const videoFeedUrl = useProxyFeed
+    ? `/api/devices/droidcam-frame?ip=${encodeURIComponent(phoneIp)}&_t=${streamNonce}`
+    : rawVideoFeedUrl;
 
   return (
     <div className="flex flex-col items-center gap-5 text-center w-full max-w-xl mx-auto">
@@ -280,12 +356,25 @@ export function DocumentUploadScreen({ sessionId, patientId, onComplete, onSkip 
         </p>
       </div>
 
+      {/* Discovery / Status Feedback Banner */}
+      {discoveryMsg && (
+        <div className="w-full p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs font-semibold flex items-center justify-between gap-2 shadow-xs animate-fade-in">
+          <div className="flex items-center gap-2">
+            <Radio size={14} className="text-blue-600 animate-pulse shrink-0" />
+            <span>{discoveryMsg}</span>
+          </div>
+          <button type="button" onClick={() => setDiscoveryMsg(null)} className="text-blue-500 hover:text-blue-700 text-xs font-bold cursor-pointer">
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Camera Mode Bar & Selector */}
       <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-2 px-1 text-xs">
         {!isIpMode ? (
           <div className="flex items-center gap-1.5 text-slate-600 font-medium overflow-hidden w-full sm:w-auto">
             <Smartphone size={14} className="text-blue-600 shrink-0" />
-            <span className="text-slate-400">Camera:</span>
+            <span className="text-slate-400 font-semibold">{isHindi ? 'कैमरा:' : 'Camera:'}</span>
             {devices.length > 0 ? (
               <select
                 value={selectedDeviceId}
@@ -300,7 +389,7 @@ export function DocumentUploadScreen({ sessionId, patientId, onComplete, onSkip 
               </select>
             ) : (
               <span className="text-slate-500 italic">
-                {cameraError ? 'Camera unavailable' : 'Detecting DroidCam / Webcam…'}
+                {cameraError ? (isHindi ? 'कैमरा अनुपलब्ध' : 'Camera unavailable') : (isHindi ? 'DroidCam / वेबकैम की पहचान हो रही है…' : 'Detecting DroidCam / Webcam…')}
               </span>
             )}
             <button
@@ -311,36 +400,44 @@ export function DocumentUploadScreen({ sessionId, patientId, onComplete, onSkip 
                 const droid = refreshed.find((d) => d.isDroidCam);
                 startCamera(droid?.deviceId);
               }}
-              className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-blue-600 transition-colors"
+              className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-blue-600 transition-colors cursor-pointer"
             >
               <RotateCcw size={13} />
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-1.5 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
             <Wifi size={14} className="text-emerald-600 shrink-0" />
-            <span className="text-slate-400">Phone IP:</span>
+            <span className="text-slate-400 font-semibold">{isHindi ? 'फोन IP:' : 'Phone IP:'}</span>
             <input
               type="text"
               value={phoneIp}
               onChange={(e) => handlePhoneIpChange(e.target.value)}
-              placeholder="192.168.X.X:4747"
+              placeholder="10.10.X.X:4747"
               className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-mono text-slate-800 w-36 outline-none focus:ring-1 focus:ring-blue-500"
             />
             <button
               type="button"
               disabled={isDiscovering}
-              onClick={handleAutoDiscover}
-              title="Auto-detect DroidCam on local Wi-Fi"
-              className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all disabled:opacity-50"
+              onClick={() => handleConnectIp(phoneIp)}
+              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-all disabled:opacity-50 cursor-pointer shadow-xs"
+            >
+              {isHindi ? 'कनेक्ट' : 'Connect'}
+            </button>
+            <button
+              type="button"
+              disabled={isDiscovering}
+              onClick={() => handleAutoDiscover()}
+              title="Auto-detect DroidCam on local Wi-Fi, USB & network"
+              className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold flex items-center gap-1 transition-all disabled:opacity-50 cursor-pointer"
             >
               {isDiscovering ? (
                 <>
-                  <RefreshCw size={11} className="animate-spin" /> Scanning…
+                  <RefreshCw size={11} className="animate-spin" /> {isHindi ? 'खोज रहे हैं…' : 'Scanning…'}
                 </>
               ) : (
                 <>
-                  <Search size={11} /> Auto-Detect
+                  <Search size={11} /> {isHindi ? 'ऑटो-डिटेक्ट' : 'Auto-Detect'}
                 </>
               )}
             </button>
@@ -354,13 +451,15 @@ export function DocumentUploadScreen({ sessionId, patientId, onComplete, onSkip 
               setIsIpMode(!isIpMode);
               setScannedDoc(null);
             }}
-            className={`px-2 py-1 rounded-lg text-xs font-semibold transition-all border ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
               isIpMode
-                ? 'bg-blue-50 text-blue-800 border-blue-200'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-200'
+                ? 'bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
             }`}
           >
-            {isIpMode ? '📱 Virtual Cam' : '🌐 Phone Wi-Fi IP'}
+            {isHindi
+              ? (isIpMode ? '📷 USB / PC कैमरा पर स्विच करें' : '📱 फोन DroidCam पर स्विच करें')
+              : (isIpMode ? '📷 Switch to USB / PC Webcam' : '📱 Switch to Phone DroidCam')}
           </button>
         </div>
       </div>
@@ -454,10 +553,18 @@ export function DocumentUploadScreen({ sessionId, patientId, onComplete, onSkip 
                 ref={ipImageRef}
                 src={videoFeedUrl}
                 alt="DroidCam Stream"
-                crossOrigin="anonymous"
                 className="w-full h-full object-cover transition-opacity duration-300"
                 onError={() => {
-                  setScanErrorMessage(`Cannot load DroidCam video at ${cleanIpUrl}. Ensure phone & PC are on the same Wi-Fi.`);
+                  if (!useProxyFeed) {
+                    setUseProxyFeed(true);
+                    setStreamNonce((n) => n + 1);
+                  } else {
+                    setScanErrorMessage(
+                      isHindi
+                        ? `DroidCam वीडियो ${cleanIpUrl} पर लोड नहीं हो सका। सुनिश्चित करें कि फोन में DroidCam चालू है।`
+                        : `Cannot load DroidCam video at ${cleanIpUrl}. Ensure phone & PC are on the same Wi-Fi/network.`
+                    );
+                  }
                 }}
               />
             </div>

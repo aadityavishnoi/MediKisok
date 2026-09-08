@@ -504,96 +504,114 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
           )}
 
             {/* Production Hardware Reader Status Card */}
-            <div className="w-full bg-slate-900 text-white rounded-2xl border border-slate-800 p-4 shadow-xl text-left space-y-3">
+            <div className="w-full bg-white rounded-3xl border border-slate-200/90 p-5 shadow-sm text-left space-y-3.5 animate-slide-up">
+              {/* Card Header */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                  </span>
-                  <span className="text-[11px] font-bold text-slate-100 uppercase tracking-wider">
-                    Physical RFID Hardware System
-                  </span>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-xs">
+                    <Radio size={16} className="animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-extrabold text-slate-900 tracking-tight font-display">
+                      Physical RFID Hardware System
+                    </h3>
+                    <p className="text-[10px] font-semibold text-slate-400">
+                      13.56 MHz ISO/IEC 14443-A Scanner Active
+                    </p>
+                  </div>
                 </div>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-mono font-bold border border-emerald-500/30">
-                  {webSerialConnected || hardwareBridgeConnected ? 'Scanner Connected & Active' : 'Auto-Listening Active'}
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200/60 shadow-xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Scanner Connected & Active
                 </span>
               </div>
 
-              <p className="text-[11px] text-slate-300 leading-relaxed">
-                Place your physical RFID Smart Card directly onto the USB scanner antenna. Cards are scanned automatically and authenticated instantly.
-              </p>
-
-              {/* Automatic Physical Hardware Auto-Connection Status */}
-              <div className="w-full py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-between border transition-all shadow-xs bg-emerald-950/90 border-emerald-500/80 text-emerald-300 shadow-emerald-900/40">
+              {/* Hardware Scanner Live Indicator Banner */}
+              <div className="p-2.5 rounded-2xl bg-gradient-to-r from-emerald-50/90 via-teal-50/50 to-blue-50/50 border border-emerald-200/80 flex items-center justify-between gap-2 shadow-xs">
                 <div className="flex items-center gap-2">
-                  <Radio size={14} className="text-emerald-400 animate-pulse" />
-                  <span>🟢 Hardware Scanner Ready (Auto-Detecting Card Taps)</span>
+                  <span className="relative flex h-2.5 w-2.5 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-600" />
+                  </span>
+                  <span className="text-xs font-bold text-slate-800">
+                    🟢 Hardware Scanner Ready (Auto-Detecting Card Taps)
+                  </span>
                 </div>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-mono font-bold border border-emerald-500/30">
+                <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-mono text-[10px] font-extrabold shrink-0 border border-emerald-200">
                   Auto-Connected
                 </span>
               </div>
 
-            {/* Live Scan Input Bar with Instant Auto-Connect */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (manualUid.trim()) {
-                  const uidToScan = manualUid.trim();
-                  setManualUid('');
-                  handleTapCard(uidToScan);
-                }
-              }}
-              className="flex items-center gap-1.5"
-            >
-              <input
-                type="text"
-                autoFocus
-                placeholder="Tap card on reader or enter card UID…"
-                value={manualUid}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setManualUid(val);
-                  const clean = val.trim();
-                  // Instant Auto-Connect when UID is read
-                  if (clean.length >= 8 && (/^[0-9a-fA-F:\s-]+$/.test(clean) || /^\d{8,14}$/.test(clean))) {
+              <p className="text-[11px] text-slate-500 font-medium leading-relaxed px-0.5">
+                Place your physical RFID Smart Card directly onto the USB scanner antenna. Cards are scanned automatically and authenticated instantly.
+              </p>
+
+              {/* Seamless Live Input / Tap Bar */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (manualUid.trim()) {
+                    const uidToScan = manualUid.trim();
                     setManualUid('');
-                    handleTapCard(clean);
+                    handleTapCard(uidToScan);
                   }
                 }}
-                className="flex-1 px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700 text-white placeholder-slate-500 text-xs font-mono focus:border-blue-500 focus:outline-none"
-              />
-              <button
-                type="submit"
-                disabled={tapLoading || !manualUid.trim()}
-                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all disabled:opacity-40 cursor-pointer shadow-xs flex items-center gap-1.5"
+                className="relative flex items-center"
               >
-                {tapLoading ? (
-                  <>
-                    <RefreshCw size={12} className="animate-spin" />
-                    <span>Connecting…</span>
-                  </>
-                ) : (
-                  <span>Auto-Scan Active</span>
-                )}
-              </button>
-            </form>
+                <CreditCard size={15} className="absolute left-3.5 text-slate-400 pointer-events-none" />
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder="Tap card on reader or enter card UID…"
+                  value={manualUid}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setManualUid(val);
+                    const clean = val.trim();
+                    // Instant Auto-Connect when UID is read
+                    if (clean.length >= 8 && (/^[0-9a-fA-F:\s-]+$/.test(clean) || /^\d{8,14}$/.test(clean))) {
+                      setManualUid('');
+                      handleTapCard(clean);
+                    }
+                  }}
+                  className="w-full pl-9 pr-32 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 text-xs font-mono font-bold focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all"
+                />
+                <div className="absolute right-1.5 flex items-center">
+                  <button
+                    type="submit"
+                    disabled={tapLoading || !manualUid.trim()}
+                    className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold shadow-xs transition-all disabled:opacity-40 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    {tapLoading ? (
+                      <>
+                        <RefreshCw size={11} className="animate-spin" />
+                        <span>Connecting…</span>
+                      </>
+                    ) : (
+                      <>
+                        <Radio size={11} className="text-blue-200 animate-pulse" />
+                        <span>Auto-Scan Active</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
 
-            <div className="flex items-center justify-between pt-1 border-t border-slate-800/80 text-[10px] text-slate-400 px-0.5">
-              <span className="flex items-center gap-1 text-slate-400">
-                <ShieldCheck size={12} className="text-emerald-400" />
-                ABDM Encrypted Intake
-              </span>
-              <button
-                type="button"
-                onClick={() => { setActiveTab('REGISTER'); setFormError(null); }}
-                className="text-blue-400 hover:text-blue-300 font-semibold underline cursor-pointer"
-              >
-                Register Without Card &rarr;
-              </button>
+              {/* Footer Links & Cert */}
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] font-semibold text-slate-500 px-0.5">
+                <span className="flex items-center gap-1.5 text-slate-600 font-bold">
+                  <ShieldCheck size={14} className="text-emerald-600" />
+                  ABDM Encrypted Intake
+                </span>
+                <button
+                  type="button"
+                  onClick={() => { setActiveTab('REGISTER'); setFormError(null); }}
+                  className="text-blue-600 hover:text-blue-700 font-bold hover:underline cursor-pointer flex items-center gap-1 transition-colors"
+                >
+                  Register Without Card &rarr;
+                </button>
+              </div>
             </div>
-          </div>
         </div>
       )}
 

@@ -35,7 +35,7 @@ export function useCameraStream() {
       const videoInputs = allDevices.filter((d) => d.kind === 'videoinput');
       const mapped: CameraDevice[] = videoInputs.map((d, index) => {
         const rawLabel = d.label || `Camera ${index + 1}`;
-        const isDroidCam = /droidcam|droid/i.test(rawLabel);
+        const isDroidCam = /droidcam|droid|e2esoft|vcam|wireless.*cam|phone.*cam/i.test(rawLabel);
         return {
           deviceId: d.deviceId,
           label: isDroidCam ? `📱 ${rawLabel} (Phone DroidCam)` : `📷 ${rawLabel}`,
