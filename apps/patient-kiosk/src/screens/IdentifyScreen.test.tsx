@@ -21,8 +21,8 @@ describe('IdentifyScreen', () => {
     render(<IdentifyScreen wsState="open" error={null} onError={vi.fn()} />);
     expect(screen.getAllByText(/Tap Card/).length).toBeGreaterThan(0);
     expect(screen.getByText('Connected')).toBeInTheDocument();
-    expect(screen.getByText(/Physical RFID Hardware Active/)).toBeInTheDocument();
-    expect(screen.getByText(/Ready for Live Tap/)).toBeInTheDocument();
+    expect(screen.getByText(/Physical RFID Hardware/)).toBeInTheDocument();
+    expect(screen.getByText(/Hardware Scanner Ready/)).toBeInTheDocument();
   });
 
   it('switches to registration mode and pre-fills card UID when a blank card is detected', () => {

@@ -6,8 +6,16 @@ import { ShieldCheck, HelpCircle, PhoneCall, Wifi } from 'lucide-react';
 const STEP_ORDER = ['IDENTIFY', 'LANGUAGE', 'CONSENT', 'CHIEF_COMPLAINT', 'HISTORY', 'SCAN', 'DONE'] as const;
 export type KioskStepId = (typeof STEP_ORDER)[number];
 
-function stepLabel(t: Dictionary, id: KioskStepId): string {
-  if (id === 'SCAN') return 'Scan Document';
+function stepLabel(t: Dictionary, id: KioskStepId, lang?: string | null): string {
+  if (id === 'SCAN') {
+    if (lang === 'HI') return 'दस्तावेज़ स्कैन';
+    if (lang === 'BN') return 'নথি স্ক্যান';
+    if (lang === 'MR') return 'कागदपत्र स्कॅन';
+    if (lang === 'TA') return 'ஆவணத்தை ஸ்கேன்';
+    if (lang === 'TE') return 'డాక్యుమెంట్ స్కాన్';
+    if (lang === 'GU') return 'દસ્તાવેજ સ્કેન';
+    return 'Scan Document';
+  }
   return {
     IDENTIFY: t.steps.identify,
     LANGUAGE: t.steps.language,
@@ -18,12 +26,19 @@ function stepLabel(t: Dictionary, id: KioskStepId): string {
   }[id];
 }
 
-function ConnectionBadge({ wsState }: { wsState: WsConnectionState }) {
+function ConnectionBadge({ wsState, lang }: { wsState: WsConnectionState; lang?: string | null }) {
   const isOnline = wsState === 'open';
+  const label = isOnline
+    ? lang === 'HI'
+      ? '13.56 MHz कार्ड रीडर'
+      : '13.56 MHz Reader'
+    : lang === 'HI'
+      ? 'कनेक्ट हो रहा है…'
+      : 'Connecting…';
   return (
     <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-slate-100 border border-slate-200/80 text-slate-700">
       <span className={`h-2 w-2 rounded-full ${isOnline ? 'bg-emerald-500 ring-4 ring-emerald-100' : 'bg-amber-500 animate-pulse'}`} />
-      <span className="font-mono text-[11px]">{isOnline ? '13.56 MHz Reader' : 'Connecting…'}</span>
+      <span className="font-mono text-[11px]">{label}</span>
     </div>
   );
 }
@@ -60,7 +75,9 @@ export function KioskShell({ step, language, onLanguageChange, wsState, sessionI
           </div>
           <div>
             <span className="text-xl font-extrabold tracking-tight text-slate-900 font-display">MediKiosk</span>
-            <p className="text-[11px] font-semibold text-slate-400 leading-none mt-0.5">Patient Self-Intake</p>
+            <p className="text-[11px] font-semibold text-slate-400 leading-none mt-0.5">
+              {language === 'HI' ? 'मरीज स्वयं-पंजीकरण' : 'Patient Self-Intake'}
+            </p>
           </div>
         </div>
 
@@ -83,7 +100,7 @@ export function KioskShell({ step, language, onLanguageChange, wsState, sessionI
                   {isCompleted ? '✓' : i + 1}
                 </span>
                 <span className={`text-xs font-semibold ${isCurrent ? 'text-slate-900 font-bold' : isCompleted ? 'text-slate-600' : 'text-slate-400'}`}>
-                  {stepLabel(t, id)}
+                  {stepLabel(t, id, language)}
                 </span>
                 {i < STEP_ORDER.length - 1 && <span className="h-0.5 w-3 bg-slate-200 rounded-full" />}
               </li>
@@ -93,7 +110,7 @@ export function KioskShell({ step, language, onLanguageChange, wsState, sessionI
 
         {/* Right Action Bar */}
         <div className="flex items-center gap-3">
-          <ConnectionBadge wsState={wsState} />
+          <ConnectionBadge wsState={wsState} lang={language} />
           {language && onLanguageChange && (
             <select
               value={language}
@@ -120,7 +137,7 @@ export function KioskShell({ step, language, onLanguageChange, wsState, sessionI
       <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-200/70 bg-white px-6 py-2 text-xs text-slate-500 font-medium shrink-0">
         <div className="flex items-center gap-2 text-slate-600">
           <ShieldCheck size={16} className="text-emerald-600" />
-          <span>ABDM Digital Health Certified · Encrypted Session</span>
+          <span>{language === 'HI' ? 'एबीडीएम डिजिटल स्वास्थ्य प्रमाणित · एन्क्रिप्टेड सत्र' : 'ABDM Digital Health Certified · Encrypted Session'}</span>
         </div>
         <span>{t.common.hospitalPlaceholder}</span>
         <div className="flex items-center gap-4">

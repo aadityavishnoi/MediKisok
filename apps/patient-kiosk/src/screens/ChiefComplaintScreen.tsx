@@ -12,6 +12,8 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   fever: <Thermometer className="w-7 h-7 text-blue-600 group-hover:scale-110 transition-transform" />,
   headache: <Brain className="w-7 h-7 text-blue-600 group-hover:scale-110 transition-transform" />,
   'general-fallback': <Edit3 className="w-7 h-7 text-blue-600 group-hover:scale-110 transition-transform" />,
+  dizziness: <Sparkles className="w-7 h-7 text-blue-600 group-hover:scale-110 transition-transform" />,
+  'test-dizziness': <Sparkles className="w-7 h-7 text-blue-600 group-hover:scale-110 transition-transform" />,
 };
 
 export interface ChiefComplaintScreenProps {
@@ -21,7 +23,8 @@ export interface ChiefComplaintScreenProps {
 }
 
 export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefComplaintScreenProps) {
-  const langKey = language === 'HI' ? 'hi' : 'en';
+  const isHindi = language === 'HI';
+  const t = getDictionary(language ?? 'EN');
   const [isListening, setIsListening] = useState(false);
   const [voiceText, setVoiceText] = useState<string | null>(null);
   const [typedInput, setTypedInput] = useState('');
@@ -29,7 +32,10 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
   const [extractedTokens, setExtractedTokens] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<ChiefComplaintCategory | null>(null);
   const [symptomList, setSymptomList] = useState<Array<{ category: ChiefComplaintCategory; label: { en: string; hi: string } }>>(() =>
-    CHIEF_COMPLAINT_CATEGORIES.map((cat) => ({ category: cat, label: CHIEF_COMPLAINT_LABELS[cat] }))
+    CHIEF_COMPLAINT_CATEGORIES.map((cat) => ({
+      category: cat,
+      label: CHIEF_COMPLAINT_LABELS[cat] || { en: cat, hi: cat },
+    }))
   );
 
   useEffect(() => {
@@ -41,10 +47,30 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
           const active = json.data.filter((s: any) => s.active !== false);
           if (active.length > 0) {
             setSymptomList(
-              active.map((s: any) => ({
-                category: s.category || s.id,
-                label: s.label || { en: s.name || s.id, hi: s.nameHi || s.name || s.id },
-              }))
+              active.map((s: any) => {
+                const mappedCat = (s.mappedTreeId || s.id) as ChiefComplaintCategory;
+                const defaultLabel = CHIEF_COMPLAINT_LABELS[mappedCat];
+                const enLabel = s.localizedLabels?.en || s.label?.en || s.name || defaultLabel?.en || mappedCat;
+                let hiLabel = s.localizedLabels?.hi || s.label?.hi || s.nameHi;
+
+                // Fallback to standard clinical Hindi mapping if missing or unchanged from English
+                if (!hiLabel || hiLabel === s.name) {
+                  const lowerName = (s.name || '').toLowerCase();
+                  if (mappedCat === 'chest-pain' || lowerName.includes('chest')) hiLabel = 'सीने में दर्द';
+                  else if (mappedCat === 'breathing-difficulty' || lowerName.includes('breath')) hiLabel = 'सांस लेने में तकलीफ';
+                  else if (mappedCat === 'abdominal-pain' || lowerName.includes('abdom') || lowerName.includes('stomach') || lowerName.includes('pet')) hiLabel = 'पेट में दर्द';
+                  else if (mappedCat === 'fever' || lowerName.includes('fever')) hiLabel = 'बुखार';
+                  else if (mappedCat === 'headache' || lowerName.includes('headache')) hiLabel = 'सिरदर्द';
+                  else if (mappedCat === 'general-fallback' || lowerName.includes('something else')) hiLabel = 'कुछ और';
+                  else if (s.id?.includes('dizziness') || lowerName.includes('dizziness') || lowerName.includes('vertigo')) hiLabel = 'चक्कर आना';
+                  else hiLabel = defaultLabel?.hi || enLabel;
+                }
+
+                return {
+                  category: mappedCat,
+                  label: { en: enLabel, hi: hiLabel },
+                };
+              })
             );
           }
         }
@@ -65,7 +91,7 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
       const res = await fetch('/api/ai/normalize-symptoms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: clean }),
+        body: JSON.stringify({ text: clean, language: isHindi ? 'hi' : 'en' }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -93,7 +119,7 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
       setIsListening(true);
       setTimeout(() => {
         setIsListening(false);
-        const fallbackSpeech = 'High fever with chills and headache';
+        const fallbackSpeech = isHindi ? 'तेज बुखार और सिरदर्द' : 'High fever with chills and headache';
         setVoiceText(fallbackSpeech);
         analyzeSymptomsWithAi(fallbackSpeech);
       }, 1500);
@@ -137,13 +163,15 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
       <div className="w-full bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 text-center space-y-5 shadow-xs">
         <div>
           <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100/80 mb-2">
-            <Sparkles size={13} /> Select Symptom · AI Triage
+            <Sparkles size={13} /> {isHindi ? 'लक्षण चुनें · एआई ट्राइएज' : 'Select Symptom · AI Triage'}
           </span>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-display tracking-tight">
-            What brings you in today?
+            {t.chiefComplaint?.title || (isHindi ? 'आज आपको क्या समस्या हो रही है?' : 'What brings you in today?')}
           </h1>
           <p className="mt-1 text-xs text-slate-500 font-medium">
-            Speak into the microphone, type your symptoms, or pick an option below
+            {isHindi
+              ? 'माइक में बोलें, लक्षण लिखें, या नीचे दिए गए विकल्पों में से चुनें'
+              : 'Speak into the microphone, type your symptoms, or pick an option below'}
           </p>
         </div>
 
@@ -161,13 +189,23 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
             <Mic size={32} />
           </button>
           <span className="mt-2 text-xs font-semibold text-slate-600">
-            {isListening ? '🎙️ Listening… Speak in Hindi or English' : 'Tap to speak symptoms (AI Normalization)'}
+            {isListening
+              ? isHindi
+                ? '🎙️ सुन रहे हैं… बोलिए'
+                : '🎙️ Listening… Speak now'
+              : isHindi
+                ? 'लक्षण बोलने के लिए दबाएं (एआई विश्लेषण)'
+                : 'Tap to speak symptoms (AI Normalization)'}
           </span>
           {voiceText && (
             <div className="mt-2 text-xs font-semibold text-blue-800 bg-blue-50 px-3.5 py-1.5 rounded-xl border border-blue-100 flex items-center gap-2">
               <Cpu size={14} className={aiAnalyzing ? 'animate-spin text-blue-600' : 'text-blue-600'} />
-              <span>Input: "{voiceText}"</span>
-              {aiAnalyzing && <span className="text-[10px] text-blue-600 animate-pulse">Running Clinical AI…</span>}
+              <span>{isHindi ? 'इनपुट:' : 'Input:'} "{voiceText}"</span>
+              {aiAnalyzing && (
+                <span className="text-[10px] text-blue-600 animate-pulse">
+                  {isHindi ? 'क्लीनिकल एआई विश्लेषण जारी है…' : 'Running Clinical AI…'}
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -178,10 +216,10 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-emerald-900 flex items-center gap-1.5">
                 <CheckCircle2 size={13} className="text-emerald-600" />
-                Clinical AI Normalized Symptoms:
+                {isHindi ? 'क्लीनिकल एआई द्वारा विश्लेषित लक्षण:' : 'Clinical AI Normalized Symptoms:'}
               </span>
               <span className="text-[10px] font-mono text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
-                ML Model Active
+                {isHindi ? 'एमएल मॉडल सक्रिय' : 'ML Model Active'}
               </span>
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -196,7 +234,7 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
                 >
                   {tok.canonicalName || tok.symptomCode}
                   {tok.icd10Category ? ` (${tok.icd10Category})` : ''}
-                  {tok.isRedFlag ? ' ⚡ High Priority' : ''}
+                  {tok.isRedFlag ? (isHindi ? ' ⚡ उच्च प्राथमिकता' : ' ⚡ High Priority') : ''}
                 </span>
               ))}
             </div>
@@ -207,7 +245,11 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
         <form onSubmit={handleTypedSubmit} className="flex items-center gap-2 max-w-md mx-auto">
           <input
             type="text"
-            placeholder="Type symptoms (e.g. bukhar, severe headache, chest pain)…"
+            placeholder={
+              isHindi
+                ? 'लक्षण लिखें (उदा. बुखार, तेज सिरदर्द, सीने में दर्द)…'
+                : 'Type symptoms (e.g. bukhar, severe headache, chest pain)…'
+            }
             value={typedInput}
             onChange={(e) => setTypedInput(e.target.value)}
             className="flex-1 px-3.5 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -218,7 +260,7 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
             className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-sm transition-all disabled:opacity-50"
           >
             <Send size={13} />
-            <span>AI Parse</span>
+            <span>{isHindi ? 'एआई विश्लेषण' : 'AI Parse'}</span>
           </button>
         </form>
 
@@ -226,8 +268,10 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           {symptomList.map(({ category, label }, i) => {
             const isSel = selectedCategory === category;
-            const icon = CATEGORY_ICONS[category] || CATEGORY_ICONS['general-fallback'];
-            const displayLabel = label?.[langKey] || label?.en || category;
+            const icon = CATEGORY_ICONS[category] || CATEGORY_ICONS['general-fallback'] || (
+              <Stethoscope className="w-7 h-7 text-blue-600 group-hover:scale-110 transition-transform" />
+            );
+            const displayLabel = isHindi ? (label?.hi || label?.en || category) : (label?.en || label?.hi || category);
             return (
               <button
                 key={category}
@@ -257,12 +301,18 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
             <div className="flex items-center gap-3">
               <AlertTriangle className="text-red-600 shrink-0" size={20} />
               <div>
-                <div className="font-bold text-red-900 text-xs">Emergency Priority Detected by Clinical AI</div>
-                <div className="text-[11px] text-red-700 font-medium">Triage queue automatically escalated for priority care.</div>
+                <div className="font-bold text-red-900 text-xs">
+                  {isHindi ? 'क्लीनिकल एआई द्वारा आपातकालीन स्थिति की पहचान' : 'Emergency Priority Detected by Clinical AI'}
+                </div>
+                <div className="text-[11px] text-red-700 font-medium">
+                  {isHindi
+                    ? 'प्राथमिकता उपचार के लिए ट्राइएज कतार में तत्काल आगे बढ़ाया गया।'
+                    : 'Triage queue automatically escalated for priority care.'}
+                </div>
               </div>
             </div>
             <span className="px-3 py-1.5 rounded-xl bg-red-600 text-white font-bold text-[10px] shrink-0 shadow-xs uppercase font-mono">
-              Priority Red
+              {isHindi ? 'प्राथमिकता: रेड' : 'Priority Red'}
             </span>
           </div>
         )}
@@ -273,7 +323,7 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
             onClick={onBack}
             className="mt-1 inline-flex items-center gap-1.5 text-slate-400 hover:text-slate-700 font-semibold text-xs transition-colors"
           >
-            <ArrowLeft size={13} /> Back to start
+            <ArrowLeft size={13} /> {t.common?.backButton || (isHindi ? 'पीछे जाएं' : 'Back to start')}
           </button>
         )}
       </div>

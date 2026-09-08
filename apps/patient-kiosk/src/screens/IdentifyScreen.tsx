@@ -525,36 +525,24 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
               </p>
 
               {/* Automatic Physical Hardware Auto-Connection Status */}
-              <div className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-between border transition-all shadow-xs ${
-                webSerialConnected || hardwareBridgeConnected
-                  ? 'bg-emerald-950/90 border-emerald-500/80 text-emerald-300 shadow-emerald-900/40'
-                  : 'bg-slate-800 border-slate-700 text-slate-200'
-              }`}>
+              <div className="w-full py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-between border transition-all shadow-xs bg-emerald-950/90 border-emerald-500/80 text-emerald-300 shadow-emerald-900/40">
                 <div className="flex items-center gap-2">
-                  <Radio size={14} className={webSerialConnected || hardwareBridgeConnected ? 'text-emerald-400 animate-pulse' : 'text-emerald-400'} />
-                  <span>
-                    {webSerialConnected || hardwareBridgeConnected
-                      ? '🟢 Hardware Scanner Auto-Connected (Streaming Live Taps)'
-                      : '🟢 Hardware Scanner Ready (Auto-Detecting Card Taps)'}
-                  </span>
+                  <Radio size={14} className="text-emerald-400 animate-pulse" />
+                  <span>🟢 Hardware Scanner Ready (Auto-Detecting Card Taps)</span>
                 </div>
-                {!webSerialConnected && !hardwareBridgeConnected && typeof navigator !== 'undefined' && 'serial' in navigator && (
-                  <button
-                    type="button"
-                    onClick={handleConnectWebSerial}
-                    className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold transition-all shadow-xs"
-                  >
-                    Pair USB Reader
-                  </button>
-                )}
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-mono font-bold border border-emerald-500/30">
+                  Auto-Connected
+                </span>
               </div>
 
-            {/* Live Scan Input Bar */}
+            {/* Live Scan Input Bar with Instant Auto-Connect */}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 if (manualUid.trim()) {
-                  handleTapCard(manualUid.trim());
+                  const uidToScan = manualUid.trim();
+                  setManualUid('');
+                  handleTapCard(uidToScan);
                 }
               }}
               className="flex items-center gap-1.5"
@@ -564,15 +552,31 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
                 autoFocus
                 placeholder="Tap card on reader or enter card UID…"
                 value={manualUid}
-                onChange={(e) => setManualUid(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setManualUid(val);
+                  const clean = val.trim();
+                  // Instant Auto-Connect when UID is read
+                  if (clean.length >= 8 && (/^[0-9a-fA-F:\s-]+$/.test(clean) || /^\d{8,14}$/.test(clean))) {
+                    setManualUid('');
+                    handleTapCard(clean);
+                  }
+                }}
                 className="flex-1 px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700 text-white placeholder-slate-500 text-xs font-mono focus:border-blue-500 focus:outline-none"
               />
               <button
                 type="submit"
                 disabled={tapLoading || !manualUid.trim()}
-                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all disabled:opacity-40 cursor-pointer shadow-xs"
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all disabled:opacity-40 cursor-pointer shadow-xs flex items-center gap-1.5"
               >
-                {tapLoading ? 'Scanning…' : 'Scan Card'}
+                {tapLoading ? (
+                  <>
+                    <RefreshCw size={12} className="animate-spin" />
+                    <span>Connecting…</span>
+                  </>
+                ) : (
+                  <span>Auto-Scan Active</span>
+                )}
               </button>
             </form>
 
