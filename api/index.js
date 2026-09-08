@@ -46683,10 +46683,77 @@ async function getSessionDetail(sessionId) {
       }
     });
     if (session && session.patient) {
-      const timelineEvents = await prisma.medicalTimelineEvent.findMany({
-        where: { patientId: session.patient.id },
-        orderBy: { eventDate: "desc" }
-      });
+      const [timelineEvents, allDocuments] = await Promise.all([
+        prisma.medicalTimelineEvent.findMany({
+          where: { patientId: session.patient.id },
+          orderBy: { eventDate: "desc" }
+        }),
+        prisma.medicalDocument.findMany({
+          where: {
+            OR: [
+              { sessionId: session.id },
+              { patientId: session.patient.id }
+            ]
+          },
+          include: { extractedData: true },
+          orderBy: { createdAt: "desc" }
+        })
+      ]);
+      const ocrMeds = allDocuments.flatMap((d) => d.extractedData).filter((e) => e.fieldType.toUpperCase().includes("MED")).map((e) => ({ label: "Prescription OCR", value: e.fieldValue }));
+      const existingHistoryMeds = Array.isArray(session.clinicalHistory?.currentMedications) ? session.clinicalHistory.currentMedications : [];
+      const mergedCurrentMeds = [...existingHistoryMeds];
+      for (const om of ocrMeds) {
+        if (!mergedCurrentMeds.some((m) => m.value?.toLowerCase() === om.value?.toLowerCase())) {
+          mergedCurrentMeds.push(om);
+        }
+      }
+      const effectiveHistory = session.clinicalHistory ? {
+        id: session.clinicalHistory.id,
+        sessionId: session.clinicalHistory.sessionId,
+        patientId: session.clinicalHistory.patientId,
+        mode: session.clinicalHistory.mode,
+        chiefComplaint: session.clinicalHistory.chiefComplaint,
+        hpi: session.clinicalHistory.hpi ?? [],
+        pastMedicalHistory: session.clinicalHistory.pastMedicalHistory ?? [],
+        pastSurgicalHistory: session.clinicalHistory.pastSurgicalHistory ?? [],
+        currentMedications: mergedCurrentMeds,
+        drugAllergies: session.clinicalHistory.drugAllergies ?? [],
+        familyHistory: session.clinicalHistory.familyHistory ?? [],
+        personalHistory: session.clinicalHistory.personalHistory ?? [],
+        reviewOfSystems: session.clinicalHistory.reviewOfSystems ?? [],
+        previousInvestigations: session.clinicalHistory.previousInvestigations ?? [],
+        ayushFields: session.clinicalHistory.ayushFields ?? null,
+        completedAt: session.clinicalHistory.completedAt?.toISOString() ?? null,
+        answers: session.clinicalHistory.answers.map((a) => ({
+          id: a.id,
+          clinicalHistoryId: a.clinicalHistoryId,
+          nodeId: a.nodeId,
+          section: a.section,
+          questionText: a.questionText,
+          questionTextLocalized: a.questionTextLocalized,
+          answerValue: a.answerValue,
+          isRedFlagTrigger: a.isRedFlagTrigger,
+          answeredAt: a.answeredAt.toISOString()
+        }))
+      } : mergedCurrentMeds.length > 0 ? {
+        id: `synth_hist_${session.id}`,
+        sessionId: session.id,
+        patientId: session.patient.id,
+        mode: "GENERAL",
+        chiefComplaint: "Prescription & Documents Scanned at Kiosk",
+        hpi: [],
+        pastMedicalHistory: [],
+        pastSurgicalHistory: [],
+        currentMedications: mergedCurrentMeds,
+        drugAllergies: [],
+        familyHistory: [],
+        personalHistory: [],
+        reviewOfSystems: [],
+        previousInvestigations: [],
+        ayushFields: null,
+        completedAt: session.createdAt.toISOString(),
+        answers: []
+      } : null;
       return {
         sessionId: session.id,
         status: session.status,
@@ -46707,35 +46774,7 @@ async function getSessionDetail(sessionId) {
           language: session.consent.language,
           grantedAt: session.consent.grantedAt?.toISOString() ?? null
         } : null,
-        history: session.clinicalHistory ? {
-          id: session.clinicalHistory.id,
-          sessionId: session.clinicalHistory.sessionId,
-          patientId: session.clinicalHistory.patientId,
-          mode: session.clinicalHistory.mode,
-          chiefComplaint: session.clinicalHistory.chiefComplaint,
-          hpi: session.clinicalHistory.hpi ?? [],
-          pastMedicalHistory: session.clinicalHistory.pastMedicalHistory ?? [],
-          pastSurgicalHistory: session.clinicalHistory.pastSurgicalHistory ?? [],
-          currentMedications: session.clinicalHistory.currentMedications ?? [],
-          drugAllergies: session.clinicalHistory.drugAllergies ?? [],
-          familyHistory: session.clinicalHistory.familyHistory ?? [],
-          personalHistory: session.clinicalHistory.personalHistory ?? [],
-          reviewOfSystems: session.clinicalHistory.reviewOfSystems ?? [],
-          previousInvestigations: session.clinicalHistory.previousInvestigations ?? [],
-          ayushFields: session.clinicalHistory.ayushFields ?? null,
-          completedAt: session.clinicalHistory.completedAt?.toISOString() ?? null,
-          answers: session.clinicalHistory.answers.map((a) => ({
-            id: a.id,
-            clinicalHistoryId: a.clinicalHistoryId,
-            nodeId: a.nodeId,
-            section: a.section,
-            questionText: a.questionText,
-            questionTextLocalized: a.questionTextLocalized,
-            answerValue: a.answerValue,
-            isRedFlagTrigger: a.isRedFlagTrigger,
-            answeredAt: a.answeredAt.toISOString()
-          }))
-        } : null,
+        history: effectiveHistory,
         alerts: session.alerts.map((a) => ({
           id: a.id,
           sessionId: a.sessionId,
@@ -46749,7 +46788,7 @@ async function getSessionDetail(sessionId) {
           acknowledgedAt: a.acknowledgedAt?.toISOString() ?? null,
           createdAt: a.createdAt.toISOString()
         })),
-        documents: session.documents.map((d) => ({
+        documents: allDocuments.map((d) => ({
           id: d.id,
           sessionId: d.sessionId,
           patientId: d.patientId,
@@ -47674,6 +47713,60 @@ documentsRouter.post("/documents/scan", async (req, res, next) => {
                 status: "NEEDS_VERIFICATION"
               }))
             });
+            const extractedMeds = result.fields.filter((f) => f.fieldType.toUpperCase().includes("MED")).map((f) => ({ label: "OCR Scanned Rx", value: f.fieldValue }));
+            if (extractedMeds.length > 0) {
+              try {
+                const existingHistory = await prisma.clinicalHistory.findUnique({
+                  where: { sessionId }
+                });
+                if (existingHistory) {
+                  const currentMeds = Array.isArray(existingHistory.currentMedications) ? existingHistory.currentMedications : [];
+                  const mergedMeds = [...currentMeds];
+                  for (const em of extractedMeds) {
+                    if (!mergedMeds.some((m) => m.value.toLowerCase() === em.value.toLowerCase())) {
+                      mergedMeds.push(em);
+                    }
+                  }
+                  await prisma.clinicalHistory.update({
+                    where: { sessionId },
+                    data: { currentMedications: mergedMeds }
+                  });
+                } else {
+                  await prisma.clinicalHistory.create({
+                    data: {
+                      sessionId,
+                      patientId: resolvedPatientId,
+                      mode: "GENERAL",
+                      currentMedications: extractedMeds,
+                      chiefComplaint: result.summary || "Prescription Ingested via Kiosk Scanner"
+                    }
+                  });
+                }
+                await prisma.medicalTimelineEvent.create({
+                  data: {
+                    patientId: resolvedPatientId,
+                    sourceDocumentId: doc.id,
+                    eventType: "MEDICATION",
+                    eventDate: /* @__PURE__ */ new Date(),
+                    title: "Prescription Scanned & OCR Ingested",
+                    description: result.summary || `Extracted: ${extractedMeds.map((m) => m.value).join(", ")}`,
+                    metadata: {
+                      imagekitUrl,
+                      medications: extractedMeds
+                    }
+                  }
+                });
+              } catch (histErr) {
+                console.warn("[documents/scan] Could not sync medications to clinicalHistory:", histErr);
+              }
+            }
+          }
+          try {
+            wsHub.broadcast({
+              type: "SESSION_UPDATED",
+              payload: { sessionId, patientId: resolvedPatientId, status: "ROUTED" }
+            });
+          } catch {
           }
         }
       } catch (dbErr) {
@@ -47829,6 +47922,31 @@ documentsRouter.post("/documents/upload", upload.single("file"), async (req, res
           }
         }
       });
+      const extractedMeds = extractedItems.filter((f) => f.fieldType === "MEDICATION").map((f) => ({ label: "Prescription OCR", value: f.fieldValue }));
+      if (extractedMeds.length > 0 && targetSessionId) {
+        const existingHistory = await prisma.clinicalHistory.findUnique({
+          where: { sessionId: targetSessionId }
+        });
+        if (existingHistory) {
+          const currentMeds = Array.isArray(existingHistory.currentMedications) ? existingHistory.currentMedications : [];
+          const mergedMeds = [...currentMeds];
+          for (const em of extractedMeds) {
+            if (!mergedMeds.some((m) => m.value.toLowerCase() === em.value.toLowerCase())) {
+              mergedMeds.push(em);
+            }
+          }
+          await prisma.clinicalHistory.update({
+            where: { sessionId: targetSessionId },
+            data: { currentMedications: mergedMeds }
+          });
+        }
+      }
+      if (targetSessionId) {
+        wsHub.broadcast({
+          type: "SESSION_UPDATED",
+          payload: { sessionId: targetSessionId, patientId: targetPatientId, status: "ROUTED" }
+        });
+      }
     } catch {
     }
     res.status(200).json({
