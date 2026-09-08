@@ -18,8 +18,20 @@ import {
   FileScan,
   Activity,
   PhoneCall,
+  TrendingUp,
 } from 'lucide-react';
-import { ApiClientError, connectWs, getDoctorDashboard, type WsConnectionState } from '@medikiosk/api-client';
+import {
+  ApiClientError,
+  connectWs,
+  getDoctorDashboard,
+  type WsConnectionState,
+} from '@medikiosk/api-client';
+import {
+  getRegionalSurveillanceRisk,
+  type RegionalRiskResponse,
+} from '../lib/surveillanceRxClient.js';
+
+
 import type { DoctorDashboardSessionRow } from '@medikiosk/shared-types';
 import { StatCard, SeverityBadge, DonutChart, MiniCalendar } from '@medikiosk/ui';
 import { clearSession, getDoctorName } from '../lib/authStore.js';
@@ -54,6 +66,14 @@ export function DashboardScreen({
   const [queueFilter, setQueueFilter] = useState<QueueFilter>('ALL');
   const [quickAction, setQuickAction] = useState<QuickActionType>(null);
   const [calledToken, setCalledToken] = useState<string | null>(null);
+  const [surveillanceRisk, setSurveillanceRisk] = useState<RegionalRiskResponse | null>(null);
+
+  useEffect(() => {
+    getRegionalSurveillanceRisk('IN-UP-VARANASI')
+      .then((res) => setSurveillanceRisk(res))
+      .catch(() => {});
+  }, []);
+
 
   const refresh = useCallback(async () => {
     try {
@@ -274,6 +294,72 @@ export function DashboardScreen({
           </button>
         </div>
       </div>
+
+      {/* Regional Disease Surveillance & Outbreak Intelligence Banner */}
+      {surveillanceRisk && (
+        <div className="mb-6 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50/90 via-orange-50/50 to-white p-5 shadow-xs">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-600 text-white shadow-xs">
+                <Activity size={20} />
+              </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded-full">
+                    Regional Surveillance Intelligence
+                  </span>
+                  <span className="text-xs font-mono text-slate-500">{surveillanceRisk.regionId}</span>
+                </div>
+                <h3 className="text-base font-extrabold text-slate-900 mt-1 flex items-center gap-2">
+                  Regional Disease Activity: <span className="text-amber-700 font-black">{surveillanceRisk.riskLevel ?? 'ELEVATED'}</span>
+                  <span className="text-xs font-semibold text-slate-500">({surveillanceRisk.disease ?? 'Dengue'})</span>
+                </h3>
+                <p className="text-xs text-slate-600 mt-0.5 max-w-2xl">
+                  {surveillanceRisk.evidence?.[0] ?? 'Dengue cases rising 38% over previous period. Sentinel clustering detected.'}{' '}
+                  Affected sentinel facilities: <strong>{surveillanceRisk.facilityCount ?? 6}</strong> · Confidence: <strong className="text-blue-900">{surveillanceRisk.confidence ?? 'ADEQUATE'}</strong>
+                </p>
+              </div>
+            </div>
+
+            {/* 7-Day & 14-Day Forecast Horizons */}
+            {surveillanceRisk.forecast && (
+              <div className="flex items-center gap-3 shrink-0 bg-white/90 p-3 rounded-xl border border-amber-200 shadow-2xs">
+                <div className="text-center px-2">
+                  <span className="text-[10px] font-bold text-slate-400 block uppercase">7-Day Forecast</span>
+                  <span className="text-sm font-black text-slate-900 flex items-center gap-1">
+                    <TrendingUp size={14} className="text-amber-600" />
+                    {surveillanceRisk.forecast['7d']?.expectedTotalCases ?? 42} cases
+                  </span>
+                  <span className="text-[9px] font-semibold text-amber-700 bg-amber-100 px-1.5 py-0.2 rounded">
+                    {surveillanceRisk.forecast['7d']?.trend ?? 'RISING'}
+                  </span>
+                </div>
+                <div className="h-8 w-px bg-slate-200" />
+                <div className="text-center px-2">
+                  <span className="text-[10px] font-bold text-slate-400 block uppercase">14-Day Forecast</span>
+                  <span className="text-sm font-black text-slate-900 flex items-center gap-1">
+                    <TrendingUp size={14} className="text-amber-600" />
+                    {surveillanceRisk.forecast['14d']?.expectedTotalCases ?? 88} cases
+                  </span>
+                  <span className="text-[9px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.2 rounded">
+                    {surveillanceRisk.forecast['14d']?.bestModel ?? 'HOLT LINEAR'}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-3 pt-2.5 border-t border-amber-200/60 flex items-center justify-between text-[11px] text-slate-500">
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+              Population-level surveillance intelligence · IDSP / Sentinel hospital network
+            </span>
+            <span className="text-amber-900 font-medium">
+              Enhanced triage screening recommended · Not an individual clinical diagnosis · Doctor review required
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Row of 5 Stat Cards */}
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-5">

@@ -12,12 +12,21 @@ import {
   Send,
   AlertCircle,
   FileCheck,
+  ShieldAlert,
+  ShieldCheck,
+  Info,
 } from 'lucide-react';
 import type {
   Consultation,
   ConsultationCompleteRequest,
   PrescriptionItem,
 } from '@medikiosk/shared-types';
+import {
+  checkRxSafety,
+  type RxCheckResponse,
+} from '../lib/surveillanceRxClient.js';
+
+
 
 export interface ConsultationRxWriterProps {
   sessionId: string;
@@ -94,12 +103,44 @@ export function ConsultationRxWriter({
   const [selectedLabs, setSelectedLabs] = useState<string[]>(['Lipid Profile (Serum)', '12-Lead Electrocardiogram (ECG)']);
   const [followUpDate, setFollowUpDate] = useState('2026-10-07');
   const [showRxSlip, setShowRxSlip] = useState(isCompleted);
+  const [rxSafety, setRxSafety] = useState<RxCheckResponse | null>(null);
+  const [checkingRx, setCheckingRx] = useState(false);
 
   useEffect(() => {
     if (isCompleted) {
       setShowRxSlip(true);
     }
   }, [isCompleted]);
+
+  // Real-time Evidence-Backed Medication Safety Check
+  useEffect(() => {
+    const validMeds = prescriptions
+      .map((p) => p.medicineName.trim())
+      .filter((name) => name.length > 0);
+
+    if (validMeds.length === 0) {
+      setRxSafety(null);
+      return;
+    }
+
+    let isCurrent = true;
+    setCheckingRx(true);
+    checkRxSafety({ medications: validMeds })
+      .then((res) => {
+        if (isCurrent) {
+          setRxSafety(res);
+          setCheckingRx(false);
+        }
+      })
+      .catch(() => {
+        if (isCurrent) setCheckingRx(false);
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [prescriptions]);
+
 
   // If patient has scanned medications from kiosk intake, automatically offer to populate prescription builder
   useEffect(() => {
@@ -615,7 +656,156 @@ export function ConsultationRxWriter({
                 </tbody>
               </table>
             </div>
+
+            {/* Developer 2: Evidence-Backed Medication Safety Review Panel */}
+            {checkingRx && (
+              <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50/60 p-3 text-xs text-blue-800 animate-pulse">
+                <Clock size={14} />
+                <span>Checking prescription against NLEM 2022 / CDSCO drug safety compendium...</span>
+              </div>
+            )}
+
+            {rxSafety && !checkingRx && (
+              <div
+                className={`rounded-xl border p-4 space-y-3 transition-all ${
+                  !rxSafety.safe
+                    ? 'border-amber-300 bg-amber-50/80 shadow-xs'
+                    : 'border-emerald-200 bg-emerald-50/60'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    {!rxSafety.safe ? (
+                      <ShieldAlert size={18} className="text-amber-700 shrink-0" />
+                    ) : (
+                      <ShieldCheck size={18} className="text-emerald-700 shrink-0" />
+                    )}
+                    <div>
+                      <h5 className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                        Medication Safety Review
+                        {!rxSafety.safe ? (
+                          <span className="rounded-full bg-amber-200 px-2 py-0.5 text-[10px] font-extrabold text-amber-900 uppercase">
+                            ⚠ Review Required
+                          </span>
+                        ) : (
+                          <span className="rounded-full bg-emerald-200 px-2 py-0.5 text-[10px] font-extrabold text-emerald-900 uppercase">
+                            ✓ Validated
+                          </span>
+                        )}
+                      </h5>
+                      <p className="text-[11px] text-slate-500">
+                        NLEM 2022 & CDSCO Interaction Matrix · Rules: {rxSafety.rulesVersion}
+                      </p>
+                    </div>
+                  </div>
+
+                  {rxSafety.janAushadhiAlternatives && rxSafety.janAushadhiAlternatives.length > 0 && (
+                    <span className="rounded-md bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-900">
+                      PMBJP Generic Options ({rxSafety.janAushadhiAlternatives.length})
+                    </span>
+                  )}
+                </div>
+
+                {/* Interactions */}
+                {rxSafety.interactions && rxSafety.interactions.length > 0 && (
+                  <div className="space-y-2 pt-1">
+                    {rxSafety.interactions.map((it: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className="rounded-lg border border-amber-200 bg-white p-3 text-xs shadow-2xs space-y-1"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-slate-900">
+                            ⚠ {it.drugA} ⟷ {it.drugB}
+                          </span>
+                          <span
+                            className={`rounded px-1.5 py-0.5 text-[10px] font-extrabold uppercase ${
+                              it.severity === 'CONTRAINDICATED'
+                                ? 'bg-red-100 text-red-800'
+                                : it.severity === 'HIGH'
+                                ? 'bg-amber-100 text-amber-900'
+                                : 'bg-slate-100 text-slate-700'
+                            }`}
+                          >
+                            {it.severity}
+                          </span>
+                        </div>
+                        <p className="text-slate-700 text-[11px]">{it.description}</p>
+                        {it.management && (
+                          <p className="text-blue-900 font-medium text-[11px]">
+                            <strong>Clinical Action:</strong> {it.management}
+                          </p>
+                        )}
+                        <p className="text-slate-400 text-[10px]">
+                          <strong>Evidence:</strong> {it.source}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Duplicate Therapy */}
+                {rxSafety.duplicateTherapy && rxSafety.duplicateTherapy.length > 0 && (
+                  <div className="space-y-1.5 pt-1">
+                    {rxSafety.duplicateTherapy.map((dt: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className="rounded-lg border border-orange-200 bg-white p-2.5 text-xs text-orange-950 shadow-2xs"
+                      >
+                        <div className="flex items-center justify-between font-bold">
+                          <span>Duplicate Therapy Alert: {dt.drugA} & {dt.drugB}</span>
+                          <span className="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-extrabold uppercase text-orange-900">
+                            {dt.type}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-700 mt-1">{dt.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Contraindications / Allergies */}
+                {rxSafety.contraindications && rxSafety.contraindications.length > 0 && (
+                  <div className="space-y-1.5 pt-1">
+                    {rxSafety.contraindications.map((c: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className="rounded-lg border border-red-200 bg-white p-2.5 text-xs text-red-950 shadow-2xs"
+                      >
+                        <p className="font-bold">Contraindication: {c.medication}</p>
+                        <p className="text-[11px] text-slate-700 mt-0.5">{c.reason}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Jan Aushadhi Generic Savings Recommendations */}
+                {rxSafety.janAushadhiAlternatives && rxSafety.janAushadhiAlternatives.length > 0 && (
+                  <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-2.5 text-xs space-y-1">
+                    <p className="font-bold text-emerald-950 text-[11px] flex items-center gap-1">
+                      <span>💊</span> Jan Aushadhi Generic Savings Available:
+                    </p>
+                    <div className="flex flex-wrap gap-2 pt-0.5">
+                      {rxSafety.janAushadhiAlternatives.map((alt: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="rounded-md bg-white border border-emerald-200 px-2 py-1 text-[10px] text-slate-800 shadow-2xs"
+                        >
+                          <strong className="text-emerald-900">{alt.prescribedDrug}</strong> → {alt.janAushadhiGeneric}{' '}
+                          <span className="text-emerald-700 font-bold">(~{alt.approxSavingsPercent}% savings)</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="text-[10px] text-slate-400 italic pt-1 border-t border-slate-200/60">
+                  {rxSafety.clinicalDisclaimer}
+                </div>
+              </div>
+            )}
           </div>
+
 
           {/* Diagnostic Lab Orders & Follow Up */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
