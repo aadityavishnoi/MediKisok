@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import type { HistorySectionEntry, Mode } from '@medikiosk/shared-types';
 import { ActorType, AlertSeverity, SessionStatus } from '@medikiosk/shared-types';
 import { advance, startHistory as engineStartHistory, toApiQuestion, type ClinicalHistorySection } from '@medikiosk/clinical-engine';
-import type { HistoryAnswerResponse, HistoryStartResponse } from '@medikiosk/shared-types';
+import type { HistoryAnswerResponse, HistoryQuestion, HistoryStartResponse } from '@medikiosk/shared-types';
 import { prisma } from '../lib/prisma.js';
 import { Errors } from '../lib/errors.js';
 import { recordAudit } from '../lib/audit.js';
@@ -26,6 +26,37 @@ function appendEntry(current: unknown, entry: HistorySectionEntry): Prisma.Input
 }
 
 import { demoStore } from '../lib/demoStore.js';
+
+import { ConsultationAiService } from './consultationAiService.js';
+
+function formatAiQuestion(q: any): HistoryQuestion {
+  return {
+    nodeId: q.questionId,
+    section: q.section || 'hpi',
+    type: q.questionType === 'BOOLEAN'
+      ? 'BOOLEAN'
+      : q.questionType === 'MULTI_SELECT'
+      ? 'MULTI_SELECT'
+      : q.questionType === 'FREE_TEXT'
+      ? 'TEXT'
+      : q.questionType === 'SCALE_1_10'
+      ? 'SCALE'
+      : 'SINGLE_SELECT',
+    questionText: {
+      en: q.questionTextLocalized?.en || q.questionText,
+      hi: q.questionTextLocalized?.hi || q.questionText,
+    },
+    options: q.options
+      ? q.options.map((opt: any) => ({
+          value: opt.value,
+          label: {
+            en: opt.label,
+            hi: opt.labelHi || opt.label,
+          },
+        }))
+      : null,
+  };
+}
 
 export async function startHistory(input: {
   sessionId: string;
@@ -54,7 +85,24 @@ export async function startHistory(input: {
     throw Errors.badRequest('Patient registration must be completed before starting the history');
   }
 
+  // 1. Trigger ConsultationAiService with full ML ranking & outbreak integration
+  let aiQuestion: HistoryQuestion | null = null;
+  try {
+    const aiResult = await ConsultationAiService.startConsultation({
+      sessionId: input.sessionId,
+      patientId: session.patientId,
+      chiefComplaint: input.chiefComplaintCategory,
+      reportedSymptoms: [input.chiefComplaintCategory],
+    });
+    if (aiResult?.nextQuestion) {
+      aiQuestion = formatAiQuestion(aiResult.nextQuestion);
+    }
+  } catch (aiErr) {
+    console.warn('[startHistory] AI ranker notice, using standard question tree:', aiErr);
+  }
+
   const { treeId, node, chiefComplaintText } = engineStartHistory(input.chiefComplaintCategory, input.mode);
+  const activeQuestion = aiQuestion || toApiQuestion(node);
 
   const history = await prisma.clinicalHistory.upsert({
     where: { sessionId: input.sessionId },
@@ -63,7 +111,7 @@ export async function startHistory(input: {
       chiefComplaint: chiefComplaintText,
       chiefComplaintCategory: input.chiefComplaintCategory,
       currentTreeId: treeId,
-      currentNodeId: node.id,
+      currentNodeId: activeQuestion.nodeId,
     },
     create: {
       sessionId: input.sessionId,
@@ -72,7 +120,7 @@ export async function startHistory(input: {
       chiefComplaint: chiefComplaintText,
       chiefComplaintCategory: input.chiefComplaintCategory,
       currentTreeId: treeId,
-      currentNodeId: node.id,
+      currentNodeId: activeQuestion.nodeId,
     },
   });
 
@@ -94,7 +142,7 @@ export async function startHistory(input: {
     payload: { sessionId: input.sessionId, status: SessionStatus.IN_HISTORY, timestamp: new Date().toISOString() },
   });
 
-  return { clinicalHistoryId: history.id, question: toApiQuestion(node) };
+  return { clinicalHistoryId: history.id, question: activeQuestion };
 }
 
 export async function answerHistory(input: {
@@ -143,6 +191,72 @@ export async function answerHistory(input: {
   }
   if (history.currentNodeId !== input.nodeId) {
     throw Errors.conflict('This question has already been answered or is out of sequence');
+  }
+
+  // 1. Submit answer to Clinical AI Engine & Ranker
+  let aiResult: any = null;
+  try {
+    aiResult = await ConsultationAiService.submitAnswer({
+      sessionId: input.sessionId,
+      questionId: input.nodeId,
+      answerValue: String(input.answerValue),
+    });
+  } catch (aiErr) {
+    console.warn('[answerHistory] AI ranking notice, falling back to tree:', aiErr);
+  }
+
+  if (aiResult) {
+    const isRedFlag = Boolean(aiResult.nextQuestion?.redFlagTrigger);
+    try {
+      await prisma.clinicalAnswer.create({
+        data: {
+          clinicalHistoryId: history.id,
+          nodeId: input.nodeId,
+          section: 'hpi',
+          questionText: input.nodeId,
+          answerValue: (input.answerValue ?? null) as Prisma.InputJsonValue,
+          isRedFlagTrigger: isRedFlag,
+        },
+      });
+    } catch {}
+
+    if (aiResult.isComplete || !aiResult.nextQuestion) {
+      await prisma.clinicalHistory.update({
+        where: { id: history.id },
+        data: { completedAt: new Date(), currentNodeId: null },
+      });
+      await prisma.patientSession.update({
+        where: { id: input.sessionId },
+        data: { status: SessionStatus.ROUTED },
+      });
+      return {
+        nextQuestion: null,
+        sectionComplete: true,
+        historyComplete: true,
+        redFlag: null,
+      };
+    }
+
+    const nextAiQuestion = formatAiQuestion(aiResult.nextQuestion);
+    await prisma.clinicalHistory.update({
+      where: { id: history.id },
+      data: { currentNodeId: nextAiQuestion.nodeId },
+    });
+
+    return {
+      nextQuestion: nextAiQuestion,
+      sectionComplete: false,
+      historyComplete: false,
+      redFlag: isRedFlag
+        ? {
+            severity: 'EMERGENCY' as any,
+            message: {
+              en: 'Critical red-flag clinical indicator detected',
+              hi: 'गंभीर लक्षण पाया गया - तत्काल जांच आवश्यक',
+            },
+          }
+        : null,
+    };
   }
 
   const result = advance({

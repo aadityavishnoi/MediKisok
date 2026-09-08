@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
+import { loadAiModule } from '../lib/dynamicAiLoader.js';
 
 export const aiRouter = Router();
 
@@ -81,9 +82,13 @@ aiRouter.post('/ai/next-question', async (req, res, next) => {
       return;
     }
 
-    // Import NextBestQuestionRanker dynamically
-    const clinicalAiPath = '../../../../ai/clinical-ai/src/index.js';
-    const { NextBestQuestionRanker } = await (import(clinicalAiPath) as Promise<any>);
+    // Import NextBestQuestionRanker dynamically via runtime loader
+    const mod = await loadAiModule('clinical-ai/src');
+    const NextBestQuestionRanker = mod?.NextBestQuestionRanker;
+    if (!NextBestQuestionRanker) {
+      res.status(500).json({ error: { code: 'AI_UNAVAILABLE', message: 'Clinical AI Ranker could not be loaded' } });
+      return;
+    }
     const result = NextBestQuestionRanker.selectNextQuestion({
       patientState,
       regionalSignal,

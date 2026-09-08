@@ -558,20 +558,52 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
                 </span>
               </div>
 
-              {/* Hardware Scanner Live Indicator Banner */}
-              <div className="p-2.5 rounded-2xl bg-gradient-to-r from-emerald-50/90 via-teal-50/50 to-blue-50/50 border border-emerald-200/80 flex items-center justify-between gap-2 shadow-xs">
-                <div className="flex items-center gap-2">
+              {/* Real Hardware Scanner Live Indicator Banner */}
+              <div className={`p-3 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-xs transition-all ${
+                webSerialConnected || hardwareBridgeConnected
+                  ? 'bg-gradient-to-r from-emerald-50/90 via-teal-50/50 to-blue-50/50 border-emerald-200/80'
+                  : 'bg-gradient-to-r from-slate-50 via-blue-50/40 to-slate-50 border-slate-200/90'
+              }`}>
+                <div className="flex items-center gap-2.5">
                   <span className="relative flex h-2.5 w-2.5 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-600" />
+                    <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                      webSerialConnected || hardwareBridgeConnected ? 'bg-emerald-400' : 'bg-blue-400'
+                    }`} />
+                    <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                      webSerialConnected || hardwareBridgeConnected ? 'bg-emerald-600' : 'bg-blue-600'
+                    }`} />
                   </span>
-                  <span className="text-xs font-bold text-slate-800">
-                    🟢 Hardware Scanner Ready (Auto-Detecting Card Taps)
-                  </span>
+                  <div>
+                    <div className="text-xs font-bold text-slate-800">
+                      {webSerialConnected || hardwareBridgeConnected
+                        ? '🟢 Hardware Scanner Ready (Auto-Detecting Card Taps)'
+                        : '🟡 Hardware Scanner Ready — Listening for Scans & USB Ports'}
+                    </div>
+                    <div className="text-[10px] text-slate-500 font-medium">
+                      {webSerialConnected
+                        ? 'Connected directly via browser WebSerial stream (9600 baud)'
+                        : hardwareBridgeConnected
+                        ? 'Connected via local background serial terminal bridge'
+                        : 'Plug in your USB reader antenna or tap directly to authenticate'}
+                    </div>
+                  </div>
                 </div>
-                <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-mono text-[10px] font-extrabold shrink-0 border border-emerald-200">
-                  Auto-Connected
-                </span>
+
+                {!webSerialConnected && !hardwareBridgeConnected && (
+                  <button
+                    type="button"
+                    onClick={handleConnectWebSerial}
+                    className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer self-start sm:self-auto shrink-0"
+                  >
+                    <Radio size={12} className="animate-pulse" />
+                    <span>Pair USB / COM Reader</span>
+                  </button>
+                )}
+                {(webSerialConnected || hardwareBridgeConnected) && (
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-100/80 text-emerald-800 font-mono text-[10px] font-extrabold shrink-0 border border-emerald-200">
+                    Active & Streaming
+                  </span>
+                )}
               </div>
 
               <p className="text-[11px] text-slate-500 font-medium leading-relaxed px-0.5">
@@ -604,7 +636,7 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
                   <button
                     type="submit"
                     disabled={tapLoading || !manualUid.trim()}
-                    className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold shadow-xs transition-all disabled:opacity-40 flex items-center gap-1.5 cursor-pointer"
+                    className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold shadow-xs transition-all disabled:opacity-40 flex items-center gap-1.5 cursor-pointer"
                   >
                     {tapLoading ? (
                       <>
@@ -620,67 +652,6 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
                   </button>
                 </div>
               </form>
-
-              {/* Quick-Tap Demo & Test Cards */}
-              <div className="pt-2 border-t border-slate-100/80 text-left">
-                <div className="flex items-center justify-between text-[10px] text-slate-400 font-semibold mb-1.5 px-0.5">
-                  <span>Fast Demo & Test Cards:</span>
-                  <span className="text-[9px] text-blue-600 font-bold">1-Click Tap Simulation</span>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                  <button
-                    type="button"
-                    disabled={tapLoading}
-                    onClick={() => handleTapCard('DEMO-RFID-001')}
-                    className="p-1.5 rounded-lg bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 border border-slate-200 text-left transition-all cursor-pointer group"
-                  >
-                    <div className="text-[10px] font-bold text-slate-800 group-hover:text-emerald-700 flex items-center justify-between">
-                      <span>Aarav Sharma</span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    </div>
-                    <div className="text-[9px] font-mono text-slate-400 truncate">DEMO-RFID-001</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={tapLoading}
-                    onClick={() => handleTapCard('DEMO-RFID-002')}
-                    className="p-1.5 rounded-lg bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 border border-slate-200 text-left transition-all cursor-pointer group"
-                  >
-                    <div className="text-[10px] font-bold text-slate-800 group-hover:text-emerald-700 flex items-center justify-between">
-                      <span>Priya Verma</span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    </div>
-                    <div className="text-[9px] font-mono text-slate-400 truncate">DEMO-RFID-002</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={tapLoading}
-                    onClick={() => handleTapCard('DEMO-RFID-003')}
-                    className="p-1.5 rounded-lg bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 border border-slate-200 text-left transition-all cursor-pointer group"
-                  >
-                    <div className="text-[10px] font-bold text-slate-800 group-hover:text-emerald-700 flex items-center justify-between">
-                      <span>Ramesh Patel</span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    </div>
-                    <div className="text-[9px] font-mono text-slate-400 truncate">DEMO-RFID-003</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={tapLoading}
-                    onClick={() => handleTapCard(`BLANK-CARD-${Math.floor(100 + Math.random() * 900)}`)}
-                    className="p-1.5 rounded-lg bg-amber-50/50 hover:bg-amber-100/70 border border-amber-200 text-left transition-all cursor-pointer group"
-                  >
-                    <div className="text-[10px] font-bold text-amber-900 flex items-center justify-between">
-                      <span>Blank Card</span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                    </div>
-                    <div className="text-[9px] font-mono text-amber-700/80">Self-Register &rarr;</div>
-                  </button>
-                </div>
-              </div>
 
               {/* Footer Links & Cert */}
               <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] font-semibold text-slate-500 px-0.5">

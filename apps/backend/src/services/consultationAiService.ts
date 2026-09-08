@@ -55,20 +55,15 @@ function normalizePrescriptionFrequency(raw?: string): PrescriptionFrequency {
 }
 
 
-// Helper to resolve dynamic AI modules safely across environments.
-// Paths are computed at runtime so TypeScript cannot statically resolve
-// modules that live outside this package's rootDir.
-const AI_MODULE_PATHS = {
-  surveillance: new URL('../../../../ai/surveillance/src/index.js', import.meta.url).href,
-  geographicNormalizer: new URL('../../../../ai/surveillance/src/normalization/GeographicNormalizer.js', import.meta.url).href,
-  rxEngine: new URL('../../../../ai/rx-engine/src/index.js', import.meta.url).href,
-  clinicalAi: new URL('../../../../ai/clinical-ai/src/index.js', import.meta.url).href,
-} as const;
+import { loadAiModule } from '../lib/dynamicAiLoader.js';
 
+// Helper to resolve dynamic AI modules safely across environments.
+// Paths are computed at runtime using dynamicAiLoader so TypeScript
+// compiler does not attempt to compile external AI files outside rootDir.
 async function getSurveillanceService(): Promise<any> {
   try {
-    const mod: any = await import(AI_MODULE_PATHS.surveillance);
-    return mod.SurveillanceService;
+    const mod = await loadAiModule('surveillance/src');
+    return mod?.SurveillanceService ?? null;
   } catch {
     return null;
   }
@@ -76,8 +71,8 @@ async function getSurveillanceService(): Promise<any> {
 
 async function getGeographicNormalizer(): Promise<any> {
   try {
-    const mod: any = await import(AI_MODULE_PATHS.geographicNormalizer);
-    return mod.GeographicNormalizer;
+    const mod = await loadAiModule('surveillance/src/normalization/GeographicNormalizer');
+    return mod?.GeographicNormalizer ?? null;
   } catch {
     return null;
   }
@@ -85,8 +80,8 @@ async function getGeographicNormalizer(): Promise<any> {
 
 async function getDrugSafetyEngine(): Promise<any> {
   try {
-    const mod: any = await import(AI_MODULE_PATHS.rxEngine);
-    return mod.DrugSafetyEngine;
+    const mod = await loadAiModule('rx-engine/src');
+    return mod?.DrugSafetyEngine ?? null;
   } catch {
     return null;
   }
@@ -94,8 +89,8 @@ async function getDrugSafetyEngine(): Promise<any> {
 
 async function getNextBestQuestionRanker(): Promise<any> {
   try {
-    const mod: any = await import(AI_MODULE_PATHS.clinicalAi);
-    return mod.NextBestQuestionRanker;
+    const mod = await loadAiModule('clinical-ai/src');
+    return mod?.NextBestQuestionRanker ?? null;
   } catch {
     return null;
   }
