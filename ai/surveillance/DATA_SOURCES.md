@@ -73,3 +73,76 @@ When sample size $n < 30$ (such as 8 positive out of 10 screened in a demo clust
 
 1. **Zero Hallucinations:** The Rx engine relies on deterministic relational matrices and evidence citations from NLEM, CDSCO, and British National Formulary (BNF). Unknown drugs return `UNKNOWN` status and mandate doctor review.
 2. **Physician Supremacy:** MediKiosk is exclusively a Clinical Decision-Support System (CDSS). AI never dispenses or prescribes autonomously.
+
+---
+
+## 5. Raw Source Record Schemas & Formats
+
+### 5.1 IDSP Weekly Outbreak Notification Schema (Governmental PDF/CSV)
+```json
+{
+  "reportingWeek": 36,
+  "reportingYear": 2026,
+  "state": "Uttar Pradesh",
+  "district": "Varanasi",
+  "diseaseIllness": "Dengue Fever",
+  "numberOfCases": 28,
+  "numberOfDeaths": 0,
+  "dateOfStartOfOutbreak": "2026-08-28",
+  "dateOfReporting": "2026-09-04",
+  "currentStatus": "Under Surveillance",
+  "commentsActionTaken": "Source reduction, fogging and larval search initiated by District Malaria Officer."
+}
+```
+
+### 5.2 Sentinel Hospital / Kiosk Stream Ingestion Schema
+```json
+{
+  "source": "KIOSK_TRIAGE_FEED",
+  "hospitalId": "HOSP_AIIMS_DELHI",
+  "facilityType": "TERTIARY_HOSPITAL",
+  "state": "Delhi",
+  "district": "New Delhi",
+  "diseaseName": "COVID-19",
+  "category": "RESPIRATORY",
+  "icd10": "U07.1",
+  "screenedCount": 10,
+  "positiveCount": 8,
+  "observationWindow": "24H",
+  "timestamp": "2026-09-08T10:00:00.000Z"
+}
+```
+
+### 5.3 NLEM 2022 Gazette Record Schema
+```json
+{
+  "nlemSection": "2.1",
+  "category": "Analgesics, Antipyretics and NSAIDs",
+  "medicine": "Paracetamol",
+  "levelOfHealthcare": "P, S, T",
+  "dosageFormAndStrength": "Tablets 500mg, 650mg; Oral liquid 120mg/5ml; IV Infusion 10mg/ml",
+  "cdscoRegulatorySchedule": "OTC",
+  "gazetteNotificationDate": "2022-09-13"
+}
+```
+
+### 5.4 PMBJP Jan Aushadhi Product Schema
+```json
+{
+  "genericProductCode": "PMBJP-GEN-0042",
+  "genericName": "Paracetamol Tablets IP 650mg",
+  "unitPack": "10x10 Tablets",
+  "mrpINR": 18.50,
+  "equivalentBrandedMRP": 78.00,
+  "savingsPercent": 76.28
+}
+```
+
+---
+
+## 6. Licensing, Regulatory Compliance & Ethics
+
+1. **National Data Sharing and Accessibility Policy (NDSAP):** Government of India epidemiological bulletins published under Open Government Data (OGD) license (https://data.gov.in).
+2. **NLEM & CDSCO Publications:** Public regulatory gazette notices released under the authority of Ministry of Health and Family Welfare (MoHFW) and Central Drugs Standard Control Organization (CDSCO).
+3. **Privacy by Design:** Zero Personally Identifiable Information (PII) or Protected Health Information (PHI) is ingested into the surveillance aggregation layer. All surveillance inputs are strictly de-identified aggregate cohorts.
+

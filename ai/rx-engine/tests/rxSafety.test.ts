@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { DrugSafetyEngine } from '../src/DrugSafetyEngine';
+import { MedicineNormalizer } from '../src/normalization/MedicineNormalizer';
 
 describe('Developer 2: Medicine Intelligence & Rx Safety Engine', () => {
   // Test 1: Known Severe Interaction (Aspirin + Warfarin)
@@ -94,5 +95,54 @@ describe('Developer 2: Medicine Intelligence & Rx Safety Engine', () => {
     const pregAlert = result.contraindications.find((c) => c.type === 'ORGAN_CONTRAINDICATION');
     expect(pregAlert).toBeDefined();
     expect(pregAlert?.reason).toContain('teratogenic');
+  });
+
+  // Test 8: MedicineNormalizer Strength & Form Stripping
+  it('extracts standardized strength and cleans formulation prefixes', () => {
+    const cleaned = MedicineNormalizer.cleanMedicineString('Tab Dolo 650 mg');
+    expect(cleaned).toContain('dolo 650 mg');
+
+    const strength = MedicineNormalizer.extractStrength('Tab Dolo 650 mg');
+    expect(strength).toBe('650mg');
+  });
+
+  // Test 9: Medicine Normalization & CDSCO Schedule Classification
+  it('maps branded Indian prescription strings to NLEM & CDSCO schedules', () => {
+    const medDolo = MedicineNormalizer.normalizeMedicine('Tab Dolo 650 mg');
+    expect(medDolo.isUnknown).toBe(false);
+    expect(medDolo.genericName).toBe('Paracetamol');
+    expect(medDolo.isNLEMEssential).toBe(true);
+    expect(medDolo.regulatorySchedule).toBe('OTC');
+    expect(medDolo.janAushadhiAvailable).toBe(true);
+
+    const medAugmentin = MedicineNormalizer.normalizeMedicine('Cap Augmentin 625');
+    expect(medAugmentin.isUnknown).toBe(false);
+    expect(medAugmentin.genericName).toContain('Amoxicillin');
+    expect(medAugmentin.regulatorySchedule).toBe('SCHEDULE_H');
+
+    const medCifran = MedicineNormalizer.normalizeMedicine('Tab Cifran 500');
+    expect(medCifran.isUnknown).toBe(false);
+    expect(medCifran.regulatorySchedule).toBe('SCHEDULE_H1');
+  });
+
+  // Test 10: Batch Normalization with Deduplication
+  it('batch normalizes prescription strings and deduplicates equivalents', () => {
+    const batch = MedicineNormalizer.normalizePrescriptionList([
+      'Tab Dolo 650',
+      'dolo 650',
+      'Tab Ecosprin 75',
+    ]);
+    expect(batch.length).toBe(2);
+    expect(batch.map((b) => b.genericName)).toContain('Paracetamol');
+    expect(batch.map((b) => b.genericName)).toContain('Aspirin (Acetylsalicylic Acid)');
+  });
+
+  // Test 11: Unknown Substance Guarding (Zero Hallucination)
+  it('strictly flags unrecognized substances as UNKNOWN requiring doctor verification', () => {
+    const unknown = MedicineNormalizer.normalizeMedicine('MysteriousExtractAlpha99');
+    expect(unknown.isUnknown).toBe(true);
+    expect(unknown.genericName).toBe('UNKNOWN');
+    expect(unknown.regulatorySchedule).toBe('UNKNOWN');
+    expect(unknown.requiresDoctorVerification).toBe(true);
   });
 });

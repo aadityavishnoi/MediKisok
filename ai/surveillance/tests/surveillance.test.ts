@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { BayesianOutbreakEstimator } from '../src/BayesianOutbreakEstimator';
 import { SurveillanceService } from '../src/SurveillanceService';
+import { SurveillanceNormalizer } from '../src/data/SurveillanceNormalizer';
+import { RegionalAggregator } from '../src/aggregation/RegionalAggregator';
+import { DemoSeedManager } from '../src/data/demoSeed';
 
 describe('Developer 2: Regional Disease Surveillance & Outbreak Intelligence', () => {
   // Test 1: 8/10 DEMO Cluster
@@ -113,4 +116,115 @@ describe('Developer 2: Regional Disease Surveillance & Outbreak Intelligence', (
     expect(diseases).toContain('COVID-19');
     expect(diseases).toContain('Dengue');
   });
+
+  // Test 9: Surveillance Normalization & ICD-10 Mapping
+  it('normalizes raw surveillance reports to canonical ICD-10 and categories', () => {
+    const normDengue = SurveillanceNormalizer.normalizeRecord({
+      source: 'IDSP_BULLETIN',
+      regionId: 'DISTRICT_VARANASI',
+      state: 'Uttar Pradesh',
+      district: 'Varanasi',
+      diseaseRaw: 'Dengue Hemorrhagic Fever',
+      screenedCount: 50,
+      positiveCount: 12,
+    });
+
+    expect(normDengue.isValid).toBe(true);
+    expect(normDengue.disease).toBe('Dengue Fever');
+    expect(normDengue.icd10Code).toBe('A90');
+    expect(normDengue.category).toBe('VECTOR_BORNE');
+    expect(normDengue.positivityRate).toBe(0.24);
+  });
+
+  // Test 10: Validation Rejection of Impossible Surveillance Data
+  it('rejects corrupt surveillance records (positive > screened or negative counts)', () => {
+    const invalidExceed = SurveillanceNormalizer.normalizeRecord({
+      source: 'HOSPITAL_SENTINEL',
+      regionId: 'HOSP_01',
+      state: 'Delhi',
+      district: 'Central',
+      diseaseRaw: 'COVID-19',
+      screenedCount: 10,
+      positiveCount: 15, // Impossible
+    });
+    expect(invalidExceed.isValid).toBe(false);
+    expect(invalidExceed.validationError).toContain('exceeds');
+
+    const invalidNegative = SurveillanceNormalizer.normalizeRecord({
+      source: 'HOSPITAL_SENTINEL',
+      regionId: 'HOSP_02',
+      state: 'Delhi',
+      district: 'Central',
+      diseaseRaw: 'COVID-19',
+      screenedCount: -5,
+      positiveCount: 2,
+    });
+    expect(invalidNegative.isValid).toBe(false);
+  });
+
+  // Test 11: Non-Fabrication of Missing Surveillance Fields
+  it('prevents fabrication when screenedCount or positiveCount is absent', () => {
+    const missing = SurveillanceNormalizer.normalizeRecord({
+      source: 'IDSP_BULLETIN',
+      regionId: 'DISTRICT_KANPUR',
+      state: 'Uttar Pradesh',
+      district: 'Kanpur',
+      diseaseRaw: 'Cholera',
+      // Missing counts
+    });
+    expect(missing.isValid).toBe(false);
+    expect(missing.validationError).toContain('fabrication prevented');
+  });
+
+  // Test 12: Regional Aggregator Multi-Facility Clustering
+  it('aggregates signals across multiple facilities within a district', () => {
+    const signals = [
+      SurveillanceNormalizer.normalizeRecord({
+        source: 'KIOSK_TRIAGE',
+        regionId: 'VARANASI',
+        state: 'Uttar Pradesh',
+        district: 'Varanasi',
+        hospitalId: 'HOSP_BHU',
+        diseaseRaw: 'COVID-19',
+        screenedCount: 20,
+        positiveCount: 4,
+      }),
+      SurveillanceNormalizer.normalizeRecord({
+        source: 'HOSPITAL_SENTINEL',
+        regionId: 'VARANASI',
+        state: 'Uttar Pradesh',
+        district: 'Varanasi',
+        hospitalId: 'HOSP_CIVIL',
+        diseaseRaw: 'COVID-19',
+        screenedCount: 30,
+        positiveCount: 6,
+      }),
+    ];
+
+    const aggregated = RegionalAggregator.aggregateCohort(signals);
+    expect(aggregated.length).toBe(1);
+    expect(aggregated[0].regionId).toBe('VARANASI');
+    expect(aggregated[0].reportingFacilitiesCount).toBe(2);
+    expect(aggregated[0].totalScreened).toBe(50);
+    expect(aggregated[0].totalPositives).toBe(10);
+    expect(aggregated[0].observedPositivityRate).toBe(0.20);
+    expect(aggregated[0].bayesianEstimate.riskLevel).toBe('CRITICAL');
+  });
+
+  // Test 13: Controlled Region X 8/10 Demo Seed
+  it('correctly validates the canonical Region X 8/10 Demo Seed', () => {
+    const rawDemo = DemoSeedManager.getRawDemoRecords();
+    expect(rawDemo.length).toBe(2);
+
+    const assessment = DemoSeedManager.getRegionXDemoAssessment();
+    expect(assessment.regionId).toBe('REGION_X');
+    expect(assessment.disease).toBe('COVID-19');
+    expect(assessment.sampleSize).toBe(10);
+    expect(assessment.positiveCount).toBe(8);
+    expect(assessment.positivityRate).toBe(0.80);
+    expect(assessment.riskLevel).toBe('CRITICAL');
+    expect(assessment.confidence).toBe('LOW_SAMPLE');
+    expect(assessment.wilsonInterval.lower).toBeCloseTo(0.49, 2);
+  });
 });
+
