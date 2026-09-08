@@ -203,11 +203,10 @@ export function DocumentUploadScreen({ sessionId, patientId, language, onComplet
       let response: Response | null = null;
       let lastErr: any = null;
 
-      // Try multiple operational API endpoints:
-      // 1. Same-origin proxy (/api/documents/scan)
-      // 2. Direct backend port 4000 (http://localhost:4000/api/documents/scan)
-      // 3. Dynamic host IP port 4000 (e.g. for LAN / mobile DroidCam testing)
+      const envApiUrl = import.meta.env?.VITE_API_URL ? String(import.meta.env.VITE_API_URL).replace(/\/$/, '') : '';
       const targetUrls = [
+        envApiUrl ? `${envApiUrl}/api/documents/scan` : null,
+        'https://medikiosk-xa4l.onrender.com/api/documents/scan',
         '/api/documents/scan',
         'http://localhost:4000/api/documents/scan',
         typeof window !== 'undefined' && window.location?.hostname

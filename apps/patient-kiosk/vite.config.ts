@@ -10,8 +10,9 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:4000',
+        target: process.env.VITE_API_URL || 'https://medikiosk-xa4l.onrender.com',
         changeOrigin: true,
+        secure: false,
       },
     },
   },
