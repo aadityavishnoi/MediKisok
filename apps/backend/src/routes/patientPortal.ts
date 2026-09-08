@@ -365,13 +365,13 @@ patientPortalRouter.get(
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 5);
 
-    let vitalsSummary = {
-      bloodPressure: '120/80 mmHg',
-      heartRate: '72 bpm',
-      spO2: '98%',
-      temperature: '98.4 °F',
-      lastRecordedAt: new Date().toISOString(),
-    };
+    let vitalsSummary: {
+      bloodPressure?: string;
+      heartRate?: string;
+      spO2?: string;
+      temperature?: string;
+      lastRecordedAt?: string;
+    } = {};
 
     try {
       const latestVitals = await prisma.patientVitals.findFirst({
@@ -383,14 +383,32 @@ patientPortalRouter.get(
           bloodPressure:
             latestVitals.systolicBp && latestVitals.diastolicBp
               ? `${latestVitals.systolicBp}/${latestVitals.diastolicBp} mmHg`
-              : '120/80 mmHg',
-          heartRate: latestVitals.pulse ? `${latestVitals.pulse} bpm` : '72 bpm',
-          spO2: latestVitals.spo2 ? `${latestVitals.spo2}%` : '98%',
-          temperature: latestVitals.temperatureF ? `${latestVitals.temperatureF} °F` : '98.4 °F',
+              : undefined,
+          heartRate: latestVitals.pulse ? `${latestVitals.pulse} bpm` : undefined,
+          spO2: latestVitals.spo2 ? `${latestVitals.spo2}%` : undefined,
+          temperature: latestVitals.temperatureF ? `${latestVitals.temperatureF} °F` : undefined,
           lastRecordedAt: latestVitals.recordedAt.toISOString(),
         };
+      } else if (patientId === 'demo-patient-001') {
+        vitalsSummary = {
+          bloodPressure: '120/80 mmHg',
+          heartRate: '72 bpm',
+          spO2: '98%',
+          temperature: '98.4 °F',
+          lastRecordedAt: new Date().toISOString(),
+        };
       }
-    } catch {}
+    } catch {
+      if (patientId === 'demo-patient-001') {
+        vitalsSummary = {
+          bloodPressure: '120/80 mmHg',
+          heartRate: '72 bpm',
+          spO2: '98%',
+          temperature: '98.4 °F',
+          lastRecordedAt: new Date().toISOString(),
+        };
+      }
+    }
 
     const response: PatientDashboardDto = {
       patient: formatPatientProfile(patient),
@@ -949,25 +967,26 @@ patientPortalRouter.get(
             orderBy: { createdAt: 'desc' },
             take: 10,
           });
-          if (dbHistories.length > 0) {
-            return dbHistories.map((ch) => ({
-              id: ch.id,
-              chiefComplaint: ch.chiefComplaint ?? 'General OPD Evaluation',
-              mode: ch.mode,
-              createdAt: ch.createdAt.toISOString(),
-              completedAt: ch.completedAt ? ch.completedAt.toISOString() : null,
-            }));
-          }
+          return dbHistories.map((ch) => ({
+            id: ch.id,
+            chiefComplaint: ch.chiefComplaint ?? 'General OPD Evaluation',
+            mode: ch.mode,
+            createdAt: ch.createdAt.toISOString(),
+            completedAt: ch.completedAt ? ch.completedAt.toISOString() : null,
+          }));
         } catch {}
-        return [
-          {
-            id: `ch-${patientId}-01`,
-            chiefComplaint: 'Cardiovascular risk evaluation and routine medication review',
-            mode: 'GENERAL' as const,
-            createdAt: new Date(Date.now() - 14 * 86400000).toISOString(),
-            completedAt: new Date(Date.now() - 14 * 86400000).toISOString(),
-          },
-        ];
+        if (patientId === 'demo-patient-001') {
+          return [
+            {
+              id: `ch-${patientId}-01`,
+              chiefComplaint: 'Cardiovascular risk evaluation and routine medication review',
+              mode: 'GENERAL' as const,
+              createdAt: new Date(Date.now() - 14 * 86400000).toISOString(),
+              completedAt: new Date(Date.now() - 14 * 86400000).toISOString(),
+            },
+          ];
+        }
+        return [];
       })(),
       aiSummaries: await (async () => {
         try {
@@ -976,35 +995,36 @@ patientPortalRouter.get(
             orderBy: { createdAt: 'desc' },
             take: 5,
           });
-          if (dbSummaries.length > 0) {
-            return dbSummaries.map((s) => ({
-              id: s.id,
-              sessionId: s.sessionId,
-              patientId: s.patientId,
-              content: s.content,
-              generatorType: (s.generatorType as 'LOCAL_TEMPLATE' | 'LLM') || 'LOCAL_TEMPLATE',
-              status: s.status,
-              editedContent: s.editedContent,
-              confirmedByDoctorId: s.confirmedByDoctorId,
-              confirmedAt: s.confirmedAt ? s.confirmedAt.toISOString() : null,
-              createdAt: s.createdAt.toISOString(),
-            }));
-          }
+          return dbSummaries.map((s) => ({
+            id: s.id,
+            sessionId: s.sessionId,
+            patientId: s.patientId,
+            content: s.content,
+            generatorType: (s.generatorType as 'LOCAL_TEMPLATE' | 'LLM') || 'LOCAL_TEMPLATE',
+            status: s.status,
+            editedContent: s.editedContent,
+            confirmedByDoctorId: s.confirmedByDoctorId,
+            confirmedAt: s.confirmedAt ? s.confirmedAt.toISOString() : null,
+            createdAt: s.createdAt.toISOString(),
+          }));
         } catch {}
-        return [
-          {
-            id: `ai-${patientId}-01`,
-            sessionId: `sess-${patientId}`,
-            patientId,
-            content: 'Patient evaluated for primary hypertension and cardiac wellness. Medication adherence high.',
-            generatorType: 'LOCAL_TEMPLATE' as const,
-            status: 'DRAFT' as const,
-            editedContent: null,
-            confirmedByDoctorId: 'DOC-01',
-            confirmedAt: new Date(Date.now() - 14 * 86400000).toISOString(),
-            createdAt: new Date(Date.now() - 14 * 86400000).toISOString(),
-          },
-        ];
+        if (patientId === 'demo-patient-001') {
+          return [
+            {
+              id: `ai-${patientId}-01`,
+              sessionId: `sess-${patientId}`,
+              patientId,
+              content: 'Patient evaluated for primary hypertension and cardiac wellness. Medication adherence high.',
+              generatorType: 'LOCAL_TEMPLATE' as const,
+              status: 'DRAFT' as const,
+              editedContent: null,
+              confirmedByDoctorId: 'DOC-01',
+              confirmedAt: new Date(Date.now() - 14 * 86400000).toISOString(),
+              createdAt: new Date(Date.now() - 14 * 86400000).toISOString(),
+            },
+          ];
+        }
+        return [];
       })(),
     };
 

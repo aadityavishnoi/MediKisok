@@ -35,6 +35,8 @@ import {
   History,
   X,
   Menu,
+  Smartphone,
+  KeyRound,
 } from 'lucide-react';
 import type {
   PatientPortalProfile,
@@ -51,6 +53,8 @@ import type {
 } from '@medikiosk/shared-types';
 import {
   patientLogin,
+  patientSendOtp,
+  patientLoginWithOtp,
   patientRegister,
   getPatientDashboard,
   updatePatientProfile,
@@ -100,9 +104,13 @@ export function App() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // Auth State
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [loginIdentifier, setLoginIdentifier] = useState('aarav.sharma@medikiosk.local');
-  const [loginPassword, setLoginPassword] = useState('MediKiosk@123');
+  const [authMode, setAuthMode] = useState<'kiosk' | 'login' | 'register'>('kiosk');
+  const [kioskPhone, setKioskPhone] = useState('');
+  const [kioskOtp, setKioskOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCountdown, setOtpCountdown] = useState(0);
+  const [loginIdentifier, setLoginIdentifier] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
 
   // Register Form State
   const [regForm, setRegForm] = useState({
@@ -167,7 +175,7 @@ export function App() {
 
   // Payment Form
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('UPI');
-  const [upiId, setUpiId] = useState('aarav@okhdfcbank');
+  const [upiId, setUpiId] = useState('');
 
   // Edit Profile Form
   const [editProfileData, setEditProfileData] = useState({
@@ -257,6 +265,56 @@ export function App() {
     } else {
       setSuccessMsg(msg);
       setTimeout(() => setSuccessMsg(null), 4000);
+    }
+  };
+
+  // Timer for OTP resend countdown
+  useEffect(() => {
+    if (otpCountdown > 0) {
+      const timer = setTimeout(() => setOtpCountdown(otpCountdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [otpCountdown]);
+
+  // Kiosk Registered Patient OTP Handlers
+  const handleSendKioskOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const cleanPhone = kioskPhone.replace(/\D/g, '').slice(-10);
+    if (cleanPhone.length < 10) {
+      showNotificationToast('Please enter a valid 10-digit mobile number.', true);
+      return;
+    }
+    setActionLoading(true);
+    try {
+      const res = await patientSendOtp(cleanPhone);
+      setOtpSent(true);
+      setOtpCountdown(60);
+      showNotificationToast(res.message || 'OTP sent successfully to your mobile number via SMS!');
+    } catch (err: any) {
+      showNotificationToast(err.message || 'Failed to send OTP. Please check the mobile number and try again.', true);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleVerifyKioskOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const cleanPhone = kioskPhone.replace(/\D/g, '').slice(-10);
+    if (!kioskOtp || kioskOtp.trim().length < 4) {
+      showNotificationToast('Please enter the 6-digit OTP code received on your mobile.', true);
+      return;
+    }
+    setActionLoading(true);
+    try {
+      const res = await patientLoginWithOtp(cleanPhone, kioskOtp.trim());
+      localStorage.setItem('medikiosk_patient_token', res.token);
+      setToken(res.token);
+      setProfile(res.patient);
+      showNotificationToast(`Welcome back, ${res.patient.fullName}! Verified from MediKiosk records.`);
+    } catch (err: any) {
+      showNotificationToast(err.message || 'Invalid or expired OTP. Please verify and retry.', true);
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -632,34 +690,52 @@ export function App() {
                 Verified Patient Access
               </div>
               <h2 className="text-2xl font-bold text-white tracking-tight">
-                {authMode === 'login' ? 'Patient Portal Login' : 'Create Patient Account'}
+                {authMode === 'kiosk'
+                  ? 'Kiosk Patient Login'
+                  : authMode === 'login'
+                  ? 'Patient Portal Login'
+                  : 'Create Patient Account'}
               </h2>
               <p className="text-xs text-slate-400">
-                {authMode === 'login'
+                {authMode === 'kiosk'
+                  ? 'Registered at a MediKiosk station? Sign in with your mobile number & OTP'
+                  : authMode === 'login'
                   ? 'Access your medical history, test reports, prescriptions and OPD appointments'
                   : 'Register for smart hospital services and link your ABHA digital health account'}
               </p>
             </div>
 
             {/* Mode Switcher */}
-            <div className="grid grid-cols-2 p-1 rounded-2xl bg-black/30 border border-white/5 text-xs font-semibold">
+            <div className="grid grid-cols-3 p-1 rounded-2xl bg-black/30 border border-white/5 text-xs font-semibold gap-1">
+              <button
+                type="button"
+                onClick={() => setAuthMode('kiosk')}
+                className={`py-2 px-1 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+                  authMode === 'kiosk' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Smartphone className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Kiosk OTP</span>
+              </button>
               <button
                 type="button"
                 onClick={() => setAuthMode('login')}
-                className={`py-2 rounded-xl transition-all ${
+                className={`py-2 px-1 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
                   authMode === 'login' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Sign In
+                <KeyRound className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Password</span>
               </button>
               <button
                 type="button"
                 onClick={() => setAuthMode('register')}
-                className={`py-2 rounded-xl transition-all ${
+                className={`py-2 px-1 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
                   authMode === 'register' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                New Registration
+                <User className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Register</span>
               </button>
             </div>
 
@@ -677,8 +753,130 @@ export function App() {
               </div>
             )}
 
-            {authMode === 'login' ? (
+            {authMode === 'kiosk' ? (
+              <div className="space-y-4">
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-start gap-2.5">
+                  <Stethoscope className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold text-white">Registered at a MediKiosk Station?</span>
+                    <p className="text-[11px] text-emerald-400/90 mt-0.5">
+                      Enter the 10-digit mobile number you used at the kiosk or RFID intake. We will send an SMS verification OTP to sign you in.
+                    </p>
+                  </div>
+                </div>
+
+                {!otpSent ? (
+                  <form onSubmit={handleSendKioskOtp} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 mb-1">
+                        Registered Mobile Number
+                      </label>
+                      <div className="relative flex items-center">
+                        <span className="absolute left-3 text-xs font-bold text-slate-400 select-none">
+                          +91
+                        </span>
+                        <input
+                          type="tel"
+                          required
+                          maxLength={10}
+                          value={kioskPhone}
+                          onChange={(e) => setKioskPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                          placeholder="e.g. 9876543210"
+                          className="w-full pl-12 pr-3.5 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 tracking-wider font-mono"
+                        />
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        We will send a 6-digit verification code via TextBee SMS.
+                      </p>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={actionLoading || kioskPhone.length < 10}
+                      className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-white text-xs shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {actionLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Smartphone className="w-4 h-4" />}
+                      Send Verification OTP via SMS
+                    </button>
+                  </form>
+                ) : (
+                  <form onSubmit={handleVerifyKioskOtp} className="space-y-4">
+                    <div className="p-2.5 rounded-xl bg-black/30 border border-white/5 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2 text-slate-300">
+                        <Smartphone className="w-4 h-4 text-emerald-400" />
+                        <span>OTP sent to <strong className="text-white font-mono">+91 {kioskPhone}</strong></span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => { setOtpSent(false); setKioskOtp(''); }}
+                        className="text-[11px] text-emerald-400 hover:underline font-medium"
+                      >
+                        Change
+                      </button>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 mb-1">
+                        Enter 6-Digit OTP Code
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        maxLength={6}
+                        value={kioskOtp}
+                        onChange={(e) => setKioskOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        placeholder="••••••"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white placeholder-slate-500 text-base text-center tracking-widest font-mono font-bold focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                        autoFocus
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={actionLoading || kioskOtp.length < 4}
+                      className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-white text-xs shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {actionLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                      Verify OTP & Access Portal
+                    </button>
+
+                    <div className="flex items-center justify-between text-[11px] pt-1">
+                      {otpCountdown > 0 ? (
+                        <span className="text-slate-400">Resend code in <strong className="text-slate-200 font-mono">{otpCountdown}s</strong></span>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={actionLoading}
+                          onClick={handleSendKioskOtp}
+                          className="text-emerald-400 hover:underline font-medium"
+                        >
+                          Resend OTP via SMS
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => { setOtpSent(false); setKioskOtp(''); }}
+                        className="text-slate-400 hover:text-white"
+                      >
+                        Back
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            ) : authMode === 'login' ? (
               <form onSubmit={(e) => handleLogin(e, false)} className="space-y-4">
+                <div
+                  onClick={() => setAuthMode('kiosk')}
+                  className="p-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 text-xs flex items-center justify-between cursor-pointer transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Registered with Kiosk? <strong>Login with Mobile & OTP &rarr;</strong></span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-emerald-400 shrink-0" />
+                </div>
+
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
                     Email, Phone Number, or Patient ID
@@ -688,7 +886,7 @@ export function App() {
                     required
                     value={loginIdentifier}
                     onChange={(e) => setLoginIdentifier(e.target.value)}
-                    placeholder="e.g. aarav.sharma@medikiosk.local or 9876543210"
+                    placeholder="e.g. 9876543210 or patient@email.com"
                     className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
@@ -712,26 +910,6 @@ export function App() {
                   {actionLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
                   Sign In to Patient Portal
                 </button>
-
-                {/* 1-Click Demo Profiles */}
-                <div className="pt-3 border-t border-white/10 space-y-2">
-                  <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider text-center">
-                    Instant Demo Login (Single Click)
-                  </div>
-                  <div className="grid grid-cols-1 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleLogin(undefined, true, 'demo-patient-001')}
-                      className="w-full px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-left flex items-center justify-between text-xs text-slate-200 transition-colors group"
-                    >
-                      <div>
-                        <div className="font-semibold text-emerald-400">Aarav Sharma (Cardiac OPD Patient)</div>
-                        <div className="text-[11px] text-slate-400">Phone: 9876543210 • ABHA Linked</div>
-                      </div>
-                      <span className="text-xs text-slate-400 group-hover:text-white">Sign In &rarr;</span>
-                    </button>
-                  </div>
-                </div>
               </form>
             ) : (
               <form onSubmit={handleRegister} className="space-y-3">
@@ -1319,41 +1497,53 @@ export function App() {
                       <span className="text-[10px] text-slate-400">Latest Recorded</span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                      <div className="p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-100">
-                        <div className="text-[10px] text-slate-400 uppercase font-semibold">Blood Pressure</div>
-                        <div className="text-sm sm:text-base font-bold text-slate-900 mt-0.5 break-words">
-                          {dashboard?.vitalsSummary?.bloodPressure ?? '120/80 mmHg'}
+                    {dashboard?.vitalsSummary && (dashboard.vitalsSummary.bloodPressure || dashboard.vitalsSummary.heartRate || dashboard.vitalsSummary.lastRecordedAt) ? (
+                      <>
+                        <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                          <div className="p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-100">
+                            <div className="text-[10px] text-slate-400 uppercase font-semibold">Blood Pressure</div>
+                            <div className="text-sm sm:text-base font-bold text-slate-900 mt-0.5 break-words">
+                              {dashboard.vitalsSummary.bloodPressure}
+                            </div>
+                            <div className="text-[10px] text-emerald-600 font-medium">Recorded</div>
+                          </div>
+                          <div className="p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-100">
+                            <div className="text-[10px] text-slate-400 uppercase font-semibold">Heart Rate</div>
+                            <div className="text-sm sm:text-base font-bold text-slate-900 mt-0.5 break-words">
+                              {dashboard.vitalsSummary.heartRate}
+                            </div>
+                            <div className="text-[10px] text-emerald-600 font-medium">Recorded</div>
+                          </div>
+                          <div className="p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-100">
+                            <div className="text-[10px] text-slate-400 uppercase font-semibold">SpO2 (Oxygen)</div>
+                            <div className="text-sm sm:text-base font-bold text-slate-900 mt-0.5 break-words">
+                              {dashboard.vitalsSummary.spO2}
+                            </div>
+                            <div className="text-[10px] text-emerald-600 font-medium">Recorded</div>
+                          </div>
+                          <div className="p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-100">
+                            <div className="text-[10px] text-slate-400 uppercase font-semibold">Temperature</div>
+                            <div className="text-sm sm:text-base font-bold text-slate-900 mt-0.5 break-words">
+                              {dashboard.vitalsSummary.temperature}
+                            </div>
+                            <div className="text-[10px] text-emerald-600 font-medium">Recorded</div>
+                          </div>
                         </div>
-                        <div className="text-[10px] text-emerald-600 font-medium">Normal</div>
-                      </div>
-                      <div className="p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-100">
-                        <div className="text-[10px] text-slate-400 uppercase font-semibold">Heart Rate</div>
-                        <div className="text-sm sm:text-base font-bold text-slate-900 mt-0.5 break-words">
-                          {dashboard?.vitalsSummary?.heartRate ?? '72 bpm'}
-                        </div>
-                        <div className="text-[10px] text-emerald-600 font-medium">Resting Normal</div>
-                      </div>
-                      <div className="p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-100">
-                        <div className="text-[10px] text-slate-400 uppercase font-semibold">SpO2 (Oxygen)</div>
-                        <div className="text-sm sm:text-base font-bold text-slate-900 mt-0.5 break-words">
-                          {dashboard?.vitalsSummary?.spO2 ?? '98%'}
-                        </div>
-                        <div className="text-[10px] text-emerald-600 font-medium">Optimal</div>
-                      </div>
-                      <div className="p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-100">
-                        <div className="text-[10px] text-slate-400 uppercase font-semibold">Temperature</div>
-                        <div className="text-sm sm:text-base font-bold text-slate-900 mt-0.5 break-words">
-                          {dashboard?.vitalsSummary?.temperature ?? '98.4 °F'}
-                        </div>
-                        <div className="text-[10px] text-emerald-600 font-medium">Afebrile</div>
-                      </div>
-                    </div>
 
-                    <div className="p-3 rounded-xl bg-emerald-50/60 border border-emerald-100 text-[11px] text-emerald-800 flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>All vital signs recorded at OPD Kiosk are within expected medical limits.</span>
-                    </div>
+                        <div className="p-3 rounded-xl bg-emerald-50/60 border border-emerald-100 text-[11px] text-emerald-800 flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>Vital signs recorded and synchronized from hospital database.</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="p-5 rounded-2xl bg-slate-50 border border-dashed border-slate-200 text-center space-y-2">
+                        <Heart className="w-7 h-7 text-slate-300 mx-auto" />
+                        <div className="text-xs font-semibold text-slate-700">No Vitals Recorded Yet</div>
+                        <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
+                          Check in at any MediKiosk station or nurse triage desk to measure and sync your vital signs automatically.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 

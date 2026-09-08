@@ -51148,17 +51148,30 @@ async function storeFindPatientById(id) {
   return PATIENTS_MAP.get(id) ?? null;
 }
 async function storeFindPatientByIdentifier(identifier) {
+  const digits = identifier.replace(/\D/g, "");
+  const cleanPhone = digits.length >= 10 ? digits.slice(-10) : "";
   try {
+    const orConditions = [
+      { email: identifier },
+      { phone: identifier },
+      { id: identifier }
+    ];
+    if (cleanPhone) {
+      orConditions.push({ phone: cleanPhone });
+      orConditions.push({ phone: `+91${cleanPhone}` });
+      orConditions.push({ phone: `+91 ${cleanPhone}` });
+      orConditions.push({ phone: `91${cleanPhone}` });
+    }
     const patient = await prisma.patient.findFirst({
       where: {
-        OR: [{ email: identifier }, { phone: identifier }, { id: identifier }]
+        OR: orConditions
       }
     });
     if (patient) return patient;
   } catch {
   }
   for (const p of PATIENTS_MAP.values()) {
-    if (p.id === identifier || p.phone === identifier || p.email === identifier) {
+    if (p.id === identifier || p.phone === identifier || p.email === identifier || cleanPhone && p.phone && p.phone.replace(/\D/g, "").endsWith(cleanPhone)) {
       return p;
     }
   }
@@ -51237,40 +51250,41 @@ async function storeFindAppointments(patientId, status) {
       include: { doctor: true, facility: true, department: true },
       orderBy: { appointmentDate: "desc" }
     });
-    if (dbAppts && dbAppts.length > 0) {
-      return dbAppts.map((a) => ({
-        id: a.id,
-        patientId: a.patientId,
-        doctorId: a.doctorId,
-        doctorName: a.doctor?.name ?? null,
-        doctorDepartment: a.doctor?.department ?? null,
-        facilityId: a.facilityId,
-        facilityName: a.facility?.name ?? null,
-        departmentId: a.departmentId,
-        departmentName: a.department?.name ?? null,
-        appointmentDate: a.appointmentDate.toISOString(),
-        timeSlot: a.timeSlot,
-        type: a.type,
-        status: a.status,
-        reason: a.reason,
-        notes: a.notes,
-        cancellationReason: a.cancellationReason,
-        location: a.department?.floor ? `${a.department.name} (${a.department.floor})` : "AIIMS Main OPD Block",
-        createdAt: a.createdAt.toISOString(),
-        updatedAt: a.updatedAt.toISOString()
-      }));
-    }
+    return dbAppts.map((a) => ({
+      id: a.id,
+      patientId: a.patientId,
+      doctorId: a.doctorId,
+      doctorName: a.doctor?.name ?? null,
+      doctorDepartment: a.doctor?.department ?? null,
+      facilityId: a.facilityId,
+      facilityName: a.facility?.name ?? null,
+      departmentId: a.departmentId,
+      departmentName: a.department?.name ?? null,
+      appointmentDate: a.appointmentDate.toISOString(),
+      timeSlot: a.timeSlot,
+      type: a.type,
+      status: a.status,
+      reason: a.reason,
+      notes: a.notes,
+      cancellationReason: a.cancellationReason,
+      location: a.department?.floor ? `${a.department.name} (${a.department.floor})` : "AIIMS Main OPD Block",
+      createdAt: a.createdAt.toISOString(),
+      updatedAt: a.updatedAt.toISOString()
+    }));
   } catch {
   }
-  const result = [];
-  for (const a of APPOINTMENTS_MAP.values()) {
-    if (a.patientId === patientId) {
-      if (!status || a.status === status) {
-        result.push(a);
+  if (patientId === "demo-patient-001") {
+    const result = [];
+    for (const a of APPOINTMENTS_MAP.values()) {
+      if (a.patientId === patientId) {
+        if (!status || a.status === status) {
+          result.push(a);
+        }
       }
     }
+    return result.sort((a, b) => new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime());
   }
-  return result.sort((a, b) => new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime());
+  return [];
 }
 async function storeCreateAppointment(data) {
   try {
@@ -51547,20 +51561,21 @@ async function storeFindPrescriptions(patientId, status) {
         });
       }
     }
-    if (list.length > 0) {
-      return status ? list.filter((p) => p.status.toLowerCase() === status.toLowerCase()) : list;
-    }
+    return status ? list.filter((p) => p.status.toLowerCase() === status.toLowerCase()) : list;
   } catch {
   }
-  const result = [];
-  for (const p of PRESCRIPTIONS_MAP.values()) {
-    if (p.patientId === patientId) {
-      if (!status || p.status.toLowerCase() === status.toLowerCase()) {
-        result.push(p);
+  if (patientId === "demo-patient-001") {
+    const result = [];
+    for (const p of PRESCRIPTIONS_MAP.values()) {
+      if (p.patientId === patientId) {
+        if (!status || p.status.toLowerCase() === status.toLowerCase()) {
+          result.push(p);
+        }
       }
     }
+    return result;
   }
-  return result;
+  return [];
 }
 async function storeFindPrescriptionById(id, patientId) {
   try {
@@ -51636,60 +51651,81 @@ async function storeFindReports(patientId, options) {
       include: { extractedData: true },
       orderBy: { createdAt: options?.sort === "oldest" ? "asc" : "desc" }
     });
-    if (dbDocs && dbDocs.length > 0) {
-      return dbDocs.map((doc) => ({
-        id: doc.id,
-        patientId: doc.patientId,
-        sessionId: doc.sessionId,
-        title: doc.originalFilename.replace(/\.[^/.]+$/, ""),
-        testDate: doc.createdAt.toISOString(),
-        category: "Biochemistry / Pathology",
-        facilityName: "AIIMS Central Pathology Laboratory",
-        doctorName: "Dr. Suresh Sen (Pathologist)",
-        departmentName: "Pathology & Laboratory Medicine",
-        status: "COMPLETED",
-        originalFilename: doc.originalFilename,
-        ocrText: doc.ocrText,
-        parameters: doc.extractedData.map((d) => ({
-          name: d.fieldType,
-          value: d.fieldValue,
-          unit: "mg/dL",
-          referenceRange: "Normal",
-          status: "NORMAL"
-        })),
-        doctorNotes: "Verified diagnostic findings. Normal physiological limits.",
-        fileUrl: `/api/patient/reports/${doc.id}/download`,
-        createdAt: doc.createdAt.toISOString()
-      }));
+    let list = dbDocs.map((doc) => ({
+      id: doc.id,
+      patientId: doc.patientId,
+      sessionId: doc.sessionId,
+      title: doc.originalFilename.replace(/\.[^/.]+$/, ""),
+      testDate: doc.createdAt.toISOString(),
+      category: "Biochemistry / Pathology",
+      facilityName: "AIIMS Central Pathology Laboratory",
+      doctorName: "Dr. Suresh Sen (Pathologist)",
+      departmentName: "Pathology & Laboratory Medicine",
+      status: "COMPLETED",
+      originalFilename: doc.originalFilename,
+      ocrText: doc.ocrText,
+      parameters: doc.extractedData.map((d) => ({
+        name: d.fieldType,
+        value: d.fieldValue,
+        unit: "mg/dL",
+        referenceRange: "Normal",
+        status: "NORMAL"
+      })),
+      doctorNotes: "Verified diagnostic findings. Normal physiological limits.",
+      fileUrl: `/api/patient/reports/${doc.id}/download`,
+      createdAt: doc.createdAt.toISOString()
+    }));
+    if (options?.search) {
+      const q = options.search.toLowerCase();
+      list = list.filter(
+        (r) => r.title.toLowerCase().includes(q) || r.category.toLowerCase().includes(q) || r.doctorNotes && r.doctorNotes.toLowerCase().includes(q)
+      );
     }
+    if (options?.category && options.category !== "ALL") {
+      list = list.filter((r) => r.category.toLowerCase().includes(options.category.toLowerCase()));
+    }
+    if (options?.startDate) {
+      list = list.filter((r) => new Date(r.testDate).getTime() >= new Date(options.startDate).getTime());
+    }
+    if (options?.endDate) {
+      list = list.filter((r) => new Date(r.testDate).getTime() <= new Date(options.endDate).getTime());
+    }
+    list.sort((a, b) => {
+      const diff = new Date(b.testDate).getTime() - new Date(a.testDate).getTime();
+      return options?.sort === "oldest" ? -diff : diff;
+    });
+    return list;
   } catch {
   }
-  let list = [];
-  for (const r of REPORTS_MAP.values()) {
-    if (r.patientId === patientId) {
-      list.push(r);
+  if (patientId === "demo-patient-001") {
+    let list = [];
+    for (const r of REPORTS_MAP.values()) {
+      if (r.patientId === patientId) {
+        list.push(r);
+      }
     }
+    if (options?.search) {
+      const q = options.search.toLowerCase();
+      list = list.filter(
+        (r) => r.title.toLowerCase().includes(q) || r.category.toLowerCase().includes(q) || r.doctorNotes && r.doctorNotes.toLowerCase().includes(q)
+      );
+    }
+    if (options?.category && options.category !== "ALL") {
+      list = list.filter((r) => r.category.toLowerCase().includes(options.category.toLowerCase()));
+    }
+    if (options?.startDate) {
+      list = list.filter((r) => new Date(r.testDate).getTime() >= new Date(options.startDate).getTime());
+    }
+    if (options?.endDate) {
+      list = list.filter((r) => new Date(r.testDate).getTime() <= new Date(options.endDate).getTime());
+    }
+    list.sort((a, b) => {
+      const diff = new Date(b.testDate).getTime() - new Date(a.testDate).getTime();
+      return options?.sort === "oldest" ? -diff : diff;
+    });
+    return list;
   }
-  if (options?.search) {
-    const q = options.search.toLowerCase();
-    list = list.filter(
-      (r) => r.title.toLowerCase().includes(q) || r.category.toLowerCase().includes(q) || r.doctorNotes && r.doctorNotes.toLowerCase().includes(q)
-    );
-  }
-  if (options?.category && options.category !== "ALL") {
-    list = list.filter((r) => r.category.toLowerCase().includes(options.category.toLowerCase()));
-  }
-  if (options?.startDate) {
-    list = list.filter((r) => new Date(r.testDate).getTime() >= new Date(options.startDate).getTime());
-  }
-  if (options?.endDate) {
-    list = list.filter((r) => new Date(r.testDate).getTime() <= new Date(options.endDate).getTime());
-  }
-  list.sort((a, b) => {
-    const diff = new Date(b.testDate).getTime() - new Date(a.testDate).getTime();
-    return options?.sort === "oldest" ? -diff : diff;
-  });
-  return list;
+  return [];
 }
 async function storeFindReportById(id, patientId) {
   try {
@@ -51737,37 +51773,38 @@ async function storeFindInvoices(patientId, status) {
       where,
       orderBy: { createdAt: "desc" }
     });
-    if (dbInvoices && dbInvoices.length > 0) {
-      return dbInvoices.map((inv) => ({
-        id: inv.id,
-        patientId: inv.patientId,
-        appointmentId: inv.appointmentId,
-        invoiceNumber: inv.invoiceNumber,
-        description: inv.description,
-        department: inv.department,
-        totalAmount: inv.totalAmount,
-        discountAmount: inv.discountAmount,
-        netAmount: inv.netAmount,
-        status: inv.status,
-        paymentMethod: inv.paymentMethod,
-        paymentDate: inv.paymentDate ? inv.paymentDate.toISOString() : null,
-        transactionReference: inv.transactionReference,
-        items: Array.isArray(inv.items) ? inv.items : null,
-        createdAt: inv.createdAt.toISOString(),
-        updatedAt: inv.updatedAt.toISOString()
-      }));
-    }
+    return dbInvoices.map((inv) => ({
+      id: inv.id,
+      patientId: inv.patientId,
+      appointmentId: inv.appointmentId,
+      invoiceNumber: inv.invoiceNumber,
+      description: inv.description,
+      department: inv.department,
+      totalAmount: inv.totalAmount,
+      discountAmount: inv.discountAmount,
+      netAmount: inv.netAmount,
+      status: inv.status,
+      paymentMethod: inv.paymentMethod,
+      paymentDate: inv.paymentDate ? inv.paymentDate.toISOString() : null,
+      transactionReference: inv.transactionReference,
+      items: Array.isArray(inv.items) ? inv.items : null,
+      createdAt: inv.createdAt.toISOString(),
+      updatedAt: inv.updatedAt.toISOString()
+    }));
   } catch {
   }
-  const result = [];
-  for (const inv of INVOICES_MAP.values()) {
-    if (inv.patientId === patientId) {
-      if (!status || inv.status === status) {
-        result.push(inv);
+  if (patientId === "demo-patient-001") {
+    const result = [];
+    for (const inv of INVOICES_MAP.values()) {
+      if (inv.patientId === patientId) {
+        if (!status || inv.status === status) {
+          result.push(inv);
+        }
       }
     }
+    return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
-  return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return [];
 }
 async function storePayInvoice(id, patientId, paymentMethod, txRef) {
   try {
@@ -51819,27 +51856,28 @@ async function storeFindNotifications(patientId) {
       orderBy: { createdAt: "desc" },
       take: 50
     });
-    if (dbNotifs && dbNotifs.length > 0) {
-      return dbNotifs.map((n) => ({
-        id: n.id,
-        patientId: n.patientId,
-        title: n.title,
-        message: n.message,
-        type: n.type,
-        read: n.read,
-        actionUrl: n.actionUrl,
-        createdAt: n.createdAt.toISOString()
-      }));
-    }
+    return dbNotifs.map((n) => ({
+      id: n.id,
+      patientId: n.patientId,
+      title: n.title,
+      message: n.message,
+      type: n.type,
+      read: n.read,
+      actionUrl: n.actionUrl,
+      createdAt: n.createdAt.toISOString()
+    }));
   } catch {
   }
-  const result = [];
-  for (const n of NOTIFICATIONS_MAP.values()) {
-    if (n.patientId === patientId) {
-      result.push(n);
+  if (patientId === "demo-patient-001") {
+    const result = [];
+    for (const n of NOTIFICATIONS_MAP.values()) {
+      if (n.patientId === patientId) {
+        result.push(n);
+      }
     }
+    return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
-  return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return [];
 }
 async function storeMarkNotificationRead(id, patientId) {
   try {
@@ -52180,13 +52218,7 @@ patientPortalRouter.get(
         description: `Status: ${inv.status} (${inv.description})`
       }))
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
-    let vitalsSummary = {
-      bloodPressure: "120/80 mmHg",
-      heartRate: "72 bpm",
-      spO2: "98%",
-      temperature: "98.4 \xB0F",
-      lastRecordedAt: (/* @__PURE__ */ new Date()).toISOString()
-    };
+    let vitalsSummary = {};
     try {
       const latestVitals = await prisma.patientVitals.findFirst({
         where: { patientId },
@@ -52194,14 +52226,31 @@ patientPortalRouter.get(
       });
       if (latestVitals) {
         vitalsSummary = {
-          bloodPressure: latestVitals.systolicBp && latestVitals.diastolicBp ? `${latestVitals.systolicBp}/${latestVitals.diastolicBp} mmHg` : "120/80 mmHg",
-          heartRate: latestVitals.pulse ? `${latestVitals.pulse} bpm` : "72 bpm",
-          spO2: latestVitals.spo2 ? `${latestVitals.spo2}%` : "98%",
-          temperature: latestVitals.temperatureF ? `${latestVitals.temperatureF} \xB0F` : "98.4 \xB0F",
+          bloodPressure: latestVitals.systolicBp && latestVitals.diastolicBp ? `${latestVitals.systolicBp}/${latestVitals.diastolicBp} mmHg` : void 0,
+          heartRate: latestVitals.pulse ? `${latestVitals.pulse} bpm` : void 0,
+          spO2: latestVitals.spo2 ? `${latestVitals.spo2}%` : void 0,
+          temperature: latestVitals.temperatureF ? `${latestVitals.temperatureF} \xB0F` : void 0,
           lastRecordedAt: latestVitals.recordedAt.toISOString()
+        };
+      } else if (patientId === "demo-patient-001") {
+        vitalsSummary = {
+          bloodPressure: "120/80 mmHg",
+          heartRate: "72 bpm",
+          spO2: "98%",
+          temperature: "98.4 \xB0F",
+          lastRecordedAt: (/* @__PURE__ */ new Date()).toISOString()
         };
       }
     } catch {
+      if (patientId === "demo-patient-001") {
+        vitalsSummary = {
+          bloodPressure: "120/80 mmHg",
+          heartRate: "72 bpm",
+          spO2: "98%",
+          temperature: "98.4 \xB0F",
+          lastRecordedAt: (/* @__PURE__ */ new Date()).toISOString()
+        };
+      }
     }
     const response = {
       patient: formatPatientProfile(patient),
@@ -52671,26 +52720,27 @@ patientPortalRouter.get(
             orderBy: { createdAt: "desc" },
             take: 10
           });
-          if (dbHistories.length > 0) {
-            return dbHistories.map((ch) => ({
-              id: ch.id,
-              chiefComplaint: ch.chiefComplaint ?? "General OPD Evaluation",
-              mode: ch.mode,
-              createdAt: ch.createdAt.toISOString(),
-              completedAt: ch.completedAt ? ch.completedAt.toISOString() : null
-            }));
-          }
+          return dbHistories.map((ch) => ({
+            id: ch.id,
+            chiefComplaint: ch.chiefComplaint ?? "General OPD Evaluation",
+            mode: ch.mode,
+            createdAt: ch.createdAt.toISOString(),
+            completedAt: ch.completedAt ? ch.completedAt.toISOString() : null
+          }));
         } catch {
         }
-        return [
-          {
-            id: `ch-${patientId}-01`,
-            chiefComplaint: "Cardiovascular risk evaluation and routine medication review",
-            mode: "GENERAL",
-            createdAt: new Date(Date.now() - 14 * 864e5).toISOString(),
-            completedAt: new Date(Date.now() - 14 * 864e5).toISOString()
-          }
-        ];
+        if (patientId === "demo-patient-001") {
+          return [
+            {
+              id: `ch-${patientId}-01`,
+              chiefComplaint: "Cardiovascular risk evaluation and routine medication review",
+              mode: "GENERAL",
+              createdAt: new Date(Date.now() - 14 * 864e5).toISOString(),
+              completedAt: new Date(Date.now() - 14 * 864e5).toISOString()
+            }
+          ];
+        }
+        return [];
       })(),
       aiSummaries: await (async () => {
         try {
@@ -52699,36 +52749,37 @@ patientPortalRouter.get(
             orderBy: { createdAt: "desc" },
             take: 5
           });
-          if (dbSummaries.length > 0) {
-            return dbSummaries.map((s) => ({
-              id: s.id,
-              sessionId: s.sessionId,
-              patientId: s.patientId,
-              content: s.content,
-              generatorType: s.generatorType || "LOCAL_TEMPLATE",
-              status: s.status,
-              editedContent: s.editedContent,
-              confirmedByDoctorId: s.confirmedByDoctorId,
-              confirmedAt: s.confirmedAt ? s.confirmedAt.toISOString() : null,
-              createdAt: s.createdAt.toISOString()
-            }));
-          }
+          return dbSummaries.map((s) => ({
+            id: s.id,
+            sessionId: s.sessionId,
+            patientId: s.patientId,
+            content: s.content,
+            generatorType: s.generatorType || "LOCAL_TEMPLATE",
+            status: s.status,
+            editedContent: s.editedContent,
+            confirmedByDoctorId: s.confirmedByDoctorId,
+            confirmedAt: s.confirmedAt ? s.confirmedAt.toISOString() : null,
+            createdAt: s.createdAt.toISOString()
+          }));
         } catch {
         }
-        return [
-          {
-            id: `ai-${patientId}-01`,
-            sessionId: `sess-${patientId}`,
-            patientId,
-            content: "Patient evaluated for primary hypertension and cardiac wellness. Medication adherence high.",
-            generatorType: "LOCAL_TEMPLATE",
-            status: "DRAFT",
-            editedContent: null,
-            confirmedByDoctorId: "DOC-01",
-            confirmedAt: new Date(Date.now() - 14 * 864e5).toISOString(),
-            createdAt: new Date(Date.now() - 14 * 864e5).toISOString()
-          }
-        ];
+        if (patientId === "demo-patient-001") {
+          return [
+            {
+              id: `ai-${patientId}-01`,
+              sessionId: `sess-${patientId}`,
+              patientId,
+              content: "Patient evaluated for primary hypertension and cardiac wellness. Medication adherence high.",
+              generatorType: "LOCAL_TEMPLATE",
+              status: "DRAFT",
+              editedContent: null,
+              confirmedByDoctorId: "DOC-01",
+              confirmedAt: new Date(Date.now() - 14 * 864e5).toISOString(),
+              createdAt: new Date(Date.now() - 14 * 864e5).toISOString()
+            }
+          ];
+        }
+        return [];
       })()
     };
     res.status(200).json(response);

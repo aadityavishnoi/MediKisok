@@ -33,6 +33,27 @@ export function patientLogin(dto: PatientLoginDto): Promise<PatientAuthResponse>
   });
 }
 
+export function patientSendOtp(phone: string): Promise<{ success: boolean; message: string; otp?: string; expiresAt?: string; channel?: string; referenceId?: string }> {
+  return apiFetch('/patient/auth/otp/send', {
+    method: 'POST',
+    body: { phone },
+  });
+}
+
+export function patientVerifyOtp(phone: string, code: string): Promise<{ verified: boolean; message: string }> {
+  return apiFetch('/patient/auth/otp/verify', {
+    method: 'POST',
+    body: { phone, code },
+  });
+}
+
+export function patientLoginWithOtp(phone: string, code: string): Promise<PatientAuthResponse> {
+  return apiFetch<PatientAuthResponse>('/patient/auth/login-otp', {
+    method: 'POST',
+    body: { phone, code },
+  });
+}
+
 export function getPatientProfile(): Promise<PatientPortalProfile> {
   return apiFetch<PatientPortalProfile>('/patient/profile');
 }
