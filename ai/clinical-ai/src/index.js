@@ -1,5 +1,5 @@
-export * from './normalization/SymptomNormalizer.js';
-export * from './graph/ClinicalQuestionGraph.js';
-export * from './ranker/NextBestQuestionRanker.js';
-export * from './data/ingestion.js';
+export * from './normalization/SymptomNormalizer';
+export * from './graph/ClinicalQuestionGraph';
+export * from './ranker/NextBestQuestionRanker';
+export * from './data/ingestion';
 //# sourceMappingURL=index.js.map

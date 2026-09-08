@@ -2,7 +2,7 @@
  * Developer 1: Clinical AI Symptom Normalization Engine
  * Normalizes vernacular, multilingual, and free-text symptom phrases into standardized clinical symptom tokens.
  */
-import type { NormalizedSymptom } from '../../shared/types/index';
+import type { NormalizedSymptom } from '../../../shared/types/index';
 
 export interface SymptomSynonymMap {
   [key: string]: {

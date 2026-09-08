@@ -8,7 +8,7 @@ import type {
   NextQuestionRequest,
   NextQuestionResponse,
   SuspectedDifferential,
-} from '../../shared/types/index';
+} from '../../../shared/types/index';
 import { CLINICAL_QUESTION_GRAPH } from '../graph/ClinicalQuestionGraph';
 import { SymptomNormalizer } from '../normalization/SymptomNormalizer';
 
@@ -27,10 +27,10 @@ export class NextBestQuestionRanker {
       ...patientState.answeredQuestions.map((a: any) => a.answerValue),
     ].join(' ');
     const normalized = SymptomNormalizer.normalizeList(allText.split(/\s+/));
-    const symptomCodes = new Set(normalized.map((s) => s.symptomCode));
+    const symptomCodes = new Set<string>(normalized.map((s: { symptomCode: string }) => s.symptomCode));
 
     // Available candidate questions
-    const candidates = CLINICAL_QUESTION_GRAPH.filter((q) => !answeredIds.has(q.questionId));
+    const candidates = CLINICAL_QUESTION_GRAPH.filter((q: ClinicalQuestion) => !answeredIds.has(q.questionId));
 
     if (candidates.length === 0 || patientState.answeredQuestions.length >= 6) {
       // Intake questioning complete
@@ -45,7 +45,7 @@ export class NextBestQuestionRanker {
     }
 
     // Rank candidates
-    const scored = candidates.map((q) => {
+    const scored = candidates.map((q: ClinicalQuestion) => {
       let score = q.priorityScore;
 
       // 1. Red flag priority boost
@@ -84,7 +84,7 @@ export class NextBestQuestionRanker {
     });
 
     // Sort descending by finalScore
-    scored.sort((a, b) => b.finalScore - a.finalScore);
+    scored.sort((a: { finalScore: number }, b: { finalScore: number }) => b.finalScore - a.finalScore);
     const topQuestion = scored[0].question;
 
     const differentials = this.computeDifferentials(symptomCodes, regionalSignal);
