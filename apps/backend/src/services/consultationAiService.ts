@@ -11,6 +11,7 @@
  * - Doctor remains sole legal and clinical authority.
  * - Fails safely on service outages.
  */
+import { PrescriptionFrequency } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { Errors } from '../lib/errors.js';
 import { wsHub } from '../ws/hub.js';
@@ -24,7 +25,7 @@ import type {
   ForecastSignal,
   ClinicalSignal,
   SuspectedDifferential,
-} from '../../../../ai/shared/types/index.js';
+} from '../types/aiSharedTypes.js';
 
 // In-memory active session cache for speed and seamless test operation
 const activeConsultationContexts = new Map<string, ConsultationAiContext & { facilityId?: string }>();
@@ -36,10 +37,37 @@ async function withFastTimeout<T>(promise: Promise<T>, ms = 60): Promise<T | nul
   ]).catch(() => null);
 }
 
-// Helper to resolve dynamic AI modules safely across environments
+/**
+ * Maps free-text frequency strings from the doctor's Rx UI (e.g. '1-0-1', 'once daily')
+ * to the PrescriptionFrequency enum required by Prisma.
+ * Defaults to BD (twice daily) for unrecognised inputs.
+ */
+function normalizePrescriptionFrequency(raw?: string): PrescriptionFrequency {
+  if (!raw) return PrescriptionFrequency.BD;
+  const upper = raw.toUpperCase().replace(/[\s\-]/g, '');
+  if (upper === 'OD' || upper === '100' || upper.includes('ONCE')) return PrescriptionFrequency.OD;
+  if (upper === 'BD' || upper === '110' || upper.includes('TWICE')) return PrescriptionFrequency.BD;
+  if (upper === 'TDS' || upper === '111' || upper.includes('THREE')) return PrescriptionFrequency.TDS;
+  if (upper === 'QID' || upper === '1111' || upper.includes('FOUR')) return PrescriptionFrequency.QID;
+  if (upper === 'PRN' || upper.includes('NEEDED') || upper.includes('REQUIRED')) return PrescriptionFrequency.PRN;
+  if (upper === 'SOS' || upper.includes('EMERGENCY') || upper.includes('SOS')) return PrescriptionFrequency.SOS;
+  return PrescriptionFrequency.BD;
+}
+
+
+// Helper to resolve dynamic AI modules safely across environments.
+// Paths are computed at runtime so TypeScript cannot statically resolve
+// modules that live outside this package's rootDir.
+const AI_MODULE_PATHS = {
+  surveillance: new URL('../../../../ai/surveillance/src/index.js', import.meta.url).href,
+  geographicNormalizer: new URL('../../../../ai/surveillance/src/normalization/GeographicNormalizer.js', import.meta.url).href,
+  rxEngine: new URL('../../../../ai/rx-engine/src/index.js', import.meta.url).href,
+  clinicalAi: new URL('../../../../ai/clinical-ai/src/index.js', import.meta.url).href,
+} as const;
+
 async function getSurveillanceService(): Promise<any> {
   try {
-    const mod = await import('../../../../ai/surveillance/src/index.js');
+    const mod: any = await import(AI_MODULE_PATHS.surveillance);
     return mod.SurveillanceService;
   } catch {
     return null;
@@ -48,17 +76,16 @@ async function getSurveillanceService(): Promise<any> {
 
 async function getGeographicNormalizer(): Promise<any> {
   try {
-    const mod = await import('../../../../ai/surveillance/src/normalization/GeographicNormalizer.js');
+    const mod: any = await import(AI_MODULE_PATHS.geographicNormalizer);
     return mod.GeographicNormalizer;
   } catch {
     return null;
   }
 }
 
-
 async function getDrugSafetyEngine(): Promise<any> {
   try {
-    const mod = await import('../../../../ai/rx-engine/src/index.js');
+    const mod: any = await import(AI_MODULE_PATHS.rxEngine);
     return mod.DrugSafetyEngine;
   } catch {
     return null;
@@ -67,7 +94,7 @@ async function getDrugSafetyEngine(): Promise<any> {
 
 async function getNextBestQuestionRanker(): Promise<any> {
   try {
-    const mod = await import('../../../../ai/clinical-ai/src/index.js');
+    const mod: any = await import(AI_MODULE_PATHS.clinicalAi);
     return mod.NextBestQuestionRanker;
   } catch {
     return null;
@@ -652,7 +679,7 @@ export class ConsultationAiService {
                     create: prescriptions.map((p) => ({
                       medicineName: p.medicineName,
                       dosage: p.dosage || '1 Tab',
-                      frequency: p.frequency || '1-0-1',
+                      frequency: normalizePrescriptionFrequency(p.frequency),
                       durationDays: 5,
                       instructions: p.instructions || 'After meals',
                     })),

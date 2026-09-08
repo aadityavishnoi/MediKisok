@@ -1,9 +1,29 @@
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../app.js';
 import { prisma } from '../lib/prisma.js';
 
 const app = createApp();
+
+/**
+ * Abandon any active sessions for demo patients before each test to prevent
+ * session deduplication from returning stale sessions across tests.
+ */
+async function resetDemoPatientSessions() {
+  try {
+    await prisma.patientSession.updateMany({
+      where: {
+        patientId: 'demo-patient-001',
+        status: { notIn: ['COMPLETED', 'ABANDONED'] },
+      },
+      data: { status: 'ABANDONED' },
+    });
+  } catch {
+    // DB may be offline; demoStore sessions are ephemeral so no cleanup needed
+  }
+}
+
+beforeEach(resetDemoPatientSessions);
 
 afterAll(async () => {
   await prisma.$disconnect();
