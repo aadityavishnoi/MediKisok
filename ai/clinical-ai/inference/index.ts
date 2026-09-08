@@ -13,3 +13,4 @@ export * from '../question-engine/RegionalModifier.js';
 export * from '../question-engine/InformationGain.js';
 export * from '../question-engine/QuestionPrioritizer.js';
 export * from './ClinicalQuestionEngine.js';
+export * from './MLQuestionRanker.js';

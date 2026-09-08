@@ -1,0 +1,23 @@
+{
+  "testMetrics": {
+    "totalExamples": 51,
+    "top1Accuracy": 96.08,
+    "top3Recall": 100.0,
+    "redFlagRecall": 100.0,
+    "unnecessaryQuestionRate": 0.0,
+    "mrr": 0.9804,
+    "ndcgAt3": 0.9855,
+    "avgInferenceLatencyMs": 0.853
+  },
+  "trainMetrics": {
+    "totalExamples": 252,
+    "top1Accuracy": 88.1,
+    "top3Recall": 100.0,
+    "redFlagRecall": 100.0,
+    "unnecessaryQuestionRate": 0.0,
+    "mrr": 0.9405,
+    "ndcgAt3": 0.9561,
+    "avgInferenceLatencyMs": 0.837
+  },
+  "comparisonTargetMet": true
+}

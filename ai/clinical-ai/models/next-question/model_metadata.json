@@ -1,0 +1,44 @@
+{
+  "modelVersion": "1.0.0",
+  "trainedAt": "2026-09-08T17:16:00Z",
+  "trainingDataset": "MediKiosk Clinical Trajectories v1.0.0 (DDXPlus Grounded)",
+  "datasetVersion": "1.0.0",
+  "featureSchemaVersion": "1.0.0",
+  "metrics": {
+    "train": {
+      "totalExamples": 252,
+      "top1Accuracy": 88.1,
+      "top3Recall": 100.0,
+      "redFlagRecall": 100.0,
+      "unnecessaryQuestionRate": 0.0,
+      "mrr": 0.9405,
+      "ndcgAt3": 0.9561,
+      "avgInferenceLatencyMs": 0.837
+    },
+    "validation": {
+      "totalExamples": 57,
+      "top1Accuracy": 92.98,
+      "top3Recall": 100.0,
+      "redFlagRecall": 100.0,
+      "unnecessaryQuestionRate": 0.0,
+      "mrr": 0.9649,
+      "ndcgAt3": 0.9741,
+      "avgInferenceLatencyMs": 0.841
+    },
+    "test": {
+      "totalExamples": 51,
+      "top1Accuracy": 96.08,
+      "top3Recall": 100.0,
+      "redFlagRecall": 100.0,
+      "unnecessaryQuestionRate": 0.0,
+      "mrr": 0.9804,
+      "ndcgAt3": 0.9855,
+      "avgInferenceLatencyMs": 0.853
+    }
+  },
+  "safetyValidation": {
+    "redFlagRecall": 100.0,
+    "requiresDoctorReviewEnforced": true,
+    "nonDiagnosticBehaviorEnforced": true
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "ruleEngine": {
+    "top1Accuracy": 37.25,
+    "top3Recall": 78.43,
+    "redFlagRecall": 100.0,
+    "unnecessaryQuestionRate": 0.0,
+    "mrr": 0.5964,
+    "ndcgAt3": 0.6067,
+    "latencyMs": 0.011
+  },
+  "mlModel": {
+    "top1Accuracy": 96.08,
+    "top3Recall": 100.0,
+    "redFlagRecall": 100.0,
+    "unnecessaryQuestionRate": 0.0,
+    "mrr": 0.9804,
+    "ndcgAt3": 0.9855,
+    "latencyMs": 0.093
+  },
+  "hybridEngine": {
+    "top1Accuracy": 96.08,
+    "top3Recall": 100.0,
+    "redFlagRecall": 100.0,
+    "unnecessaryQuestionRate": 0.0,
+    "mrr": 0.9804,
+    "ndcgAt3": 0.9855,
+    "latencyMs": 0.075
+  },
+  "evaluationDataset": "test.json",
+  "exampleCount": 51,
+  "evaluatedAt": "2026-09-08T17:18:00Z"
+}

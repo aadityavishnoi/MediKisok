@@ -1,0 +1,34 @@
+{
+  "datasetVersion": "1.0.0",
+  "generatedAt": "2026-09-08T17:15:00Z",
+  "sourceDataset": "DDXPlus-NeurIPS2022 + ChatDoctor + ClinicalTriageProtocols",
+  "totalCases": 144,
+  "totalExamples": 360,
+  "splits": {
+    "trainCases": 100,
+    "trainExamples": 252,
+    "valCases": 21,
+    "valExamples": 57,
+    "testCases": 23,
+    "testExamples": 51
+  },
+  "leakageDetected": false,
+  "missingValues": 0,
+  "duplicateStateTransitions": 14,
+  "uniqueQuestionsTargeted": 11,
+  "targetQuestionDistribution": {
+    "CARD_001": 24,
+    "CARD_002": 24,
+    "RESP_001": 48,
+    "RESP_002": 36,
+    "RESP_003": 12,
+    "FEV_001": 72,
+    "FEV_002": 48,
+    "DENGUE_001": 24,
+    "GI_001": 24,
+    "GI_002": 24,
+    "NEURO_001": 24
+  },
+  "meanCandidatesPerStep": 10.1,
+  "isRedFlagCaseCount": 192
+}

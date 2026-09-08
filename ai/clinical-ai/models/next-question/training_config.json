@@ -1,0 +1,10 @@
+{
+  "algorithm": "LogisticRegression",
+  "penalty": "l2",
+  "bestC": 10.0,
+  "solver": "lbfgs",
+  "trainSize": 252,
+  "valSize": 57,
+  "testSize": 51,
+  "randomState": 42
+}

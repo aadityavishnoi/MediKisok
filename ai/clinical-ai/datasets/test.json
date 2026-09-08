@@ -1,0 +1,2336 @@
+[
+  {
+    "caseId": "CASE_BENIGN_0143",
+    "syndrome": "BENIGN_HEADACHE",
+    "stepIndex": 0,
+    "patient": {
+      "age": 53,
+      "gender": "F"
+    },
+    "symptoms": [
+      "CEPHALEA_HEADACHE"
+    ],
+    "history": [],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "NEURO_001",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_ACUTE__0052",
+    "syndrome": "ACUTE_BRONCHITIS",
+    "stepIndex": 0,
+    "patient": {
+      "age": 24,
+      "gender": "F"
+    },
+    "symptoms": [
+      "COUGH_ACUTE"
+    ],
+    "history": [],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "RESP_001",
+    "negativeQuestions": [
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": false
+  },
+  {
+    "caseId": "CASE_ACUTE__0052",
+    "syndrome": "ACUTE_BRONCHITIS",
+    "stepIndex": 1,
+    "patient": {
+      "age": 24,
+      "gender": "F"
+    },
+    "symptoms": [
+      "COUGH_ACUTE"
+    ],
+    "history": [
+      {
+        "questionId": "RESP_001",
+        "answer": "no"
+      }
+    ],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "RESP_002",
+    "negativeQuestions": [
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": false
+  },
+  {
+    "caseId": "CASE_ACUTE__0085",
+    "syndrome": "ACUTE_FEVER_UNDIFFERENTIATED",
+    "stepIndex": 0,
+    "patient": {
+      "age": 36,
+      "gender": "F"
+    },
+    "symptoms": [
+      "FEVER_ACUTE"
+    ],
+    "history": [],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "FEV_001",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": false
+  },
+  {
+    "caseId": "CASE_ACUTE__0085",
+    "syndrome": "ACUTE_FEVER_UNDIFFERENTIATED",
+    "stepIndex": 1,
+    "patient": {
+      "age": 36,
+      "gender": "F"
+    },
+    "symptoms": [
+      "FEVER_ACUTE"
+    ],
+    "history": [
+      {
+        "questionId": "FEV_001",
+        "answer": "acute_1_to_3_days"
+      }
+    ],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "FEV_002",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": false
+  },
+  {
+    "caseId": "CASE_ACUTE__0109",
+    "syndrome": "ACUTE_APPENDICITIS",
+    "stepIndex": 0,
+    "patient": {
+      "age": 34,
+      "gender": "F"
+    },
+    "symptoms": [
+      "ABDOMINAL_PAIN_UNSPECIFIED",
+      "EMESIS_VOMITING"
+    ],
+    "history": [],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "GI_002",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_ACUTE__0109",
+    "syndrome": "ACUTE_APPENDICITIS",
+    "stepIndex": 1,
+    "patient": {
+      "age": 34,
+      "gender": "F"
+    },
+    "symptoms": [
+      "ABDOMINAL_PAIN_UNSPECIFIED",
+      "EMESIS_VOMITING"
+    ],
+    "history": [
+      {
+        "questionId": "GI_002",
+        "answer": "yes_severe_rlq"
+      }
+    ],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "NEURO_001"
+    ],
+    "targetQuestion": "GI_001",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_ACUTE__0053",
+    "syndrome": "ACUTE_BRONCHITIS",
+    "stepIndex": 0,
+    "patient": {
+      "age": 20,
+      "gender": "M"
+    },
+    "symptoms": [
+      "COUGH_ACUTE"
+    ],
+    "history": [],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "RESP_001",
+    "negativeQuestions": [
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": false
+  },
+  {
+    "caseId": "CASE_ACUTE__0053",
+    "syndrome": "ACUTE_BRONCHITIS",
+    "stepIndex": 1,
+    "patient": {
+      "age": 20,
+      "gender": "M"
+    },
+    "symptoms": [
+      "COUGH_ACUTE"
+    ],
+    "history": [
+      {
+        "questionId": "RESP_001",
+        "answer": "no"
+      }
+    ],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "RESP_002",
+    "negativeQuestions": [
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": false
+  },
+  {
+    "caseId": "CASE_BENIGN_0137",
+    "syndrome": "BENIGN_HEADACHE",
+    "stepIndex": 0,
+    "patient": {
+      "age": 55,
+      "gender": "F"
+    },
+    "symptoms": [
+      "CEPHALEA_HEADACHE"
+    ],
+    "history": [],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "NEURO_001",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_NON_CA_0017",
+    "syndrome": "NON_CARDIAC_CHEST_DISCOMFORT",
+    "stepIndex": 0,
+    "patient": {
+      "age": 22,
+      "gender": "M"
+    },
+    "symptoms": [
+      "PRECORDIAL_CHEST_PAIN"
+    ],
+    "history": [],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "CARD_001",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_NON_CA_0017",
+    "syndrome": "NON_CARDIAC_CHEST_DISCOMFORT",
+    "stepIndex": 1,
+    "patient": {
+      "age": 22,
+      "gender": "M"
+    },
+    "symptoms": [
+      "PRECORDIAL_CHEST_PAIN"
+    ],
+    "history": [
+      {
+        "questionId": "CARD_001",
+        "answer": "no_localized"
+      }
+    ],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "CARD_002",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_COMMUN_0040",
+    "syndrome": "COMMUNITY_ACQUIRED_PNEUMONIA",
+    "stepIndex": 0,
+    "patient": {
+      "age": 42,
+      "gender": "F"
+    },
+    "symptoms": [
+      "FEVER_ACUTE",
+      "COUGH_ACUTE",
+      "DYSPNEA_ACUTE"
+    ],
+    "history": [],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "RESP_001",
+    "negativeQuestions": [
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_COMMUN_0040",
+    "syndrome": "COMMUNITY_ACQUIRED_PNEUMONIA",
+    "stepIndex": 1,
+    "patient": {
+      "age": 42,
+      "gender": "F"
+    },
+    "symptoms": [
+      "FEVER_ACUTE",
+      "COUGH_ACUTE",
+      "DYSPNEA_ACUTE"
+    ],
+    "history": [
+      {
+        "questionId": "RESP_001",
+        "answer": "yes"
+      }
+    ],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "RESP_002",
+    "negativeQuestions": [
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_COMMUN_0040",
+    "syndrome": "COMMUNITY_ACQUIRED_PNEUMONIA",
+    "stepIndex": 2,
+    "patient": {
+      "age": 42,
+      "gender": "F"
+    },
+    "symptoms": [
+      "FEVER_ACUTE",
+      "COUGH_ACUTE",
+      "DYSPNEA_ACUTE"
+    ],
+    "history": [
+      {
+        "questionId": "RESP_001",
+        "answer": "yes"
+      },
+      {
+        "questionId": "RESP_002",
+        "answer": "productive_phlegm"
+      }
+    ],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "FEV_001",
+    "negativeQuestions": [
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_COMMUN_0040",
+    "syndrome": "COMMUNITY_ACQUIRED_PNEUMONIA",
+    "stepIndex": 3,
+    "patient": {
+      "age": 42,
+      "gender": "F"
+    },
+    "symptoms": [
+      "FEVER_ACUTE",
+      "COUGH_ACUTE",
+      "DYSPNEA_ACUTE"
+    ],
+    "history": [
+      {
+        "questionId": "RESP_001",
+        "answer": "yes"
+      },
+      {
+        "questionId": "RESP_002",
+        "answer": "productive_phlegm"
+      },
+      {
+        "questionId": "FEV_001",
+        "answer": "subacute_4_to_7_days"
+      }
+    ],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "FEV_002",
+    "negativeQuestions": [
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_COMMUN_0043",
+    "syndrome": "COMMUNITY_ACQUIRED_PNEUMONIA",
+    "stepIndex": 0,
+    "patient": {
+      "age": 61,
+      "gender": "F"
+    },
+    "symptoms": [
+      "FEVER_ACUTE",
+      "COUGH_ACUTE",
+      "DYSPNEA_ACUTE"
+    ],
+    "history": [],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "RESP_001",
+    "negativeQuestions": [
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_COMMUN_0043",
+    "syndrome": "COMMUNITY_ACQUIRED_PNEUMONIA",
+    "stepIndex": 1,
+    "patient": {
+      "age": 61,
+      "gender": "F"
+    },
+    "symptoms": [
+      "FEVER_ACUTE",
+      "COUGH_ACUTE",
+      "DYSPNEA_ACUTE"
+    ],
+    "history": [
+      {
+        "questionId": "RESP_001",
+        "answer": "yes"
+      }
+    ],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "RESP_002",
+    "negativeQuestions": [
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_COMMUN_0043",
+    "syndrome": "COMMUNITY_ACQUIRED_PNEUMONIA",
+    "stepIndex": 2,
+    "patient": {
+      "age": 61,
+      "gender": "F"
+    },
+    "symptoms": [
+      "FEVER_ACUTE",
+      "COUGH_ACUTE",
+      "DYSPNEA_ACUTE"
+    ],
+    "history": [
+      {
+        "questionId": "RESP_001",
+        "answer": "yes"
+      },
+      {
+        "questionId": "RESP_002",
+        "answer": "productive_phlegm"
+      }
+    ],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "FEV_001",
+    "negativeQuestions": [
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_COMMUN_0043",
+    "syndrome": "COMMUNITY_ACQUIRED_PNEUMONIA",
+    "stepIndex": 3,
+    "patient": {
+      "age": 61,
+      "gender": "F"
+    },
+    "symptoms": [
+      "FEVER_ACUTE",
+      "COUGH_ACUTE",
+      "DYSPNEA_ACUTE"
+    ],
+    "history": [
+      {
+        "questionId": "RESP_001",
+        "answer": "yes"
+      },
+      {
+        "questionId": "RESP_002",
+        "answer": "productive_phlegm"
+      },
+      {
+        "questionId": "FEV_001",
+        "answer": "subacute_4_to_7_days"
+      }
+    ],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "FEV_002",
+    "negativeQuestions": [
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_ACUTE__0103",
+    "syndrome": "ACUTE_GASTROENTERITIS_DEHYDRATION",
+    "stepIndex": 0,
+    "patient": {
+      "age": 64,
+      "gender": "F"
+    },
+    "symptoms": [
+      "EMESIS_VOMITING",
+      "DIARRHEA_ACUTE"
+    ],
+    "history": [],
+    "regionalSignals": [
+      {
+        "regionId": "DIST_EAST_03",
+        "disease": "Cholera",
+        "riskLevel": "HIGH",
+        "positivityRate": 0.13,
+        "confidence": "HIGH_CONFIDENCE"
+      }
+    ],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "GI_001",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_ACUTE__0103",
+    "syndrome": "ACUTE_GASTROENTERITIS_DEHYDRATION",
+    "stepIndex": 1,
+    "patient": {
+      "age": 64,
+      "gender": "F"
+    },
+    "symptoms": [
+      "EMESIS_VOMITING",
+      "DIARRHEA_ACUTE"
+    ],
+    "history": [
+      {
+        "questionId": "GI_001",
+        "answer": "unable_to_drink"
+      }
+    ],
+    "regionalSignals": [
+      {
+        "regionId": "DIST_EAST_03",
+        "disease": "Cholera",
+        "riskLevel": "HIGH",
+        "positivityRate": 0.13,
+        "confidence": "HIGH_CONFIDENCE"
+      }
+    ],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "GI_002",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_ACUTE__0095",
+    "syndrome": "ACUTE_FEVER_UNDIFFERENTIATED",
+    "stepIndex": 0,
+    "patient": {
+      "age": 34,
+      "gender": "M"
+    },
+    "symptoms": [
+      "FEVER_ACUTE"
+    ],
+    "history": [],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "FEV_001",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": false
+  },
+  {
+    "caseId": "CASE_ACUTE__0095",
+    "syndrome": "ACUTE_FEVER_UNDIFFERENTIATED",
+    "stepIndex": 1,
+    "patient": {
+      "age": 34,
+      "gender": "M"
+    },
+    "symptoms": [
+      "FEVER_ACUTE"
+    ],
+    "history": [
+      {
+        "questionId": "FEV_001",
+        "answer": "acute_1_to_3_days"
+      }
+    ],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "FEV_002",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": false
+  },
+  {
+    "caseId": "CASE_ACUTE__0090",
+    "syndrome": "ACUTE_FEVER_UNDIFFERENTIATED",
+    "stepIndex": 0,
+    "patient": {
+      "age": 27,
+      "gender": "M"
+    },
+    "symptoms": [
+      "FEVER_ACUTE"
+    ],
+    "history": [],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "FEV_001",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": false
+  },
+  {
+    "caseId": "CASE_ACUTE__0090",
+    "syndrome": "ACUTE_FEVER_UNDIFFERENTIATED",
+    "stepIndex": 1,
+    "patient": {
+      "age": 27,
+      "gender": "M"
+    },
+    "symptoms": [
+      "FEVER_ACUTE"
+    ],
+    "history": [
+      {
+        "questionId": "FEV_001",
+        "answer": "acute_1_to_3_days"
+      }
+    ],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "FEV_002",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": false
+  },
+  {
+    "caseId": "CASE_MALARI_0079",
+    "syndrome": "MALARIA_FEBRILE",
+    "stepIndex": 0,
+    "patient": {
+      "age": 58,
+      "gender": "F"
+    },
+    "symptoms": [
+      "FEVER_ACUTE",
+      "RIGORS_CHILLS"
+    ],
+    "history": [],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "FEV_001",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": false
+  },
+  {
+    "caseId": "CASE_MALARI_0079",
+    "syndrome": "MALARIA_FEBRILE",
+    "stepIndex": 1,
+    "patient": {
+      "age": 58,
+      "gender": "F"
+    },
+    "symptoms": [
+      "FEVER_ACUTE",
+      "RIGORS_CHILLS"
+    ],
+    "history": [
+      {
+        "questionId": "FEV_001",
+        "answer": "acute_1_to_3_days"
+      }
+    ],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "FEV_002",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": false
+  },
+  {
+    "caseId": "CASE_MALARI_0079",
+    "syndrome": "MALARIA_FEBRILE",
+    "stepIndex": 2,
+    "patient": {
+      "age": 58,
+      "gender": "F"
+    },
+    "symptoms": [
+      "FEVER_ACUTE",
+      "RIGORS_CHILLS"
+    ],
+    "history": [
+      {
+        "questionId": "FEV_001",
+        "answer": "acute_1_to_3_days"
+      },
+      {
+        "questionId": "FEV_002",
+        "answer": "yes"
+      }
+    ],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "DENGUE_001",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": false
+  },
+  {
+    "caseId": "CASE_ACUTE__0130",
+    "syndrome": "ACUTE_MENINGISMUS_EMERGENCY",
+    "stepIndex": 0,
+    "patient": {
+      "age": 48,
+      "gender": "M"
+    },
+    "symptoms": [
+      "CEPHALEA_HEADACHE",
+      "FEVER_ACUTE"
+    ],
+    "history": [],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "NEURO_001",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_ACUTE__0130",
+    "syndrome": "ACUTE_MENINGISMUS_EMERGENCY",
+    "stepIndex": 1,
+    "patient": {
+      "age": 48,
+      "gender": "M"
+    },
+    "symptoms": [
+      "CEPHALEA_HEADACHE",
+      "FEVER_ACUTE"
+    ],
+    "history": [
+      {
+        "questionId": "NEURO_001",
+        "answer": "yes_stiff_neck"
+      }
+    ],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002"
+    ],
+    "targetQuestion": "FEV_001",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_ACUTE__0094",
+    "syndrome": "ACUTE_FEVER_UNDIFFERENTIATED",
+    "stepIndex": 0,
+    "patient": {
+      "age": 46,
+      "gender": "M"
+    },
+    "symptoms": [
+      "FEVER_ACUTE"
+    ],
+    "history": [],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "FEV_001",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": false
+  },
+  {
+    "caseId": "CASE_ACUTE__0094",
+    "syndrome": "ACUTE_FEVER_UNDIFFERENTIATED",
+    "stepIndex": 1,
+    "patient": {
+      "age": 46,
+      "gender": "M"
+    },
+    "symptoms": [
+      "FEVER_ACUTE"
+    ],
+    "history": [
+      {
+        "questionId": "FEV_001",
+        "answer": "acute_1_to_3_days"
+      }
+    ],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "FEV_002",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": false
+  },
+  {
+    "caseId": "CASE_ACUTE__0099",
+    "syndrome": "ACUTE_GASTROENTERITIS_DEHYDRATION",
+    "stepIndex": 0,
+    "patient": {
+      "age": 54,
+      "gender": "M"
+    },
+    "symptoms": [
+      "EMESIS_VOMITING",
+      "DIARRHEA_ACUTE"
+    ],
+    "history": [],
+    "regionalSignals": [
+      {
+        "regionId": "DIST_EAST_03",
+        "disease": "Cholera",
+        "riskLevel": "HIGH",
+        "positivityRate": 0.15,
+        "confidence": "HIGH_CONFIDENCE"
+      }
+    ],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "GI_001",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_ACUTE__0099",
+    "syndrome": "ACUTE_GASTROENTERITIS_DEHYDRATION",
+    "stepIndex": 1,
+    "patient": {
+      "age": 54,
+      "gender": "M"
+    },
+    "symptoms": [
+      "EMESIS_VOMITING",
+      "DIARRHEA_ACUTE"
+    ],
+    "history": [
+      {
+        "questionId": "GI_001",
+        "answer": "unable_to_drink"
+      }
+    ],
+    "regionalSignals": [
+      {
+        "regionId": "DIST_EAST_03",
+        "disease": "Cholera",
+        "riskLevel": "HIGH",
+        "positivityRate": 0.15,
+        "confidence": "HIGH_CONFIDENCE"
+      }
+    ],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "GI_002",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_ACUTE__0132",
+    "syndrome": "ACUTE_MENINGISMUS_EMERGENCY",
+    "stepIndex": 0,
+    "patient": {
+      "age": 59,
+      "gender": "F"
+    },
+    "symptoms": [
+      "CEPHALEA_HEADACHE",
+      "FEVER_ACUTE"
+    ],
+    "history": [],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "NEURO_001",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_ACUTE__0132",
+    "syndrome": "ACUTE_MENINGISMUS_EMERGENCY",
+    "stepIndex": 1,
+    "patient": {
+      "age": 59,
+      "gender": "F"
+    },
+    "symptoms": [
+      "CEPHALEA_HEADACHE",
+      "FEVER_ACUTE"
+    ],
+    "history": [
+      {
+        "questionId": "NEURO_001",
+        "answer": "yes_stiff_neck"
+      }
+    ],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002"
+    ],
+    "targetQuestion": "FEV_001",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_ACUTE__0093",
+    "syndrome": "ACUTE_FEVER_UNDIFFERENTIATED",
+    "stepIndex": 0,
+    "patient": {
+      "age": 47,
+      "gender": "F"
+    },
+    "symptoms": [
+      "FEVER_ACUTE"
+    ],
+    "history": [],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "FEV_001",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": false
+  },
+  {
+    "caseId": "CASE_ACUTE__0093",
+    "syndrome": "ACUTE_FEVER_UNDIFFERENTIATED",
+    "stepIndex": 1,
+    "patient": {
+      "age": 47,
+      "gender": "F"
+    },
+    "symptoms": [
+      "FEVER_ACUTE"
+    ],
+    "history": [
+      {
+        "questionId": "FEV_001",
+        "answer": "acute_1_to_3_days"
+      }
+    ],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "FEV_002",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": false
+  },
+  {
+    "caseId": "CASE_ACUTE__0104",
+    "syndrome": "ACUTE_GASTROENTERITIS_DEHYDRATION",
+    "stepIndex": 0,
+    "patient": {
+      "age": 24,
+      "gender": "F"
+    },
+    "symptoms": [
+      "EMESIS_VOMITING",
+      "DIARRHEA_ACUTE"
+    ],
+    "history": [],
+    "regionalSignals": [
+      {
+        "regionId": "DIST_EAST_03",
+        "disease": "Cholera",
+        "riskLevel": "HIGH",
+        "positivityRate": 0.12,
+        "confidence": "HIGH_CONFIDENCE"
+      }
+    ],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "GI_001",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_ACUTE__0104",
+    "syndrome": "ACUTE_GASTROENTERITIS_DEHYDRATION",
+    "stepIndex": 1,
+    "patient": {
+      "age": 24,
+      "gender": "F"
+    },
+    "symptoms": [
+      "EMESIS_VOMITING",
+      "DIARRHEA_ACUTE"
+    ],
+    "history": [
+      {
+        "questionId": "GI_001",
+        "answer": "unable_to_drink"
+      }
+    ],
+    "regionalSignals": [
+      {
+        "regionId": "DIST_EAST_03",
+        "disease": "Cholera",
+        "riskLevel": "HIGH",
+        "positivityRate": 0.12,
+        "confidence": "HIGH_CONFIDENCE"
+      }
+    ],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "GI_002",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_VIRAL__0028",
+    "syndrome": "VIRAL_RESPIRATORY_COVID",
+    "stepIndex": 0,
+    "patient": {
+      "age": 41,
+      "gender": "M"
+    },
+    "symptoms": [
+      "FEVER_ACUTE",
+      "COUGH_ACUTE",
+      "PHARYNGITIS_ACUTE"
+    ],
+    "history": [],
+    "regionalSignals": [
+      {
+        "regionId": "DIST_NORTH_01",
+        "disease": "COVID-19",
+        "riskLevel": "HIGH",
+        "positivityRate": 0.22,
+        "confidence": "HIGH_CONFIDENCE"
+      }
+    ],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "RESP_001",
+    "negativeQuestions": [
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": false
+  },
+  {
+    "caseId": "CASE_VIRAL__0028",
+    "syndrome": "VIRAL_RESPIRATORY_COVID",
+    "stepIndex": 1,
+    "patient": {
+      "age": 41,
+      "gender": "M"
+    },
+    "symptoms": [
+      "FEVER_ACUTE",
+      "COUGH_ACUTE",
+      "PHARYNGITIS_ACUTE"
+    ],
+    "history": [
+      {
+        "questionId": "RESP_001",
+        "answer": "no"
+      }
+    ],
+    "regionalSignals": [
+      {
+        "regionId": "DIST_NORTH_01",
+        "disease": "COVID-19",
+        "riskLevel": "HIGH",
+        "positivityRate": 0.22,
+        "confidence": "HIGH_CONFIDENCE"
+      }
+    ],
+    "candidateQuestions": [
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "RESP_002",
+    "negativeQuestions": [
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": false
+  },
+  {
+    "caseId": "CASE_VIRAL__0028",
+    "syndrome": "VIRAL_RESPIRATORY_COVID",
+    "stepIndex": 2,
+    "patient": {
+      "age": 41,
+      "gender": "M"
+    },
+    "symptoms": [
+      "FEVER_ACUTE",
+      "COUGH_ACUTE",
+      "PHARYNGITIS_ACUTE"
+    ],
+    "history": [
+      {
+        "questionId": "RESP_001",
+        "answer": "no"
+      },
+      {
+        "questionId": "RESP_002",
+        "answer": "dry_under_week"
+      }
+    ],
+    "regionalSignals": [
+      {
+        "regionId": "DIST_NORTH_01",
+        "disease": "COVID-19",
+        "riskLevel": "HIGH",
+        "positivityRate": 0.22,
+        "confidence": "HIGH_CONFIDENCE"
+      }
+    ],
+    "candidateQuestions": [
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "RESP_003",
+    "negativeQuestions": [
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": false
+  },
+  {
+    "caseId": "CASE_VIRAL__0028",
+    "syndrome": "VIRAL_RESPIRATORY_COVID",
+    "stepIndex": 3,
+    "patient": {
+      "age": 41,
+      "gender": "M"
+    },
+    "symptoms": [
+      "FEVER_ACUTE",
+      "COUGH_ACUTE",
+      "PHARYNGITIS_ACUTE"
+    ],
+    "history": [
+      {
+        "questionId": "RESP_001",
+        "answer": "no"
+      },
+      {
+        "questionId": "RESP_002",
+        "answer": "dry_under_week"
+      },
+      {
+        "questionId": "RESP_003",
+        "answer": "yes"
+      }
+    ],
+    "regionalSignals": [
+      {
+        "regionId": "DIST_NORTH_01",
+        "disease": "COVID-19",
+        "riskLevel": "HIGH",
+        "positivityRate": 0.22,
+        "confidence": "HIGH_CONFIDENCE"
+      }
+    ],
+    "candidateQuestions": [
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "FEV_001",
+    "negativeQuestions": [
+      "CARD_001",
+      "CARD_002",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": false
+  },
+  {
+    "caseId": "CASE_ACUTE__0086",
+    "syndrome": "ACUTE_FEVER_UNDIFFERENTIATED",
+    "stepIndex": 0,
+    "patient": {
+      "age": 37,
+      "gender": "M"
+    },
+    "symptoms": [
+      "FEVER_ACUTE"
+    ],
+    "history": [],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "FEV_001",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": false
+  },
+  {
+    "caseId": "CASE_ACUTE__0086",
+    "syndrome": "ACUTE_FEVER_UNDIFFERENTIATED",
+    "stepIndex": 1,
+    "patient": {
+      "age": 37,
+      "gender": "M"
+    },
+    "symptoms": [
+      "FEVER_ACUTE"
+    ],
+    "history": [
+      {
+        "questionId": "FEV_001",
+        "answer": "acute_1_to_3_days"
+      }
+    ],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "FEV_002",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": false
+  },
+  {
+    "caseId": "CASE_ACUTE__0126",
+    "syndrome": "ACUTE_MENINGISMUS_EMERGENCY",
+    "stepIndex": 0,
+    "patient": {
+      "age": 30,
+      "gender": "F"
+    },
+    "symptoms": [
+      "CEPHALEA_HEADACHE",
+      "FEVER_ACUTE"
+    ],
+    "history": [],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "NEURO_001",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_ACUTE__0126",
+    "syndrome": "ACUTE_MENINGISMUS_EMERGENCY",
+    "stepIndex": 1,
+    "patient": {
+      "age": 30,
+      "gender": "F"
+    },
+    "symptoms": [
+      "CEPHALEA_HEADACHE",
+      "FEVER_ACUTE"
+    ],
+    "history": [
+      {
+        "questionId": "NEURO_001",
+        "answer": "yes_stiff_neck"
+      }
+    ],
+    "regionalSignals": [],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002"
+    ],
+    "targetQuestion": "FEV_001",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_ACUTE__0101",
+    "syndrome": "ACUTE_GASTROENTERITIS_DEHYDRATION",
+    "stepIndex": 0,
+    "patient": {
+      "age": 23,
+      "gender": "F"
+    },
+    "symptoms": [
+      "EMESIS_VOMITING",
+      "DIARRHEA_ACUTE"
+    ],
+    "history": [],
+    "regionalSignals": [
+      {
+        "regionId": "DIST_EAST_03",
+        "disease": "Cholera",
+        "riskLevel": "HIGH",
+        "positivityRate": 0.12,
+        "confidence": "HIGH_CONFIDENCE"
+      }
+    ],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "GI_001",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": true
+  },
+  {
+    "caseId": "CASE_ACUTE__0101",
+    "syndrome": "ACUTE_GASTROENTERITIS_DEHYDRATION",
+    "stepIndex": 1,
+    "patient": {
+      "age": 23,
+      "gender": "F"
+    },
+    "symptoms": [
+      "EMESIS_VOMITING",
+      "DIARRHEA_ACUTE"
+    ],
+    "history": [
+      {
+        "questionId": "GI_001",
+        "answer": "unable_to_drink"
+      }
+    ],
+    "regionalSignals": [
+      {
+        "regionId": "DIST_EAST_03",
+        "disease": "Cholera",
+        "riskLevel": "HIGH",
+        "positivityRate": 0.12,
+        "confidence": "HIGH_CONFIDENCE"
+      }
+    ],
+    "candidateQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "GI_002",
+      "NEURO_001"
+    ],
+    "targetQuestion": "GI_002",
+    "negativeQuestions": [
+      "RESP_001",
+      "RESP_002",
+      "RESP_003",
+      "CARD_001",
+      "CARD_002",
+      "FEV_001",
+      "FEV_002",
+      "DENGUE_001",
+      "NEURO_001"
+    ],
+    "isRedFlagCase": true
+  }
+]
