@@ -45,3 +45,7 @@ process.env.DATABASE_URL = process.env.DATABASE_URL || env.DATABASE_URL;
 process.env.DEVICE_KEY = process.env.DEVICE_KEY || env.DEVICE_KEY;
 process.env.JWT_SECRET = process.env.JWT_SECRET || env.JWT_SECRET;
 
+if (env.NODE_ENV === 'production' && env.JWT_SECRET.includes('default')) {
+  console.warn('⚠️ [SECURITY WARNING] Default JWT_SECRET is being used in production environment. Set a strong secret in production!');
+}
+

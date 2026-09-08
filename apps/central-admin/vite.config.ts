@@ -8,6 +8,16 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5177,
     strictPort: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
+      '/ws': {
+        target: 'ws://localhost:4000',
+        ws: true,
+      },
+    },
   },
 });
 

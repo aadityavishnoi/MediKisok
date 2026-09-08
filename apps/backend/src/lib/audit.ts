@@ -9,6 +9,8 @@ import { prisma } from './prisma.js';
 export async function recordAudit(entry: {
   actorType: ActorType;
   actorId?: string | null;
+  /** The facility context for this audit event (enables tenant-scoped audit queries). */
+  facilityId?: string | null;
   action: string;
   entityType?: string | null;
   entityId?: string | null;
@@ -19,14 +21,15 @@ export async function recordAudit(entry: {
       data: {
         actorType: entry.actorType as any,
         actorId: entry.actorId ?? null,
+        facilityId: entry.facilityId ?? null,
         action: entry.action,
         entityType: entry.entityType ?? null,
         entityId: entry.entityId ?? null,
         metadata: entry.metadata ? (entry.metadata as Prisma.InputJsonValue) : undefined,
       },
     });
-  } catch (err) {
-    // Non-blocking in demo mode or when database is offline
+  } catch (_err) {
+    // Non-blocking — audit failures must never crash the application.
+    // In production, route this to a secondary log sink.
   }
-
 }

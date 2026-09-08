@@ -4,6 +4,7 @@ import { env } from './lib/env.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { healthRouter } from './routes/health.js';
 import { rfidRouter } from './routes/rfid.js';
+import { rfidManagementRouter } from './routes/rfidManagement.js';
 import { sessionRouter } from './routes/session.js';
 import { consentRouter } from './routes/consent.js';
 import { historyRouter } from './routes/history.js';
@@ -17,9 +18,11 @@ import { otpRouter } from './routes/otp.js';
 import { patientRegistrationRouter } from './routes/patientRegistration.js';
 import { discoveryRouter } from './routes/discovery.js';
 import { hospitalRouter } from './routes/hospital.js';
+import { hospitalAdminRouter } from './routes/hospitalAdmin.js';
 import { queueRouter } from './routes/queue.js';
 import { prescriptionsRouter } from './routes/prescriptions.js';
 import { surveillanceRouter } from './routes/surveillance.js';
+import { interoperabilityRouter } from './routes/interoperability.js';
 
 export function createApp() {
   const app = express();
@@ -35,6 +38,7 @@ export function createApp() {
   const routers = [
     healthRouter,
     rfidRouter,
+    rfidManagementRouter,
     sessionRouter,
     consentRouter,
     historyRouter,
@@ -48,9 +52,11 @@ export function createApp() {
     patientRegistrationRouter,
     discoveryRouter,
     hospitalRouter,
+    hospitalAdminRouter,
     queueRouter,
     prescriptionsRouter,
     surveillanceRouter,
+    interoperabilityRouter,
   ];
 
   for (const r of routers) {
@@ -66,4 +72,3 @@ export function createApp() {
 
   return app;
 }
-

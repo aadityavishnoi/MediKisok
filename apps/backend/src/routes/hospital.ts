@@ -1,13 +1,18 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
+import { requireAuth, requireFacilityScope, requireRole } from '../middleware/userAuth.js';
 
 export const hospitalRouter = Router();
+
+// Admins and doctors can read hospital data
+const requireHospitalAccess = [requireAuth];
 
 /**
  * GET /api/hospitals
  * Returns all registered health facilities (for Central Admin & multi-facility switcher)
  */
-hospitalRouter.get('/hospitals', async (_req, res, next) => {
+hospitalRouter.get('/hospitals', requireAuth, requireRole('CENTRAL_ADMIN', 'ADMIN', 'HOSPITAL_ADMIN'), async (_req, res, next) => {
+
   try {
     const hospitals = await prisma.hospital.findMany({
       include: {
@@ -37,7 +42,7 @@ hospitalRouter.get('/hospitals', async (_req, res, next) => {
  * GET /api/hospitals/:id/overview
  * Executive metrics for a specific hospital (Hospital Admin dashboard)
  */
-hospitalRouter.get('/hospitals/:id/overview', async (req, res, next) => {
+hospitalRouter.get('/hospitals/:id/overview', requireAuth, requireFacilityScope, async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -101,7 +106,7 @@ hospitalRouter.get('/hospitals/:id/overview', async (req, res, next) => {
  * GET /api/hospitals/:id/departments
  * Departments with doctors and active queue
  */
-hospitalRouter.get('/hospitals/:id/departments', async (req, res, next) => {
+hospitalRouter.get('/hospitals/:id/departments', requireAuth, requireFacilityScope, async (req, res, next) => {
   try {
     const { id } = req.params;
     const departments = await prisma.department.findMany({
@@ -133,7 +138,7 @@ hospitalRouter.get('/hospitals/:id/departments', async (req, res, next) => {
  * GET /api/hospitals/:id/kiosks
  * Kiosk fleet health for Hospital Admin
  */
-hospitalRouter.get('/hospitals/:id/kiosks', async (req, res, next) => {
+hospitalRouter.get('/hospitals/:id/kiosks', requireAuth, requireFacilityScope, async (req, res, next) => {
   try {
     const { id } = req.params;
     const kiosks = await prisma.rFIDDevice.findMany({

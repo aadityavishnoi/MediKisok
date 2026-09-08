@@ -172,6 +172,9 @@ rfidRouter.post(
       timestamp: new Date().toISOString(),
       isSimulated: true,
     });
+    if (result.status === 'NEW_PATIENT') {
+      throw Errors.notFound(`Card UID ${body.uid} not registered`);
+    }
     latestScanRecord = {
       sessionId: result.sessionId,
       patientId: result.patientId,

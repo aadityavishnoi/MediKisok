@@ -1,4 +1,4 @@
-import type { AlertSeverity, ConsentStatus, DeviceStatus, DocumentType, IdentificationMethod, Language, Mode, QuestionType } from './enums.js';
+import type { AlertSeverity, ConsentStatus, DeviceStatus, DoctorRole, DocumentType, IdentificationMethod, Language, Mode, QuestionType } from './enums.js';
 import type {
   Alert,
   AISummary,
@@ -367,7 +367,7 @@ export interface AuthLoginRequest {
 
 export interface AuthLoginResponse {
   token: string;
-  role: 'DOCTOR' | 'ADMIN';
+  role: DoctorRole | string;
   name: string;
 }
 

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
+import { requireAuth } from '../middleware/userAuth.js';
 
 export const queueRouter = Router();
 
@@ -82,7 +83,7 @@ queueRouter.post('/queue/ticket', async (req, res, next) => {
  * GET /api/queue/doctor/:doctorId
  * Doctor retrieves their live OPD queue line
  */
-queueRouter.get('/queue/doctor/:doctorId', async (req, res, next) => {
+queueRouter.get('/queue/doctor/:doctorId', requireAuth, async (req, res, next) => {
   try {
     const { doctorId } = req.params;
 
@@ -148,7 +149,7 @@ queueRouter.get('/queue/doctor/:doctorId', async (req, res, next) => {
  * PATCH /api/queue/:id/call
  * Doctor calls patient into consultation room
  */
-queueRouter.patch('/queue/:id/call', async (req, res, next) => {
+queueRouter.patch('/queue/:id/call', requireAuth, async (req, res, next) => {
   try {
     const { id } = req.params;
     const { doctorId } = req.body;
@@ -178,7 +179,7 @@ queueRouter.patch('/queue/:id/call', async (req, res, next) => {
  * PATCH /api/queue/:id/complete
  * Mark consultation completed
  */
-queueRouter.patch('/queue/:id/complete', async (req, res, next) => {
+queueRouter.patch('/queue/:id/complete', requireAuth, async (req, res, next) => {
   try {
     const { id } = req.params;
 

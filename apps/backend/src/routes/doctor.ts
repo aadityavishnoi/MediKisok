@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { asyncHandler } from '../lib/asyncHandler.js';
-import { requireDoctorAuth, type RequestWithDoctor } from '../middleware/doctorAuth.js';
+import { requireDoctorAuth, type RequestWithUser } from '../middleware/userAuth.js';
 import {
   completeConsultation,
   getDoctorDashboard,
@@ -10,6 +10,10 @@ import {
   startConsultation,
 } from '../services/doctorDashboardService.js';
 import { acknowledgeAlert } from '../services/alertService.js';
+
+// Backward compat helper
+type RequestWithDoctor = RequestWithUser;
+
 
 export const doctorRouter = Router();
 
@@ -42,7 +46,7 @@ doctorRouter.post(
   requireDoctorAuth,
   asyncHandler(async (req, res) => {
     const { alertId } = acknowledgeSchema.parse({ alertId: req.params.alertId });
-    const doctorId = (req as RequestWithDoctor).doctor!.sub;
+    const doctorId = (req as RequestWithDoctor).user!.sub;
     const result = await acknowledgeAlert(alertId, doctorId);
     res.status(200).json(result);
   }),
@@ -52,7 +56,7 @@ doctorRouter.post(
   '/doctor/sessions/:sessionId/consultation/start',
   requireDoctorAuth,
   asyncHandler(async (req, res) => {
-    const doctorId = (req as RequestWithDoctor).doctor?.sub;
+    const doctorId = (req as RequestWithDoctor).user?.sub;
     const result = await startConsultation(req.params.sessionId, doctorId);
     res.status(200).json(result);
   }),
@@ -77,7 +81,7 @@ doctorRouter.post(
   '/doctor/sessions/:sessionId/consultation/complete',
   requireDoctorAuth,
   asyncHandler(async (req, res) => {
-    const doctorId = (req as RequestWithDoctor).doctor?.sub;
+    const doctorId = (req as RequestWithDoctor).user?.sub;
     const body = completeConsultationSchema.parse(req.body);
     const result = await completeConsultation(req.params.sessionId, doctorId, body);
     res.status(200).json(result);
@@ -93,7 +97,7 @@ doctorRouter.put(
   '/doctor/sessions/:sessionId/summary',
   requireDoctorAuth,
   asyncHandler(async (req, res) => {
-    const doctorId = (req as RequestWithDoctor).doctor?.sub;
+    const doctorId = (req as RequestWithDoctor).user?.sub;
     const body = reviewSummarySchema.parse(req.body);
     const result = await reviewAISummary(req.params.sessionId, doctorId, body);
     res.status(200).json(result);

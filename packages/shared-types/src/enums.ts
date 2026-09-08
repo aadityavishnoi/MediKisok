@@ -107,8 +107,10 @@ export const ActorType = {
   DOCTOR: 'DOCTOR',
   SYSTEM: 'SYSTEM',
   DEVICE: 'DEVICE',
+  ADMIN: 'ADMIN',
 } as const;
 export type ActorType = (typeof ActorType)[keyof typeof ActorType] | string;
+
 
 
 export const IdentificationMethod = {
