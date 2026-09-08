@@ -138,7 +138,7 @@ async function main() {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-Device-Key': env.DEVICE_KEY || 'dev-device-key-change-in-production',
+              'X-Device-Key': env.DEVICE_KEY || 'ef5d4cd7ba3ed2747c782311257fd5bd716548e8628c83d31bfc66685493574f',
             },
             body: JSON.stringify({
               deviceCode: 'KIOSK-DEV-001',
@@ -146,9 +146,22 @@ async function main() {
               timestamp: new Date().toISOString(),
             }),
           });
-        } catch {
-          // Dev server might be the same process or offline
-        }
+        } catch {}
+
+        // 3. Also forward to live Vercel production deployment
+        try {
+          await fetch(`https://medikiosk-sih26047-three.vercel.app/api/rfid/trigger-scan`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              deviceCode: 'USB-NANO-01',
+              uid,
+            }),
+          });
+          console.log(`  [Cloud Sync] Synced scan ${uid} to live Vercel Kiosk!`);
+        } catch {}
       } catch (err: any) {
         console.log(formatRfidScanBanner({
           uid,

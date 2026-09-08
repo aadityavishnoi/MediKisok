@@ -51,6 +51,30 @@ rfidRouter.get(
 
 
 
+interface LatestScanRecord {
+  sessionId: string;
+  patientId: string | null;
+  isNewPatient: boolean;
+  uid: string;
+  status: string;
+  timestamp: number;
+}
+
+let latestScanRecord: LatestScanRecord | null = null;
+
+/**
+ * GET /api/rfid/latest-scan
+ * Polling endpoint for Kiosks running in serverless cloud where WebSockets are unavailable.
+ */
+rfidRouter.get('/rfid/latest-scan', (req, res) => {
+  const since = Number(req.query.since || 0);
+  if (latestScanRecord && latestScanRecord.timestamp > since) {
+    res.status(200).json({ hasScan: true, scan: latestScanRecord });
+  } else {
+    res.status(200).json({ hasScan: false });
+  }
+});
+
 /**
  * POST /api/rfid/trigger-scan
  * Used by Kiosk UI to trigger or forward an RFID scan (e.g. from on-screen Scan Card button).
@@ -70,6 +94,14 @@ rfidRouter.post(
       timestamp: new Date().toISOString(),
       isSimulated: false,
     });
+    latestScanRecord = {
+      sessionId: result.sessionId,
+      patientId: result.patientId,
+      isNewPatient: result.isNewPatient,
+      uid: body.uid,
+      status: result.status,
+      timestamp: Date.now(),
+    };
     res.status(200).json(result);
   }),
 );
@@ -86,6 +118,14 @@ rfidRouter.post(
   asyncHandler(async (req, res) => {
     const body = scanSchema.parse(req.body);
     const result = await handleRfidScan({ ...body, isSimulated: false });
+    latestScanRecord = {
+      sessionId: result.sessionId,
+      patientId: result.patientId,
+      isNewPatient: result.isNewPatient,
+      uid: body.uid,
+      status: result.status,
+      timestamp: Date.now(),
+    };
     res.status(200).json(result);
   }),
 );
@@ -108,6 +148,14 @@ rfidRouter.post(
       timestamp: new Date().toISOString(),
       isSimulated: true,
     });
+    latestScanRecord = {
+      sessionId: result.sessionId,
+      patientId: result.patientId,
+      isNewPatient: result.isNewPatient,
+      uid: body.uid,
+      status: result.status,
+      timestamp: Date.now(),
+    };
     res.status(200).json(result);
   }),
 );

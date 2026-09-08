@@ -51,6 +51,8 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
   const [blankCardNotice, setBlankCardNotice] = useState<string | null>(null);
   const [isScanningBlank, setIsScanningBlank] = useState(false);
   const [tapLoading, setTapLoading] = useState(false);
+  const [manualUid, setManualUid] = useState('');
+  const [webSerialConnected, setWebSerialConnected] = useState(false);
 
   async function handleTapCard(uid = 'DEMO-RFID-001') {
     if (tapLoading) return;
@@ -80,6 +82,109 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
     setBlankCardNotice(`Blank Smart Card (${blankUid}) Detected`);
     playCardBeep();
   }
+
+  // 1. Web Serial direct browser-to-hardware reader connection
+  async function handleConnectWebSerial() {
+    if (!('serial' in navigator)) {
+      alert('Web Serial is supported in Google Chrome & Edge. Please open this page in Chrome/Edge to connect directly to your USB scanner.');
+      return;
+    }
+    try {
+      const port = await (navigator as any).serial.requestPort();
+      await port.open({ baudRate: 9600 });
+      setWebSerialConnected(true);
+
+      const textDecoder = new TextDecoderStream();
+      port.readable.pipeTo(textDecoder.writable);
+      const reader = textDecoder.readable.getReader();
+
+      let buffer = '';
+      (async () => {
+        try {
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            if (value) {
+              buffer += value;
+              const lines = buffer.split(/[\r\n]+/);
+              buffer = lines.pop() || '';
+              for (const line of lines) {
+                const clean = line.trim();
+                const match = clean.match(/(?:RFID_SCAN:|Card UID:\s*|UID tag:\s*|UID:\s*)([0-9a-fA-F:\s]+)/i) || clean.match(/^([0-9a-fA-F:\s]{8,})$/);
+                if (match) {
+                  const scannedUid = match[1].trim().replace(/\s+/g, ':');
+                  handleTapCard(scannedUid);
+                }
+              }
+            }
+          }
+        } catch {
+          setWebSerialConnected(false);
+        }
+      })();
+    } catch (err: any) {
+      console.warn('WebSerial error:', err);
+    }
+  }
+
+  // 2. Listen to USB HID Keyboard Readers (types UID + Enter)
+  useEffect(() => {
+    let buffer: string[] = [];
+    let lastTime = Date.now();
+
+    function onKeyDown(e: KeyboardEvent) {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
+      const now = Date.now();
+      if (now - lastTime > 300) {
+        buffer = [];
+      }
+      lastTime = now;
+
+      if (e.key === 'Enter') {
+        if (buffer.length >= 4) {
+          const scanned = buffer.join('').trim();
+          buffer = [];
+          handleTapCard(scanned);
+        }
+      } else if (e.key.length === 1) {
+        buffer.push(e.key);
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  // 3. Poll cloud backend for live physical scans forwarded by local serial bridge
+  useEffect(() => {
+    const mountTime = Date.now();
+    let mounted = true;
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch(`${window.location.origin}/api/rfid/latest-scan?since=${mountTime}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (mounted && data.hasScan && data.scan) {
+          playCardBeep();
+          if (onIdentified) {
+            onIdentified({
+              sessionId: data.scan.sessionId,
+              patientId: data.scan.patientId,
+              isNewPatient: data.scan.isNewPatient,
+            });
+          }
+        }
+      } catch {}
+    }, 1200);
+
+    return () => {
+      mounted = false;
+      clearInterval(pollInterval);
+    };
+  }, [onIdentified]);
 
   const connection = CONNECTION_CONFIG[wsState] || CONNECTION_CONFIG.open;
 
@@ -297,8 +402,48 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
             </div>
 
             <p className="text-[11px] text-slate-300 leading-relaxed">
-              Place any physical RFID Smart Card on the USB reader or click below to check in. Registered cards authenticate immediately. Blank cards open registration.
+              Place your physical RFID Smart Card on the USB reader, pair it directly via browser Web Serial, or scan below to check in:
             </p>
+
+            {/* Direct USB Hardware Pair Button */}
+            <button
+              type="button"
+              onClick={handleConnectWebSerial}
+              className={`w-full py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border transition-all cursor-pointer shadow-xs ${
+                webSerialConnected
+                  ? 'bg-emerald-950/90 border-emerald-500 text-emerald-300 shadow-emerald-900/40'
+                  : 'bg-slate-800 hover:bg-slate-700/90 border-slate-700 text-slate-200'
+              }`}
+            >
+              <Radio size={14} className={webSerialConnected ? 'text-emerald-400 animate-pulse' : 'text-blue-400'} />
+              <span>{webSerialConnected ? '🟢 Physical USB Hardware Connected (Listening)' : '🔌 Pair USB Hardware Scanner (Arduino COM Port)'}</span>
+            </button>
+
+            {/* Live Scan Input Bar */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (manualUid.trim()) {
+                  handleTapCard(manualUid.trim());
+                }
+              }}
+              className="flex items-center gap-1.5"
+            >
+              <input
+                type="text"
+                placeholder="Scan with USB reader or enter UID…"
+                value={manualUid}
+                onChange={(e) => setManualUid(e.target.value)}
+                className="flex-1 px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700 text-white placeholder-slate-500 text-xs font-mono focus:border-blue-500 focus:outline-none"
+              />
+              <button
+                type="submit"
+                disabled={tapLoading || !manualUid.trim()}
+                className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all disabled:opacity-40 cursor-pointer shadow-xs"
+              >
+                Scan
+              </button>
+            </form>
 
             {/* Direct Tap Action Button */}
             <div className="flex flex-col gap-2 pt-1 border-t border-slate-800">
@@ -311,20 +456,27 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
                 <CreditCard size={15} />
                 <span>{tapLoading ? 'Authenticating Patient…' : '💳 Tap Smart Card (Aarav Sharma — DEMO-001)'}</span>
               </button>
-              <div className="flex items-center justify-between text-[10px] text-slate-400 px-0.5">
+              <div className="flex flex-wrap items-center justify-between gap-1 text-[10px] text-slate-400 px-0.5">
+                <button
+                  type="button"
+                  onClick={() => handleTapCard('DEMO-RFID-002')}
+                  className="text-emerald-400 hover:text-emerald-300 font-semibold underline cursor-pointer"
+                >
+                  Sunita Devi (002)
+                </button>
                 <button
                   type="button"
                   onClick={handleTapBlankCard}
                   className="text-amber-400 hover:text-amber-300 font-semibold underline cursor-pointer"
                 >
-                  🪪 Tap Blank Card (Issue Flow)
+                  🪪 Tap Blank Card
                 </button>
                 <button
                   type="button"
                   onClick={() => { setActiveTab('REGISTER'); setFormError(null); }}
                   className="text-blue-400 hover:text-blue-300 font-semibold underline cursor-pointer"
                 >
-                  Register Without Card &rarr;
+                  Register (No Card) &rarr;
                 </button>
               </div>
             </div>

@@ -44774,6 +44774,15 @@ rfidRouter.get(
     res.status(200).json(result);
   })
 );
+var latestScanRecord = null;
+rfidRouter.get("/rfid/latest-scan", (req, res) => {
+  const since = Number(req.query.since || 0);
+  if (latestScanRecord && latestScanRecord.timestamp > since) {
+    res.status(200).json({ hasScan: true, scan: latestScanRecord });
+  } else {
+    res.status(200).json({ hasScan: false });
+  }
+});
 var triggerScanSchema = external_exports.object({
   uid: external_exports.string().min(1),
   deviceCode: external_exports.string().optional().default("KIOSK-DEV-001")
@@ -44788,6 +44797,14 @@ rfidRouter.post(
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       isSimulated: false
     });
+    latestScanRecord = {
+      sessionId: result.sessionId,
+      patientId: result.patientId,
+      isNewPatient: result.isNewPatient,
+      uid: body.uid,
+      status: result.status,
+      timestamp: Date.now()
+    };
     res.status(200).json(result);
   })
 );
@@ -44802,6 +44819,14 @@ rfidRouter.post(
   asyncHandler(async (req, res) => {
     const body = scanSchema.parse(req.body);
     const result = await handleRfidScan({ ...body, isSimulated: false });
+    latestScanRecord = {
+      sessionId: result.sessionId,
+      patientId: result.patientId,
+      isNewPatient: result.isNewPatient,
+      uid: body.uid,
+      status: result.status,
+      timestamp: Date.now()
+    };
     res.status(200).json(result);
   })
 );
@@ -44822,6 +44847,14 @@ rfidRouter.post(
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       isSimulated: true
     });
+    latestScanRecord = {
+      sessionId: result.sessionId,
+      patientId: result.patientId,
+      isNewPatient: result.isNewPatient,
+      uid: body.uid,
+      status: result.status,
+      timestamp: Date.now()
+    };
     res.status(200).json(result);
   })
 );
