@@ -146,3 +146,30 @@ When sample size $n < 30$ (such as 8 positive out of 10 screened in a demo clust
 2. **NLEM & CDSCO Publications:** Public regulatory gazette notices released under the authority of Ministry of Health and Family Welfare (MoHFW) and Central Drugs Standard Control Organization (CDSCO).
 3. **Privacy by Design:** Zero Personally Identifiable Information (PII) or Protected Health Information (PHI) is ingested into the surveillance aggregation layer. All surveillance inputs are strictly de-identified aggregate cohorts.
 
+---
+
+## 7. Phase 2 Dataset Inspection & Discovery Audit
+
+### 7.1 Available In-Repository Surveillance Records
+- **File / Source:** `prisma/seed.ts` (CockroachDB `DiseaseOutbreakSignal` Table).
+- **Date Coverage:** Current reporting cycle (2026).
+- **Geographic Coverage:** Multi-state Indian sentinel coverage (Delhi, Maharashtra, Kerala, Karnataka).
+- **Diseases Present:**
+  - Dengue (ICD-10 `A97.0`, South Delhi)
+  - Influenza H3N2 (ICD-10 `J10.1`, Pune)
+  - Leptospirosis (ICD-10 `A27.9`, Kolhapur)
+  - Cholera (ICD-10 `A00.9`, Ernakulam)
+  - Measles (ICD-10 `B05.9`, Bengaluru Urban)
+- **Denominators:** Sentinel hospital case counts recorded; screening denominator absent in municipal bulletins (preserved as missing, not fabricated).
+
+### 7.2 Available In-Repository Kiosk & Sentinel Streams
+- **File / Source:** `ai/surveillance/src/data/demoSeed.ts` (`REGION_X` Sentinel Kiosks).
+- **Date Coverage:** Real-time pre-consultation intake stream (2026-09).
+- **Geographic Coverage:** Varanasi District, Uttar Pradesh (`HOSP_BHU_VARANASI`, `HOSP_DISTRICT_CIVIL`).
+- **Diseases Present:** COVID-19 (`U07.1`), Dengue (`A90`).
+- **Fields:** `screenedCount: 10`, `positiveCount: 8` (controlled 8/10 small-sample cluster).
+
+### 7.3 External Data Sources Status (IDSP Historic Bulk Repositories)
+- **Status:** **UNAVAILABLE AS LOCAL RAW DUMPS** in repository tree (in compliance with Git repository policy forbidding gigabyte binary dumps and raw web scrapes).
+- **Handling Strategy:** Ingestion pipelines ingest external data via canonical `SurveillanceObservation` schema. Missing fields are preserved strictly as `undefined`. Zero synthetic historical records are fabricated.
+

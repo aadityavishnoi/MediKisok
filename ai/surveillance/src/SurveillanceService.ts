@@ -8,6 +8,20 @@ import {
 
 export interface RegionalRiskResponse {
   regionId: string;
+  disease?: string;
+  riskLevel?: string;
+  observedPositivity?: number;
+  sampleSize?: number;
+  trend?: string;
+  baselineDeviation?: number;
+  facilityCount?: number;
+  confidence?: string;
+  evidence?: string[];
+  clinicalUse?: {
+    individualDiagnosis: false;
+    enhancedScreeningRecommended: boolean;
+    doctorReviewRequired: boolean;
+  };
   generatedAt: string;
   signals: OutbreakCalculationResult[];
   demoActive?: boolean;
@@ -49,6 +63,24 @@ export class SurveillanceService {
 
       return {
         regionId: 'REGION_X',
+        disease: 'COVID-19',
+        riskLevel: demoResult.riskLevel,
+        observedPositivity: demoResult.positivityRate,
+        sampleSize: demoResult.sampleSize,
+        trend: demoResult.trend,
+        baselineDeviation: 1.42,
+        facilityCount: 2,
+        confidence: demoResult.confidence,
+        evidence: [
+          demoResult.epidemiologicalNote,
+          'Localized cluster observed across 2 sentinel facilities (HOSP_BHU_VARANASI, HOSP_DISTRICT_CIVIL)',
+          'Wilson 95% CI spans [49% - 94%]; Laplace Beta-Binomial smoothed rate is 16.7%',
+        ],
+        clinicalUse: {
+          individualDiagnosis: false,
+          enhancedScreeningRecommended: true,
+          doctorReviewRequired: true,
+        },
         generatedAt: new Date().toISOString(),
         demoActive: true,
         signals: [demoResult, dengueSignal],
