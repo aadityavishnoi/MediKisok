@@ -1,15 +1,14 @@
 {
-  "name": "@medikiosk/hospital-admin",
+  "name": "@medikiosk/patient-portal",
   "private": true,
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --port 5176",
+    "dev": "vite --host 0.0.0.0 --port 5175",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"
   },
-
   "dependencies": {
     "@medikiosk/api-client": "workspace:*",
     "@medikiosk/shared-types": "workspace:*",

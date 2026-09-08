@@ -13,12 +13,13 @@ import { doctorRouter } from './routes/doctor.js';
 import { documentsRouter } from './routes/documents.js';
 import { aiRouter } from './routes/ai.js';
 import { adminRouter } from './routes/admin.js';
+import { hospitalAdminRouter } from './routes/hospitalAdmin.js';
+import { patientPortalRouter } from './routes/patientPortal.js';
 import { ttsRouter } from './routes/tts.js';
 import { otpRouter } from './routes/otp.js';
 import { patientRegistrationRouter } from './routes/patientRegistration.js';
 import { discoveryRouter } from './routes/discovery.js';
 import { hospitalRouter } from './routes/hospital.js';
-import { hospitalAdminRouter } from './routes/hospitalAdmin.js';
 import { queueRouter } from './routes/queue.js';
 import { prescriptionsRouter } from './routes/prescriptions.js';
 import { surveillanceRouter } from './routes/surveillance.js';
@@ -73,7 +74,14 @@ export function createApp() {
     surveillanceRouter,
     interoperabilityRouter,
     clinicalRouter,
+    patientPortalRouter,
   ];
+
+  // Specific path prefixes for patient portal and hospital admin
+  app.use('/api/patient', patientPortalRouter);
+  app.use('/patient', patientPortalRouter);
+  app.use('/api/hospital', hospitalAdminRouter);
+  app.use('/hospital', hospitalAdminRouter);
 
   for (const r of routers) {
     app.use('/api', r);

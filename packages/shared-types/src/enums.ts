@@ -219,3 +219,201 @@ export const DoctorRole = {
 } as const;
 export type DoctorRole = (typeof DoctorRole)[keyof typeof DoctorRole];
 
+// ---------------------------------------------------------------------------
+// Hospital Admin Domain Enums
+// ---------------------------------------------------------------------------
+
+export const FacilityType = {
+  GOVERNMENT_HOSPITAL: 'GOVERNMENT_HOSPITAL',
+  AIIMS: 'AIIMS',
+  PRIMARY_HEALTH_CENTRE: 'PRIMARY_HEALTH_CENTRE',
+  COMMUNITY_HEALTH_CENTRE: 'COMMUNITY_HEALTH_CENTRE',
+  DISTRICT_HOSPITAL: 'DISTRICT_HOSPITAL',
+  PRIVATE_HOSPITAL: 'PRIVATE_HOSPITAL',
+} as const;
+export type FacilityType = (typeof FacilityType)[keyof typeof FacilityType];
+
+export const DepartmentLoadStatus = {
+  OPTIMAL: 'OPTIMAL',
+  HIGH_LOAD: 'HIGH_LOAD',
+  OVER_CAPACITY: 'OVER_CAPACITY',
+} as const;
+export type DepartmentLoadStatus = (typeof DepartmentLoadStatus)[keyof typeof DepartmentLoadStatus];
+
+export const ShiftType = {
+  MORNING: 'MORNING',
+  EVENING: 'EVENING',
+  NIGHT: 'NIGHT',
+  FULL_DAY: 'FULL_DAY',
+} as const;
+export type ShiftType = (typeof ShiftType)[keyof typeof ShiftType];
+
+export const DoctorDutyStatus = {
+  AVAILABLE: 'AVAILABLE',
+  IN_CONSULTATION: 'IN_CONSULTATION',
+  ON_BREAK: 'ON_BREAK',
+  OFF_DUTY: 'OFF_DUTY',
+} as const;
+export type DoctorDutyStatus = (typeof DoctorDutyStatus)[keyof typeof DoctorDutyStatus];
+
+export const QueuePriority = {
+  NORMAL: 'NORMAL',
+  SENIOR_CITIZEN: 'SENIOR_CITIZEN',
+  EMERGENCY_RED_FLAG: 'EMERGENCY_RED_FLAG',
+} as const;
+export type QueuePriority = (typeof QueuePriority)[keyof typeof QueuePriority];
+
+export const QueueStatus = {
+  WAITING: 'WAITING',
+  CALLED: 'CALLED',
+  IN_CONSULTATION: 'IN_CONSULTATION',
+  COMPLETED: 'COMPLETED',
+  NO_SHOW: 'NO_SHOW',
+  TRANSFERRED: 'TRANSFERRED',
+} as const;
+export type QueueStatus = (typeof QueueStatus)[keyof typeof QueueStatus];
+
+export const KioskOperationalMode = {
+  GENERAL_OPD: 'GENERAL_OPD',
+  AYUSH_MODE: 'AYUSH_MODE',
+  EMERGENCY_PRIORITY: 'EMERGENCY_PRIORITY',
+} as const;
+export type KioskOperationalMode = (typeof KioskOperationalMode)[keyof typeof KioskOperationalMode];
+
+export const ComponentHealthStatus = {
+  HEALTHY: 'HEALTHY',
+  DEGRADED: 'DEGRADED',
+  FAULTY: 'FAULTY',
+  OFFLINE: 'OFFLINE',
+} as const;
+export type ComponentHealthStatus = (typeof ComponentHealthStatus)[keyof typeof ComponentHealthStatus];
+
+export const PrinterHealthStatus = {
+  HEALTHY: 'HEALTHY',
+  PAPER_LOW: 'PAPER_LOW',
+  PAPER_OUT: 'PAPER_OUT',
+  JAMMED: 'JAMMED',
+  OFFLINE: 'OFFLINE',
+} as const;
+export type PrinterHealthStatus = (typeof PrinterHealthStatus)[keyof typeof PrinterHealthStatus];
+
+export const RfidCardType = {
+  MIFARE_CLASSIC_1K: 'MIFARE_CLASSIC_1K',
+  NTAG215: 'NTAG215',
+  DESFIRE_EV1: 'DESFIRE_EV1',
+  OTHER: 'OTHER',
+} as const;
+export type RfidCardType = (typeof RfidCardType)[keyof typeof RfidCardType];
+
+export const RfidCardStockStatus = {
+  IN_STOCK: 'IN_STOCK',
+  ACTIVE_ISSUED: 'ACTIVE_ISSUED',
+  DAMAGED: 'DAMAGED',
+  BLOCKED: 'BLOCKED',
+  RETURNED: 'RETURNED',
+} as const;
+export type RfidCardStockStatus = (typeof RfidCardStockStatus)[keyof typeof RfidCardStockStatus];
+
+export const HisSystemType = {
+  NIC_E_HOSPITAL: 'NIC_E_HOSPITAL',
+  CUSTOM_FHIR_R4: 'CUSTOM_FHIR_R4',
+  OPEN_MRS: 'OPEN_MRS',
+  BAHMNI: 'BAHMNI',
+  MEDIKIOSK_STANDALONE: 'MEDIKIOSK_STANDALONE',
+} as const;
+export type HisSystemType = (typeof HisSystemType)[keyof typeof HisSystemType];
+
+export const IntegrationHealthStatus = {
+  HEALTHY: 'HEALTHY',
+  SYNCING: 'SYNCING',
+  DEGRADED: 'DEGRADED',
+  DISCONNECTED: 'DISCONNECTED',
+} as const;
+export type IntegrationHealthStatus = (typeof IntegrationHealthStatus)[keyof typeof IntegrationHealthStatus];
+
+export const IncidentType = {
+  PRINTER_PAPER_LOW: 'PRINTER_PAPER_LOW',
+  RFID_MODULE_FAULT: 'RFID_MODULE_FAULT',
+  OCR_CAMERA_DEGRADED: 'OCR_CAMERA_DEGRADED',
+  NETWORK_OFFLINE: 'NETWORK_OFFLINE',
+  RED_FLAG_OVERFLOW: 'RED_FLAG_OVERFLOW',
+  GENERAL_MAINTENANCE: 'GENERAL_MAINTENANCE',
+} as const;
+export type IncidentType = (typeof IncidentType)[keyof typeof IncidentType];
+
+export const IncidentSeverity = {
+  LOW: 'LOW',
+  MEDIUM: 'MEDIUM',
+  HIGH: 'HIGH',
+  CRITICAL: 'CRITICAL',
+} as const;
+export type IncidentSeverity = (typeof IncidentSeverity)[keyof typeof IncidentSeverity];
+
+export const IncidentStatus = {
+  OPEN: 'OPEN',
+  DISPATCHED: 'DISPATCHED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  RESOLVED: 'RESOLVED',
+  CLOSED: 'CLOSED',
+} as const;
+export type IncidentStatus = (typeof IncidentStatus)[keyof typeof IncidentStatus];
+
+export const HospitalStaffRole = {
+  MEDICAL_SUPERINTENDENT: 'MEDICAL_SUPERINTENDENT',
+  OPERATIONS_ADMIN: 'OPERATIONS_ADMIN',
+  OPD_SUPERVISOR: 'OPD_SUPERVISOR',
+  KIOSK_TECHNICIAN: 'KIOSK_TECHNICIAN',
+  REGISTRATION_CLERK: 'REGISTRATION_CLERK',
+} as const;
+export type HospitalStaffRole = (typeof HospitalStaffRole)[keyof typeof HospitalStaffRole];
+
+// Patient Portal Enums
+export const AppointmentType = {
+  IN_PERSON: 'IN_PERSON',
+  VIDEO_CONSULT: 'VIDEO_CONSULT',
+  FOLLOW_UP: 'FOLLOW_UP',
+  EMERGENCY: 'EMERGENCY',
+} as const;
+export type AppointmentType = (typeof AppointmentType)[keyof typeof AppointmentType];
+
+export const AppointmentStatus = {
+  SCHEDULED: 'SCHEDULED',
+  CONFIRMED: 'CONFIRMED',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED',
+  RESCHEDULED: 'RESCHEDULED',
+} as const;
+export type AppointmentStatus = (typeof AppointmentStatus)[keyof typeof AppointmentStatus];
+
+export const BillingStatus = {
+  PENDING: 'PENDING',
+  PAID: 'PAID',
+  CANCELLED: 'CANCELLED',
+  REFUNDED: 'REFUNDED',
+} as const;
+export type BillingStatus = (typeof BillingStatus)[keyof typeof BillingStatus];
+
+export const PaymentMethod = {
+  UPI: 'UPI',
+  CREDIT_CARD: 'CREDIT_CARD',
+  DEBIT_CARD: 'DEBIT_CARD',
+  NET_BANKING: 'NET_BANKING',
+  CASH: 'CASH',
+  ABDM_INSURANCE: 'ABDM_INSURANCE',
+} as const;
+export type PaymentMethod = (typeof PaymentMethod)[keyof typeof PaymentMethod];
+
+export const PatientNotificationType = {
+  APPOINTMENT_CONFIRMED: 'APPOINTMENT_CONFIRMED',
+  APPOINTMENT_REMINDER: 'APPOINTMENT_REMINDER',
+  APPOINTMENT_CANCELLED: 'APPOINTMENT_CANCELLED',
+  APPOINTMENT_RESCHEDULED: 'APPOINTMENT_RESCHEDULED',
+  PRESCRIPTION_ISSUED: 'PRESCRIPTION_ISSUED',
+  LAB_REPORT_READY: 'LAB_REPORT_READY',
+  BILL_GENERATED: 'BILL_GENERATED',
+  BILL_PAID: 'BILL_PAID',
+  HEALTH_ALERT: 'HEALTH_ALERT',
+} as const;
+export type PatientNotificationType = (typeof PatientNotificationType)[keyof typeof PatientNotificationType];
+
+

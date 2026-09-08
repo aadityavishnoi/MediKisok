@@ -12,4 +12,5 @@ export * from './endpoints/queues.js';
 export * from './endpoints/rfidLifecycle.js';
 export * from './endpoints/admin.js';
 export * from './endpoints/surveillance.js';
-
+export * from './endpoints/hospitalAdmin.js';
+export * from './endpoints/patientPortal.js';

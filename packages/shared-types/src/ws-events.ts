@@ -70,6 +70,7 @@ export interface HardwareStatusChangedEvent {
   };
 }
 
+<<<<<<< HEAD
 export interface HospitalStatusChangedEvent {
   type: 'HOSPITAL_STATUS_CHANGED';
   payload: {
@@ -164,9 +165,29 @@ export interface PatientQueueAddedEvent {
   };
 }
 
+export interface KioskModeChangedEvent {
+  type: 'KIOSK_MODE_CHANGED';
+  payload: {
+    terminalCode: string;
+    mode: string;
+    timestamp: string;
+  };
+}
+
+export interface HospitalIncidentUpdatedEvent {
+  type: 'HOSPITAL_INCIDENT_UPDATED';
+  payload: {
+    incidentId: string;
+    status: string;
+    assignedStaff: string | null;
+    timestamp: string;
+  };
+}
+
 export interface QueueUpdatedEvent {
   type: 'QUEUE_UPDATED';
   payload: {
+<<<<<<< HEAD
     queueId: string;
     hospitalId: string;
     status: string;
@@ -282,6 +303,9 @@ export type WsEvent =
   | ConsultationCompletedEvent
   | PrescriptionFinalizedEvent
   | SurveillanceAlertCreatedEvent
-  | SurveillanceAlertUpdatedEvent;
+  | SurveillanceAlertUpdatedEvent
+  | KioskModeChangedEvent
+  | HospitalIncidentUpdatedEvent;
 
 export type WsEventType = WsEvent['type'];
+

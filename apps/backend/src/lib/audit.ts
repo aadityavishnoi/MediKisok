@@ -28,8 +28,9 @@ export async function recordAudit(entry: {
         metadata: entry.metadata ? (entry.metadata as Prisma.InputJsonValue) : undefined,
       },
     });
-  } catch (_err) {
+  } catch (err) {
     // Non-blocking — audit failures must never crash the application.
-    // In production, route this to a secondary log sink.
+    console.warn('[AuditLog] Could not persist audit record:', entry.action);
+  }
   }
 }

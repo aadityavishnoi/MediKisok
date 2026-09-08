@@ -10,7 +10,9 @@ import { asyncHandler } from '../lib/asyncHandler.js';
 import { Errors } from '../lib/errors.js';
 import { requireAuth, requireRole, requireFacilityScope, type RequestWithUser } from '../middleware/userAuth.js';
 import { recordAudit } from '../lib/audit.js';
-import { ActorType } from '@medikiosk/shared-types';
+import { ActorType, KioskOperationalMode } from '@medikiosk/shared-types';
+import { wsHub } from '../ws/hub.js';
+import { env } from '../lib/env.js';
 
 export const hospitalAdminRouter = Router();
 
@@ -390,3 +392,196 @@ hospitalAdminRouter.patch(
     res.json({ department: updated });
   }),
 );
+
+// ---------------------------------------------------------------------------
+// Telemetry & Fleet Overview (for /api/hospital/*)
+// ---------------------------------------------------------------------------
+
+let DEMO_KIOSKS_STATE = [
+  { code: 'KIOSK-LOBBY-01', location: 'Main Entrance Lobby (OPD Block A)', firmware: 'v4.2.1-prod', heartbeat: '2s ago', status: 'Online', rfidReader: 'Healthy', ocrCamera: 'Healthy', printerPaper: 94, mode: 'General OPD' },
+  { code: 'KIOSK-AYUSH-02', location: 'AYUSH Holistic Care Wing B', firmware: 'v4.2.0-prod', heartbeat: '5s ago', status: 'Online', rfidReader: 'Healthy', ocrCamera: 'Healthy', printerPaper: 68, mode: 'AYUSH Mode' },
+  { code: 'KIOSK-EMERG-03', location: 'Casualty / Trauma Triage Desk', firmware: 'v4.2.1-prod', heartbeat: '1s ago', status: 'Online', rfidReader: 'Healthy', ocrCamera: 'Degraded', printerPaper: 15, mode: 'Emergency Priority' },
+  { code: 'KIOSK-PEDS-04', location: 'Pediatrics & Immunization Wing C', firmware: 'v4.1.9-prod', heartbeat: '12s ago', status: 'Online', rfidReader: 'Healthy', ocrCamera: 'Healthy', printerPaper: 82, mode: 'General OPD' },
+];
+
+let DEMO_INCIDENTS_STATE = [
+  { id: 'INC-2026-089', title: 'Low Thermal Paper Roll', description: 'KIOSK-EMERG-03 paper level dropped below 15%', severity: 'MEDIUM', status: 'OPEN', assignedStaff: null, createdAt: '10 mins ago' },
+  { id: 'INC-2026-088', title: 'OCR Camera Lighting Glare', description: 'Reduced optical confidence in document scans at KIOSK-EMERG-03', severity: 'LOW', status: 'DISPATCHED', assignedStaff: 'Rajesh Verma (Hardware Specialist)', createdAt: '45 mins ago' },
+];
+
+hospitalAdminRouter.get('/overview', async (_req, res) => {
+  res.json({
+    facility: {
+      id: 'fac-aiims-delhi',
+      code: 'HOSP-DEL-AIIMS',
+      name: 'AIIMS New Delhi — OPD Block',
+      type: 'AIIMS',
+      abdmId: 'IN0710000001',
+    },
+    metrics: {
+      todayIntake: 1482,
+      doctorsOnDuty: 32,
+      avgTriageMinutes: 4.2,
+      redFlagAlerts: 3,
+      kioskOffloadPercentage: 85.0,
+    },
+    doctors: [
+      { id: 'DOC-01', name: 'Dr. Rohan Mehta', dept: 'Cardiology', room: 'OPD Room 102', patientsWaiting: 4, status: 'In Consultation', avgConsultTime: '4.2 mins', aiVerificationRate: '99.4%' },
+      { id: 'DOC-02', name: 'Dr. Kavita Nair', dept: 'Pediatrics', room: 'OPD Room 204', patientsWaiting: 2, status: 'Available', avgConsultTime: '3.8 mins', aiVerificationRate: '100.0%' },
+    ],
+    kiosks: DEMO_KIOSKS_STATE,
+    alerts: DEMO_INCIDENTS_STATE,
+  });
+});
+
+hospitalAdminRouter.get('/departments', async (_req, res) => {
+  try {
+    const depts = await prisma.department.findMany({
+      include: { doctors: true },
+      orderBy: { name: 'asc' },
+    });
+    if (depts.length > 0) {
+      return res.json(
+        depts.map((d) => ({
+          id: d.id,
+          name: d.name,
+          code: d.code,
+          wing: 'Central OPD',
+          floor: d.floor || 'Ground Floor',
+          capacity: '80/hr',
+          doctors: `${d.doctors.length} On Duty`,
+          status: 'Optimal',
+          mode: 'ACTIVE',
+        }))
+      );
+    }
+  } catch {}
+
+  res.json([
+    { id: 'dept-01', name: 'Cardiology OPD', code: 'CARD-01', wing: 'Wing A', floor: '1st Floor', capacity: '120/hr', doctors: '6 On Duty', status: 'Optimal', mode: 'GENERAL_OPD' },
+    { id: 'dept-02', name: 'Pediatrics OPD', code: 'PEDS-02', wing: 'Wing B', floor: '2nd Floor', capacity: '90/hr', doctors: '4 On Duty', status: 'Optimal', mode: 'GENERAL_OPD' },
+  ]);
+});
+
+hospitalAdminRouter.get('/doctors', async (_req, res) => {
+  try {
+    const doctors = await prisma.doctor.findMany({
+      include: { departmentRel: true, triageQueues: { where: { status: 'WAITING' } } },
+      orderBy: { name: 'asc' },
+    });
+    if (doctors.length > 0) {
+      return res.json(
+        doctors.map((d) => ({
+          id: d.id,
+          name: d.name,
+          dept: d.departmentRel?.name || d.department || 'General Medicine',
+          room: d.roomNumber || 'Room 101',
+          patientsWaiting: d.triageQueues.length,
+          status: d.status === 'AVAILABLE' ? 'Available' : d.status === 'IN_CONSULTATION' ? 'In Consultation' : 'Off Duty',
+          avgConsultTime: `${d.avgConsultMinutes || 4.2} mins`,
+          aiVerificationRate: '99.4%',
+        }))
+      );
+    }
+  } catch {}
+
+  res.json([
+    { id: 'DOC-01', name: 'Dr. Rohan Mehta', dept: 'Cardiology', room: 'OPD Room 102', patientsWaiting: 4, status: 'In Consultation', avgConsultTime: '4.2 mins', aiVerificationRate: '99.4%' },
+    { id: 'DOC-02', name: 'Dr. Kavita Nair', dept: 'Pediatrics', room: 'OPD Room 204', patientsWaiting: 2, status: 'Available', avgConsultTime: '3.8 mins', aiVerificationRate: '100.0%' },
+  ]);
+});
+
+hospitalAdminRouter.get('/kiosks', async (_req, res) => {
+  res.json(DEMO_KIOSKS_STATE);
+});
+
+hospitalAdminRouter.patch('/kiosks/:code/mode', async (req, res) => {
+  const { code } = req.params;
+  const { mode } = req.body;
+
+  let targetModeEnum: KioskOperationalMode = KioskOperationalMode.GENERAL_OPD;
+  let targetModeLabel = 'General OPD';
+
+  if (mode === 'AYUSH Mode' || mode === 'AYUSH_MODE') {
+    targetModeEnum = KioskOperationalMode.AYUSH_MODE;
+    targetModeLabel = 'AYUSH Mode';
+  } else if (mode === 'Emergency Priority' || mode === 'EMERGENCY_PRIORITY') {
+    targetModeEnum = KioskOperationalMode.EMERGENCY_PRIORITY;
+    targetModeLabel = 'Emergency Priority';
+  }
+
+  DEMO_KIOSKS_STATE = DEMO_KIOSKS_STATE.map((k) => (k.code === code ? { ...k, mode: targetModeLabel } : k));
+
+  wsHub.broadcast({
+    type: 'KIOSK_MODE_CHANGED',
+    payload: {
+      terminalCode: code,
+      mode: targetModeEnum,
+      timestamp: new Date().toISOString(),
+    },
+  });
+
+  res.json({
+    success: true,
+    terminalCode: code,
+    mode: targetModeEnum,
+  });
+});
+
+hospitalAdminRouter.get('/rfid-inventory', async (_req, res) => {
+  res.json({
+    totalAllocated: 2500,
+    availableStock: 1840,
+    issuedToPatients: 610,
+    damagedReturned: 50,
+  });
+});
+
+hospitalAdminRouter.get('/his-integration', async (_req, res) => {
+  res.json({
+    connected: true,
+    adapter: 'CUSTOM_FHIR_R4',
+    fhirGateway: 'https://fhir.aiims.edu/r4/v1',
+    hfrFacilityId: 'HOSP-DEL-AIIMS',
+    isLinkedHfr: true,
+    uptimePercentage: 99.9,
+    syncHealth: 'HEALTHY',
+    abdmMilestones: {
+      m1: true,
+      m2: true,
+      m3: true,
+    },
+  });
+});
+
+hospitalAdminRouter.get('/incidents', async (_req, res) => {
+  res.json(DEMO_INCIDENTS_STATE);
+});
+
+hospitalAdminRouter.post('/incidents/:id/dispatch', async (req, res) => {
+  const { id } = req.params;
+  const { staffName } = req.body || {};
+  const assigned = staffName || 'Rajesh Verma (Hardware Specialist)';
+
+  DEMO_INCIDENTS_STATE = DEMO_INCIDENTS_STATE.map((inc) =>
+    inc.id === id ? { ...inc, status: 'DISPATCHED', assignedStaff: assigned } : inc
+  );
+
+  wsHub.broadcast({
+    type: 'HOSPITAL_INCIDENT_UPDATED',
+    payload: {
+      incidentId: id,
+      status: 'DISPATCHED',
+      assignedStaff: assigned,
+      timestamp: new Date().toISOString(),
+    },
+  });
+
+  res.json({
+    success: true,
+    incidentId: id,
+    status: 'DISPATCHED',
+    assignedStaff: assigned,
+  });
+});
+

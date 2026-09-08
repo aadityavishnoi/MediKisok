@@ -12,6 +12,28 @@ import type {
   Mode,
   SessionStatus,
   TimelineEventType,
+  FacilityType,
+  DepartmentLoadStatus,
+  ShiftType,
+  DoctorDutyStatus,
+  QueuePriority,
+  QueueStatus,
+  KioskOperationalMode,
+  ComponentHealthStatus,
+  PrinterHealthStatus,
+  RfidCardType,
+  RfidCardStockStatus,
+  HisSystemType,
+  IntegrationHealthStatus,
+  IncidentType,
+  IncidentSeverity,
+  IncidentStatus,
+  HospitalStaffRole,
+  AppointmentType,
+  AppointmentStatus,
+  BillingStatus,
+  PaymentMethod,
+  PatientNotificationType,
 } from './enums.js';
 
 /** All timestamps are ISO-8601 strings as they cross the wire (API responses are JSON). */
@@ -28,6 +50,11 @@ export interface Patient {
   dateOfBirth: ISODateString | null;
   gender: string | null;
   phone: string | null;
+  email?: string | null;
+  bloodGroup?: string | null;
+  address?: string | null;
+  emergencyContact?: string | null;
+  emergencyPhone?: string | null;
   abhaId: string | null;
   registrationSource: IdentificationMethod;
   isDemo: boolean;
@@ -226,3 +253,330 @@ export interface HardwareDeviceState {
   firmwareVersion: string | null;
   isDemo: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Hospital Admin Domain Entities
+// ---------------------------------------------------------------------------
+
+export interface HospitalFacility {
+  id: string;
+  facilityCode: string;
+  name: string;
+  type: FacilityType;
+  abdmFacilityId: string | null;
+  address: string | null;
+  city: string;
+  state: string;
+  pincode: string | null;
+  contactPhone: string | null;
+  contactEmail: string | null;
+  active: boolean;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface Department {
+  id: string;
+  facilityId: string;
+  name: string;
+  code: string;
+  wingOrBlock: string | null;
+  floor: string | null;
+  dailyCapacity: number;
+  currentLoadStatus: DepartmentLoadStatus;
+  mode: Mode;
+  isActive: boolean;
+  headDoctorId: string | null;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface ConsultationRoom {
+  id: string;
+  facilityId: string;
+  departmentId: string;
+  roomNumber: string;
+  roomName: string;
+  floor: string | null;
+  isActive: boolean;
+  currentDoctorId: string | null;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface DoctorRoster {
+  id: string;
+  facilityId: string;
+  doctorId: string;
+  departmentId: string;
+  roomId: string | null;
+  shiftDate: ISODateString;
+  shiftType: ShiftType;
+  status: DoctorDutyStatus;
+  patientsWaitingCount: number;
+  patientsServedCount: number;
+  avgConsultTimeMinutes: number;
+  aiVerificationRate: number;
+  checkInTime: ISODateString | null;
+  checkOutTime: ISODateString | null;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface PatientQueueEntry {
+  id: string;
+  facilityId: string;
+  departmentId: string;
+  sessionId: string;
+  patientId: string;
+  rosterId: string | null;
+  doctorId: string | null;
+  tokenNumber: string;
+  priority: QueuePriority;
+  status: QueueStatus;
+  queuePosition: number;
+  estimatedWaitMinutes: number;
+  calledAt: ISODateString | null;
+  consultationStartedAt: ISODateString | null;
+  completedAt: ISODateString | null;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface KioskTerminalProfile {
+  id: string;
+  facilityId: string;
+  deviceId: string;
+  assignedDepartmentId: string | null;
+  terminalCode: string;
+  mode: KioskOperationalMode;
+  rfidReaderStatus: ComponentHealthStatus;
+  ocrCameraStatus: ComponentHealthStatus;
+  printerStatus: PrinterHealthStatus;
+  printerPaperLevel: number;
+  touchscreenStatus: ComponentHealthStatus;
+  batteryBackupPercentage: number | null;
+  lastSelfTestAt: ISODateString | null;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface RfidInventoryBatch {
+  id: string;
+  facilityId: string;
+  batchNumber: string;
+  cardType: RfidCardType;
+  totalAllocated: number;
+  availableStock: number;
+  issuedCount: number;
+  damagedReturnedCount: number;
+  reorderThreshold: number;
+  unitCost: number | null;
+  receivedDate: ISODateString;
+  supplier: string | null;
+  notes: string | null;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface HospitalIntegrationConfig {
+  id: string;
+  facilityId: string;
+  hisType: HisSystemType;
+  fhirGatewayUrl: string;
+  hfrFacilityId: string | null;
+  isLinkedHfr: boolean;
+  syncEnabled: boolean;
+  syncIntervalSeconds: number;
+  lastSyncAt: ISODateString | null;
+  syncHealthStatus: IntegrationHealthStatus;
+  uptimePercentage: number;
+  abdmMilestone1: boolean;
+  abdmMilestone2: boolean;
+  abdmMilestone3: boolean;
+  authClientId: string | null;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface MaintenanceIncident {
+  id: string;
+  facilityId: string;
+  kioskProfileId: string | null;
+  deviceId: string | null;
+  title: string;
+  description: string;
+  incidentType: IncidentType;
+  severity: IncidentSeverity;
+  status: IncidentStatus;
+  assignedStaff: string | null;
+  dispatchedAt: ISODateString | null;
+  resolvedAt: ISODateString | null;
+  resolutionNotes: string | null;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface HospitalStaff {
+  id: string;
+  facilityId: string;
+  name: string;
+  email: string;
+  role: HospitalStaffRole;
+  designation: string | null;
+  phone: string | null;
+  isActive: boolean;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface OpdMetricSnapshot {
+  id: string;
+  facilityId: string;
+  snapshotDate: ISODateString;
+  hour: number | null;
+  totalPatientIntake: number;
+  generalOpdIntake: number;
+  ayushIntake: number;
+  emergencyIntake: number;
+  doctorsOnDuty: number;
+  avgTriageMinutes: number;
+  redFlagAlerts: number;
+  kioskOffloadPercentage: number;
+  createdAt: ISODateString;
+}
+
+// ---------------------------------------------------------------------------
+// Patient Portal Entities
+// ---------------------------------------------------------------------------
+
+export interface PatientPortalProfile {
+  id: string;
+  fullName: string;
+  dateOfBirth: ISODateString | null;
+  gender: string | null;
+  phone: string | null;
+  email: string | null;
+  bloodGroup: string | null;
+  address: string | null;
+  emergencyContact: string | null;
+  emergencyPhone: string | null;
+  abhaId: string | null;
+  registeredFacilityId: string | null;
+  createdAt: ISODateString;
+}
+
+export interface AppointmentEntity {
+  id: string;
+  patientId: string;
+  doctorId: string | null;
+  doctorName?: string | null;
+  doctorDepartment?: string | null;
+  facilityId: string | null;
+  facilityName?: string | null;
+  departmentId: string | null;
+  departmentName?: string | null;
+  appointmentDate: ISODateString;
+  timeSlot: string;
+  type: AppointmentType;
+  status: AppointmentStatus;
+  reason: string;
+  notes: string | null;
+  cancellationReason: string | null;
+  location?: string | null;
+  virtualMeetingUrl?: string | null;
+  followUpInstructions?: string | null;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface BillingInvoiceItem {
+  description: string;
+  quantity?: number;
+  unitPrice?: number;
+  amount: number;
+}
+
+export interface BillingInvoiceEntity {
+  id: string;
+  patientId: string;
+  appointmentId: string | null;
+  invoiceNumber: string;
+  description: string;
+  department: string | null;
+  totalAmount: number;
+  discountAmount: number;
+  netAmount: number;
+  status: BillingStatus;
+  paymentMethod: PaymentMethod | null;
+  paymentDate: ISODateString | null;
+  transactionReference: string | null;
+  items: BillingInvoiceItem[] | null;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface PatientNotificationEntity {
+  id: string;
+  patientId: string;
+  title: string;
+  message: string;
+  type: PatientNotificationType;
+  read: boolean;
+  actionUrl: string | null;
+  createdAt: ISODateString;
+}
+
+export interface PrescriptionMedicationItem {
+  name: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  instructions: string;
+  route?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface PrescriptionEntity {
+  id: string;
+  patientId: string;
+  doctorId: string | null;
+  doctorName?: string | null;
+  appointmentId: string | null;
+  prescriptionDate: ISODateString;
+  diagnosis: string;
+  instructions: string | null;
+  medications: PrescriptionMedicationItem[];
+  pdfUrl: string | null;
+  status: 'Active' | 'Completed' | 'Expired';
+  startDate?: ISODateString;
+  endDate?: ISODateString;
+  createdAt: ISODateString;
+}
+
+export interface LabReportEntity {
+  id: string;
+  patientId: string;
+  sessionId?: string | null;
+  title: string;
+  testDate: ISODateString;
+  category: string;
+  facilityName?: string | null;
+  doctorName?: string | null;
+  departmentName?: string | null;
+  status: 'COMPLETED' | 'PENDING';
+  originalFilename?: string | null;
+  ocrText?: string | null;
+  parameters: Array<{
+    name: string;
+    value: string;
+    unit: string;
+    referenceRange: string;
+    status: 'NORMAL' | 'ABNORMAL' | 'CRITICAL';
+  }>;
+  doctorNotes?: string | null;
+  fileUrl?: string | null;
+  createdAt: ISODateString;
+}
+
