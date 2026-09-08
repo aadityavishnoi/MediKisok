@@ -622,3 +622,147 @@ rfidManagementRouter.get(
     });
   }),
 );
+
+/**
+ * DELETE /api/rfid/cards/:uid
+ * Permanently delete an RFID card and clean up event history
+ */
+rfidManagementRouter.delete(
+  '/rfid/cards/:uid',
+  ...RFID_ROLES,
+  asyncHandler(async (req, res) => {
+    const { uid } = req.params;
+    const user = (req as RequestWithUser).user!;
+
+    const card = await prisma.rFIDCard.findUnique({
+      where: { uid },
+      include: { patient: true },
+    });
+
+    if (!card) {
+      throw Errors.notFound(`Card with UID ${uid} not found`);
+    }
+
+    if (user.facilityId && card.hospitalId && user.facilityId !== card.hospitalId) {
+      throw Errors.forbidden('Access denied to card of another facility');
+    }
+
+    // Clean up foreign key child records
+    await prisma.rFIDEvent.deleteMany({
+      where: { rfidCardId: card.id },
+    });
+
+    await prisma.rFIDCard.delete({
+      where: { id: card.id },
+    });
+
+    await recordAudit({
+      actorType: ActorType.ADMIN,
+      actorId: user.sub,
+      facilityId: card.hospitalId ?? undefined,
+      action: 'CARD_DELETED',
+      entityType: 'RFIDCard',
+      entityId: card.id,
+      metadata: { uid, previousPatient: card.patient?.fullName },
+    });
+
+    wsHub.broadcast({
+      type: 'RFID_STATUS_CHANGED',
+      payload: { uid, status: 'RETIRED', timestamp: new Date().toISOString() },
+    });
+
+    res.json({ success: true, message: `Card ${uid} deleted successfully` });
+  }),
+);
+
+/**
+ * POST /api/rfid/cards/:uid/unassign
+ * Unbinds patient from card and restores status to AVAILABLE
+ */
+rfidManagementRouter.post(
+  '/rfid/cards/:uid/unassign',
+  ...RFID_ROLES,
+  asyncHandler(async (req, res) => {
+    const { uid } = req.params;
+    const user = (req as RequestWithUser).user!;
+
+    const card = await prisma.rFIDCard.findUnique({
+      where: { uid },
+      include: { patient: true },
+    });
+
+    if (!card) {
+      throw Errors.notFound(`Card with UID ${uid} not found`);
+    }
+
+    const updated = await prisma.rFIDCard.update({
+      where: { id: card.id },
+      data: {
+        patientId: null,
+        cardStatus: 'AVAILABLE',
+        active: true,
+        cardStatusChangedAt: new Date(),
+      },
+    });
+
+    await recordAudit({
+      actorType: ActorType.ADMIN,
+      actorId: user.sub,
+      facilityId: card.hospitalId ?? undefined,
+      action: 'CARD_UNASSIGNED',
+      entityType: 'RFIDCard',
+      entityId: card.id,
+      metadata: { uid, previousPatient: card.patient?.fullName },
+    });
+
+    res.json({ success: true, card: updated });
+  }),
+);
+
+/**
+ * POST /api/rfid/cards/:uid/quarantine
+ * Central Admin or Security Sentinel quarantines/suspends an anomalous token
+ */
+rfidManagementRouter.post(
+  '/rfid/cards/:uid/quarantine',
+  ...RFID_ROLES,
+  asyncHandler(async (req, res) => {
+    const { uid } = req.params;
+    const user = (req as RequestWithUser).user!;
+
+    let card = await prisma.rFIDCard.findUnique({ where: { uid } });
+    if (!card) {
+      card = await prisma.rFIDCard.create({
+        data: {
+          uid,
+          cardStatus: 'SUSPENDED',
+          blockReason: 'Security Sentinel Quarantine: Anomaly Flagged',
+          active: false,
+        },
+      });
+    } else {
+      card = await prisma.rFIDCard.update({
+        where: { id: card.id },
+        data: {
+          cardStatus: 'SUSPENDED',
+          blockReason: 'Security Sentinel Quarantine: Anomaly Flagged',
+          active: false,
+          cardStatusChangedAt: new Date(),
+        },
+      });
+    }
+
+    await recordAudit({
+      actorType: ActorType.ADMIN,
+      actorId: user.sub,
+      facilityId: card.hospitalId ?? undefined,
+      action: 'CARD_SUSPENDED',
+      entityType: 'RFIDCard',
+      entityId: card.id,
+      metadata: { uid, reason: 'Quarantined by Security Sentinel' },
+    });
+
+    res.json({ success: true, card, message: `Card ${uid} quarantined successfully` });
+  }),
+);
+

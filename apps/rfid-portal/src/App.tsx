@@ -89,6 +89,9 @@ export default function App() {
 
   // Enrolment Desk State
   const [patientInput, setPatientInput] = useState('');
+  const [ageInput, setAgeInput] = useState('32');
+  const [genderInput, setGenderInput] = useState('MALE');
+  const [phoneInput, setPhoneInput] = useState('');
   const [abhaInput, setAbhaInput] = useState('');
   const [scannedUid, setScannedUid] = useState('04:F9:88:AA:12');
   const [consentChecked, setConsentChecked] = useState(false);
@@ -255,6 +258,41 @@ export default function App() {
     setScannedUid(`04:${hex}`);
   };
 
+  const handleDeleteCard = async (uid: string) => {
+    if (!window.confirm(`Permanently delete RFID card ${uid} from CockroachDB? This will remove its active assignment and history.`)) return;
+    try {
+      const res = await fetch(`/api/rfid/cards/${encodeURIComponent(uid)}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        showToast(`Card ${uid} deleted successfully from CockroachDB`);
+        loadData();
+      } else {
+        const err = await res.json();
+        showToast(`Error: ${err.error?.message || 'Failed to delete card'}`);
+      }
+    } catch {
+      showToast('Network error deleting card');
+    }
+  };
+
+  const handleUnassignCard = async (uid: string) => {
+    try {
+      const res = await fetch(`/api/rfid/cards/${encodeURIComponent(uid)}/unassign`, {
+        method: 'POST',
+      });
+      if (res.ok) {
+        showToast(`Card ${uid} unassigned and returned to available stock`);
+        loadData();
+      } else {
+        const err = await res.json();
+        showToast(`Error: ${err.error?.message || 'Failed to unassign card'}`);
+      }
+    } catch {
+      showToast('Network error unassigning card');
+    }
+  };
+
   const handleEnrollCard = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!patientInput || !scannedUid || !consentChecked || isSubmitting) return;
@@ -265,16 +303,21 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fullName: patientInput,
-          phone: `9198${Math.floor(100000 + Math.random() * 900000)}`,
-          abhaId: abhaInput || `ABHA-91-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}`,
+          fullName: patientInput.trim(),
+          age: parseInt(ageInput, 10) || 30,
+          gender: genderInput || 'MALE',
+          phone: phoneInput.trim() || `9198${Math.floor(100000 + Math.random() * 900000)}`,
+          abhaId: abhaInput.trim() || `ABHA-91-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}`,
           rfidUid: scannedUid,
           deviceCode: 'ENCODER-DEL-01',
         }),
       });
       if (res.ok) {
-        showToast(`RFID Token ${scannedUid} activated & mapped to ${patientInput}`);
+        showToast(`RFID Token ${scannedUid} activated & mapped to ${patientInput} (${ageInput}y, ${genderInput})`);
         setPatientInput('');
+        setAgeInput('32');
+        setGenderInput('MALE');
+        setPhoneInput('');
         setAbhaInput('');
         setConsentChecked(false);
         loadData();
@@ -603,6 +646,24 @@ export default function App() {
                               </button>
                             )}
 
+                            {c.patient && (
+                              <button
+                                onClick={() => handleUnassignCard(c.uid)}
+                                title="Unassign patient from this card"
+                                className="px-2 py-1 bg-blue-100 text-blue-800 rounded-lg text-[10px] font-bold hover:bg-blue-200"
+                              >
+                                Unassign
+                              </button>
+                            )}
+
+                            <button
+                              onClick={() => handleDeleteCard(c.uid)}
+                              title="Permanently delete this card record"
+                              className="px-2 py-1 bg-rose-100 text-rose-800 rounded-lg text-[10px] font-bold hover:bg-rose-200"
+                            >
+                              Delete
+                            </button>
+
                             <button
                               onClick={() => handleViewAudit(c)}
                               title="View Cryptographic Audit Trail"
@@ -688,14 +749,54 @@ export default function App() {
                       />
                     </div>
 
-                    <div>
-                      <label className="font-semibold block mb-1">ABHA Health ID / Address (Optional)</label>
-                      <input
-                        value={abhaInput}
-                        onChange={(e) => setAbhaInput(e.target.value)}
-                        placeholder="e.g. ramesh@abdm or ABHA-91-8821-0042"
-                        className={`w-full border rounded-xl px-3 py-2 font-mono ${isLight ? 'bg-slate-50 border-slate-300' : 'bg-white/5 border-white/10'}`}
-                      />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="font-semibold block mb-1">Patient Age (Years) *</label>
+                        <input
+                          required
+                          type="number"
+                          min="1"
+                          max="125"
+                          value={ageInput}
+                          onChange={(e) => setAgeInput(e.target.value)}
+                          placeholder="e.g. 35"
+                          className={`w-full border rounded-xl px-3 py-2 ${isLight ? 'bg-slate-50 border-slate-300' : 'bg-white/5 border-white/10'}`}
+                        />
+                      </div>
+                      <div>
+                        <label className="font-semibold block mb-1">Gender *</label>
+                        <select
+                          value={genderInput}
+                          onChange={(e) => setGenderInput(e.target.value)}
+                          className={`w-full border rounded-xl px-3 py-2 ${isLight ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-slate-800 border-white/10 text-white'}`}
+                        >
+                          <option value="MALE">Male</option>
+                          <option value="FEMALE">Female</option>
+                          <option value="OTHER">Other</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="font-semibold block mb-1">Mobile Phone (Optional)</label>
+                        <input
+                          type="tel"
+                          value={phoneInput}
+                          onChange={(e) => setPhoneInput(e.target.value)}
+                          placeholder="e.g. 9876543210"
+                          className={`w-full border rounded-xl px-3 py-2 ${isLight ? 'bg-slate-50 border-slate-300' : 'bg-white/5 border-white/10'}`}
+                        />
+                      </div>
+                      <div>
+                        <label className="font-semibold block mb-1">ABHA ID / Address (Optional)</label>
+                        <input
+                          value={abhaInput}
+                          onChange={(e) => setAbhaInput(e.target.value)}
+                          placeholder="e.g. ramesh@abdm or ABHA-91-8821"
+                          className={`w-full border rounded-xl px-3 py-2 font-mono ${isLight ? 'bg-slate-50 border-slate-300' : 'bg-white/5 border-white/10'}`}
+                        />
+                      </div>
                     </div>
 
                     <div className={`p-3 border rounded-xl space-y-2 ${isLight ? 'bg-blue-50/70 border-blue-200' : 'bg-blue-500/10 border-blue-500/20'}`}>

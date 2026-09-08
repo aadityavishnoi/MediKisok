@@ -107,6 +107,18 @@ export default function App() {
   const [overviewMetrics, setOverviewMetrics] = useState<any>(null);
 
   // Modals
+  const [showAddHospitalModal, setShowAddHospitalModal] = useState(false);
+  const [hospitalForm, setHospitalForm] = useState({
+    name: '',
+    code: '',
+    type: 'DISTRICT_HOSPITAL',
+    state: 'Delhi',
+    district: 'New Delhi',
+    city: 'New Delhi',
+    totalBeds: 200,
+    totalKiosks: 4,
+  });
+
   const [showAddDeptModal, setShowAddDeptModal] = useState(false);
   const [deptForm, setDeptForm] = useState({ name: '', code: '', floor: 'Ground Floor', roomNumber: 'OPD 101', headOfDepartment: '' });
 
@@ -130,10 +142,10 @@ export default function App() {
         const res = await fetch('/api/hospitals?limit=50');
         if (res.ok) {
           const data = await res.json();
-          const list = data.hospitals || [];
+          const list = data.facilities || data.hospitals || [];
           setHospitals(list);
           if (list.length > 0) {
-            setSelectedHospitalId(list[0].id);
+            setSelectedHospitalId((prev) => (prev && list.some((h: any) => h.id === prev) ? prev : list[0].id));
           }
         }
       } catch (err) {
@@ -170,7 +182,7 @@ export default function App() {
       }
       if (queueRes.ok) {
         const q = await queueRes.json();
-        setQueueItems(q.items || []);
+        setQueueItems(q.queue || q.items || []);
       }
       if (overviewRes.ok) {
         const o = await overviewRes.json();
@@ -188,6 +200,59 @@ export default function App() {
     const interval = setInterval(loadHospitalData, 10000);
     return () => clearInterval(interval);
   }, [loadHospitalData]);
+
+  // Actions: Hospital Facility Create
+  const handleCreateHospital = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!hospitalForm.name || !hospitalForm.code) return;
+    try {
+      const res = await fetch('/api/hospitals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: hospitalForm.name.trim(),
+          code: hospitalForm.code.trim().toUpperCase(),
+          type: hospitalForm.type,
+          state: hospitalForm.state.trim() || 'Delhi',
+          district: hospitalForm.district.trim() || 'New Delhi',
+          city: hospitalForm.city.trim() || 'New Delhi',
+          totalBeds: Number(hospitalForm.totalBeds) || 100,
+          totalKiosks: Number(hospitalForm.totalKiosks) || 2,
+          facilityStatus: 'ACTIVE',
+        }),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        const created = d.hospital || d.facility;
+        showToast(`Hospital "${hospitalForm.name}" registered successfully`);
+        setShowAddHospitalModal(false);
+        setHospitalForm({
+          name: '',
+          code: '',
+          type: 'DISTRICT_HOSPITAL',
+          state: 'Delhi',
+          district: 'New Delhi',
+          city: 'New Delhi',
+          totalBeds: 200,
+          totalKiosks: 4,
+        });
+        const hRes = await fetch('/api/hospitals?limit=50');
+        if (hRes.ok) {
+          const hData = await hRes.json();
+          const list = hData.facilities || hData.hospitals || [];
+          setHospitals(list);
+          if (created?.id) {
+            setSelectedHospitalId(created.id);
+          }
+        }
+      } else {
+        const err = await res.json();
+        showToast(`Error: ${err.error?.message || 'Failed to create hospital'}`);
+      }
+    } catch {
+      showToast('Network error creating hospital');
+    }
+  };
 
   // Actions: Department Create & Toggle
   const handleCreateDepartment = async (e: React.FormEvent) => {
@@ -404,8 +469,8 @@ export default function App() {
           </div>
 
           {/* Hospital Switcher */}
-          {hospitals.length > 1 && (
-            <div className="mt-3">
+          <div className="mt-3 space-y-1.5">
+            {hospitals.length > 0 ? (
               <select
                 value={selectedHospitalId}
                 onChange={(e) => setSelectedHospitalId(e.target.value)}
@@ -415,12 +480,21 @@ export default function App() {
               >
                 {hospitals.map(h => (
                   <option key={h.id} value={h.id}>
-                    {h.name} ({h.city})
+                    {h.name} ({h.city || h.state})
                   </option>
                 ))}
               </select>
-            </div>
-          )}
+            ) : (
+              <div className="text-[11px] text-amber-500 font-medium">No facility loaded</div>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowAddHospitalModal(true)}
+              className="w-full flex items-center justify-center gap-1 px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-lg text-[11px] font-bold transition-all"
+            >
+              <Plus size={12} /> + Add Facility / Hospital
+            </button>
+          </div>
         </div>
 
         <nav className="flex-1 px-3 py-3 space-y-1.5 text-xs font-medium overflow-y-auto">
@@ -497,7 +571,50 @@ export default function App() {
             />
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {/* Quick Action Toolbar Buttons */}
+            <div className="flex items-center gap-1.5 border-r pr-3 border-slate-200 dark:border-white/10">
+              <button
+                type="button"
+                onClick={() => setShowAddHospitalModal(true)}
+                title="Add New Hospital / Facility"
+                className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all"
+              >
+                <Plus size={13} />
+                <span>+ Hospital</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowAddDoctorModal(true)}
+                title="Add New Doctor to Facility Roster"
+                className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all"
+              >
+                <Plus size={13} />
+                <span>+ Doctor</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowAddKioskModal(true)}
+                title="Enroll New Kiosk Terminal"
+                className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all"
+              >
+                <Plus size={13} />
+                <span>+ Kiosk</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowAddDeptModal(true)}
+                title="Create OPD Department"
+                className="flex items-center gap-1 px-2.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all"
+              >
+                <Plus size={13} />
+                <span>+ Dept</span>
+              </button>
+            </div>
+
             <button
               type="button"
               onClick={loadHospitalData}
@@ -1183,11 +1300,23 @@ export default function App() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-semibold mb-1">Department</label>
-                  <input
-                    value={doctorForm.department}
-                    onChange={e => setDoctorForm({ ...doctorForm, department: e.target.value })}
-                    className={`w-full border rounded-xl px-3 py-2 ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'}`}
-                  />
+                  {departments.length > 0 ? (
+                    <select
+                      value={doctorForm.department}
+                      onChange={e => setDoctorForm({ ...doctorForm, department: e.target.value })}
+                      className={`w-full border rounded-xl px-3 py-2 ${isLight ? 'bg-slate-50 border-slate-200 text-slate-900' : 'bg-slate-800 border-white/10 text-white'}`}
+                    >
+                      {departments.map(d => (
+                        <option key={d.id} value={d.name}>{d.name} ({d.code})</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      value={doctorForm.department}
+                      onChange={e => setDoctorForm({ ...doctorForm, department: e.target.value })}
+                      className={`w-full border rounded-xl px-3 py-2 ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'}`}
+                    />
+                  )}
                 </div>
                 <div>
                   <label className="block text-[11px] font-semibold mb-1">Assigned Room</label>
@@ -1269,6 +1398,123 @@ export default function App() {
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md"
                 >
                   Enroll Kiosk
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: ADD HOSPITAL */}
+      {showAddHospitalModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className={`w-full max-w-md rounded-2xl border p-6 space-y-4 shadow-2xl ${
+            isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-white/10 text-white'
+          }`}>
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="font-bold text-sm font-heading">Onboard New Hospital / Health Facility</h3>
+              <button onClick={() => setShowAddHospitalModal(false)} className="text-slate-400 hover:text-slate-600"><X size={16} /></button>
+            </div>
+            <form onSubmit={handleCreateHospital} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-[11px] font-semibold mb-1">Facility Name *</label>
+                <input
+                  required
+                  placeholder="e.g. District Civil Hospital Gurugram"
+                  value={hospitalForm.name}
+                  onChange={e => setHospitalForm({ ...hospitalForm, name: e.target.value })}
+                  className={`w-full border rounded-xl px-3 py-2 ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'}`}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold mb-1">Facility Code *</label>
+                  <input
+                    required
+                    placeholder="e.g. DH-GUR-01"
+                    value={hospitalForm.code}
+                    onChange={e => setHospitalForm({ ...hospitalForm, code: e.target.value.toUpperCase() })}
+                    className={`w-full border rounded-xl px-3 py-2 font-mono ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'}`}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold mb-1">Facility Type</label>
+                  <select
+                    value={hospitalForm.type}
+                    onChange={e => setHospitalForm({ ...hospitalForm, type: e.target.value })}
+                    className={`w-full border rounded-xl px-3 py-2 ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-800 border-white/10 text-white'}`}
+                  >
+                    <option value="DISTRICT_HOSPITAL">District Hospital</option>
+                    <option value="AIIMS">AIIMS</option>
+                    <option value="TERTIARY_HOSPITAL">Tertiary Hospital</option>
+                    <option value="COMMUNITY_HEALTH_CENTRE">Community Health Centre</option>
+                    <option value="PRIMARY_HEALTH_CENTRE">Primary Health Centre</option>
+                    <option value="PRIVATE_HOSPITAL">Private Hospital</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold mb-1">State *</label>
+                  <input
+                    required
+                    value={hospitalForm.state}
+                    onChange={e => setHospitalForm({ ...hospitalForm, state: e.target.value })}
+                    className={`w-full border rounded-xl px-3 py-2 ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'}`}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold mb-1">District *</label>
+                  <input
+                    required
+                    value={hospitalForm.district}
+                    onChange={e => setHospitalForm({ ...hospitalForm, district: e.target.value })}
+                    className={`w-full border rounded-xl px-3 py-2 ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'}`}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold mb-1">City *</label>
+                  <input
+                    required
+                    value={hospitalForm.city}
+                    onChange={e => setHospitalForm({ ...hospitalForm, city: e.target.value })}
+                    className={`w-full border rounded-xl px-3 py-2 ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'}`}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold mb-1">Total Beds</label>
+                  <input
+                    type="number"
+                    value={hospitalForm.totalBeds}
+                    onChange={e => setHospitalForm({ ...hospitalForm, totalBeds: Number(e.target.value) })}
+                    className={`w-full border rounded-xl px-3 py-2 ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'}`}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold mb-1">Kiosks Planned</label>
+                  <input
+                    type="number"
+                    value={hospitalForm.totalKiosks}
+                    onChange={e => setHospitalForm({ ...hospitalForm, totalKiosks: Number(e.target.value) })}
+                    className={`w-full border rounded-xl px-3 py-2 ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'}`}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2 border-t">
+                <button
+                  type="button"
+                  onClick={() => setShowAddHospitalModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md"
+                >
+                  Create Facility
                 </button>
               </div>
             </form>

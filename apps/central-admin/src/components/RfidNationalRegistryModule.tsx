@@ -23,6 +23,42 @@ export function RfidNationalRegistryModule() {
   const [batches, setBatches] = useState<RfidTokenBatch[]>(INITIAL_BATCHES);
   const [scanUid, setScanUid] = useState('');
   const [scanResult, setScanResult] = useState<string | null>(null);
+  const [revokedTokens, setRevokedTokens] = useState<Record<string, string>>({});
+  const [registryToast, setRegistryToast] = useState<string | null>(null);
+
+  const showRegistryToast = (msg: string) => {
+    setRegistryToast(msg);
+    setTimeout(() => setRegistryToast(null), 4000);
+  };
+
+  const handleRevokeToken = async (uid: string) => {
+    setRevokedTokens((prev) => ({ ...prev, [uid]: 'Revoked' }));
+    showRegistryToast(`Token ${uid} revoked across National Registry`);
+    try {
+      await fetch(`/api/rfid/cards/${encodeURIComponent(uid)}/suspend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: 'National Security Sentinel: Clone attempt revoked' }),
+      });
+      showRegistryToast(`Token ${uid} revoked in CockroachDB`);
+    } catch (e) {
+      console.error('Revoke failed:', e);
+    }
+  };
+
+  const handleQuarantineToken = async (uid: string) => {
+    setRevokedTokens((prev) => ({ ...prev, [uid]: 'Quarantined' }));
+    showRegistryToast(`Token ${uid} placed into Quarantine`);
+    try {
+      await fetch(`/api/rfid/cards/${encodeURIComponent(uid)}/quarantine`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      showRegistryToast(`Token ${uid} quarantined in CockroachDB`);
+    } catch (e) {
+      console.error('Quarantine failed:', e);
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -171,21 +207,45 @@ export function RfidNationalRegistryModule() {
           <div className="space-y-2 text-xs">
             <div className="p-2.5 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between text-red-700 animate-slide-up stagger-item" style={{ animationDelay: '0ms' }}>
               <div>
-                <span className="font-bold block">UID Clone Attempt Blocked</span>
+                <span className="font-bold block flex items-center gap-2">
+                  UID Clone Attempt Blocked
+                  {revokedTokens['04:A7:99:FF'] && (
+                    <span className="text-[9px] bg-red-700 text-white px-1.5 py-0.5 rounded font-mono font-bold">
+                      {revokedTokens['04:A7:99:FF']}
+                    </span>
+                  )}
+                </span>
                 <span className="text-[10px] text-slate-500 font-mono">UID: 04:A7:99:FF • Hospital: KEM Mumbai</span>
               </div>
-              <button type="button" className="px-2.5 py-1 bg-red-600 text-white font-bold text-[10px] rounded-lg transition-all duration-200 hover:bg-red-500">
-                Revoke Token
+              <button
+                type="button"
+                onClick={() => handleRevokeToken('04:A7:99:FF')}
+                disabled={Boolean(revokedTokens['04:A7:99:FF'])}
+                className="px-2.5 py-1 bg-red-600 text-white font-bold text-[10px] rounded-lg transition-all duration-200 hover:bg-red-500 disabled:opacity-50"
+              >
+                {revokedTokens['04:A7:99:FF'] ? 'Revoked' : 'Revoke Token'}
               </button>
             </div>
 
             <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between text-amber-700 animate-slide-up stagger-item" style={{ animationDelay: '40ms' }}>
               <div>
-                <span className="font-bold block">Rapid Re-tap Anomaly</span>
+                <span className="font-bold block flex items-center gap-2">
+                  Rapid Re-tap Anomaly
+                  {revokedTokens['04:B2:11:09'] && (
+                    <span className="text-[9px] bg-amber-700 text-white px-1.5 py-0.5 rounded font-mono font-bold">
+                      {revokedTokens['04:B2:11:09']}
+                    </span>
+                  )}
+                </span>
                 <span className="text-[10px] text-slate-500 font-mono">UID: 04:B2:11:09 • 12 taps in 30 seconds</span>
               </div>
-              <button type="button" className="px-2.5 py-1 bg-amber-600 text-white font-bold text-[10px] rounded-lg transition-all duration-200 hover:bg-amber-500">
-                Quarantine
+              <button
+                type="button"
+                onClick={() => handleQuarantineToken('04:B2:11:09')}
+                disabled={Boolean(revokedTokens['04:B2:11:09'])}
+                className="px-2.5 py-1 bg-amber-600 text-white font-bold text-[10px] rounded-lg transition-all duration-200 hover:bg-amber-500 disabled:opacity-50"
+              >
+                {revokedTokens['04:B2:11:09'] ? 'Quarantined' : 'Quarantine'}
               </button>
             </div>
           </div>
@@ -229,6 +289,13 @@ export function RfidNationalRegistryModule() {
           </tbody>
         </table>
       </div>
+
+      {registryToast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700 animate-fade-in text-xs font-semibold">
+          <ShieldAlert size={16} className="text-amber-400" />
+          <span>{registryToast}</span>
+        </div>
+      )}
     </div>
   );
 }

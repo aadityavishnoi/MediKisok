@@ -100,6 +100,7 @@ hospitalRouter.get('/hospitals', allowDemoOrAdmin, async (req, res, next) => {
       page: pageNum,
       limit: limitNum,
       facilities: hospitals,
+      hospitals,
     });
   } catch (err) {
     next(err);
@@ -162,7 +163,7 @@ hospitalRouter.post('/hospitals', allowDemoOrAdmin, async (req, res, next) => {
       },
     });
 
-    res.status(201).json({ success: true, hospital });
+    res.status(201).json({ success: true, hospital, facility: hospital });
   } catch (err) {
     next(err);
   }
@@ -597,6 +598,29 @@ hospitalRouter.get('/hospitals/:id/departments', allowDemoOrAdmin, async (req, r
     next(err);
   }
 });
+
+/**
+ * GET /api/hospitals/:id/doctors
+ * Doctors roster for this facility
+ */
+hospitalRouter.get('/hospitals/:id/doctors', allowDemoOrAdmin, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const doctors = await prisma.doctor.findMany({
+      where: { hospitalId: id },
+      include: {
+        departmentRel: {
+          select: { id: true, name: true, code: true },
+        },
+      },
+      orderBy: { name: 'asc' },
+    });
+    res.json({ doctors });
+  } catch (err) {
+    next(err);
+  }
+});
+
 
 /**
  * GET /api/hospitals/:id/kiosks

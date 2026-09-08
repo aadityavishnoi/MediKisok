@@ -65,8 +65,41 @@ export function KioskFleetCommandModule() {
     return () => { mounted = false; };
   }, []);
 
-  const handleRemoteRestart = (deviceId: string) => {
-    setKiosks(kiosks.map(k => k.deviceId === deviceId ? { ...k, lastHeartbeat: 'Restarting...' } : k));
+  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+
+  const showFeedback = (msg: string) => {
+    setActionFeedback(msg);
+    setTimeout(() => setActionFeedback(null), 4000);
+  };
+
+  const handleRemoteRestart = async (deviceId: string) => {
+    setKiosks(kiosks.map(k => k.deviceId === deviceId ? { ...k, lastHeartbeat: 'Restarting...', status: 'Online' } : k));
+    showFeedback(`Reboot command dispatched to hardware terminal ${deviceId}`);
+    try {
+      const res = await fetch(`/api/admin/devices/${encodeURIComponent(deviceId)}/restart`, {
+        method: 'POST',
+      });
+      if (res.ok) {
+        showFeedback(`Remote reboot signal acknowledged by ${deviceId}`);
+      }
+    } catch (err) {
+      console.error('Remote reboot error:', err);
+    }
+  };
+
+  const handleQuarantine = async (deviceId: string) => {
+    setKiosks(kiosks.map(k => k.deviceId === deviceId ? { ...k, status: 'Degraded', lastHeartbeat: 'Quarantined' } : k));
+    showFeedback(`Terminal ${deviceId} moved to quarantine / maintenance mode`);
+    try {
+      const res = await fetch(`/api/admin/devices/${encodeURIComponent(deviceId)}/quarantine`, {
+        method: 'POST',
+      });
+      if (res.ok) {
+        showFeedback(`Terminal ${deviceId} successfully locked in quarantine`);
+      }
+    } catch (err) {
+      console.error('Quarantine error:', err);
+    }
   };
 
   const handleTriggerOtaUpdate = () => {
@@ -261,6 +294,7 @@ export function KioskFleetCommandModule() {
                 </button>
                 <button
                   type="button"
+                  onClick={() => handleQuarantine(selectedDevice.deviceId)}
                   className="flex-1 py-2 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 font-bold text-xs rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5"
                 >
                   <Wrench size={14} />
@@ -273,6 +307,13 @@ export function KioskFleetCommandModule() {
           )}
         </div>
       </div>
+
+      {actionFeedback && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700 animate-fade-in text-xs font-semibold">
+          <Server size={16} className="text-blue-400" />
+          <span>{actionFeedback}</span>
+        </div>
+      )}
     </div>
   );
 }

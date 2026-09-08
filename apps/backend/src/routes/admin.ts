@@ -6,6 +6,8 @@ import { requireAuth, requireRole, type RequestWithUser } from '../middleware/us
 import { recordAudit } from '../lib/audit.js';
 import { ActorType } from '@medikiosk/shared-types';
 import { env } from '../lib/env.js';
+import { Errors } from '../lib/errors.js';
+import { wsHub } from '../ws/hub.js';
 
 export const adminRouter = Router();
 
@@ -606,9 +608,26 @@ adminRouter.post(
     const data = incidentCreateSchema.parse(req.body);
     const user = (req as any).user;
 
+    let targetFacilityId = data.facilityId;
+    const existingHospital = await prisma.hospital.findFirst({
+      where: {
+        OR: [{ id: targetFacilityId }, { code: targetFacilityId }],
+      },
+      select: { id: true },
+    });
+
+    if (existingHospital) {
+      targetFacilityId = existingHospital.id;
+    } else {
+      const defaultHosp = await prisma.hospital.findFirst({ select: { id: true } });
+      if (defaultHosp) {
+        targetFacilityId = defaultHosp.id;
+      }
+    }
+
     const alert = await prisma.operationalAlert.create({
       data: {
-        facilityId: data.facilityId,
+        facilityId: targetFacilityId,
         deviceId: data.deviceId,
         alertType: data.alertType as any,
         severity: data.severity as any,
@@ -622,7 +641,7 @@ adminRouter.post(
     await recordAudit({
       actorType: ActorType.ADMIN,
       actorId: user?.sub,
-      facilityId: data.facilityId,
+      facilityId: targetFacilityId,
       action: 'INCIDENT_REPORTED',
       entityType: 'OperationalAlert',
       entityId: alert.id,
@@ -635,7 +654,7 @@ adminRouter.post(
 
 /**
  * POST /api/admin/incidents/:id/resolve
- * Resolve an operational incident
+ * Resolve an operational incident (supports full CUID or prefix)
  */
 adminRouter.post(
   '/admin/incidents/:id/resolve',
@@ -644,8 +663,21 @@ adminRouter.post(
     const { id } = req.params;
     const user = (req as any).user;
 
+    const existing = await prisma.operationalAlert.findFirst({
+      where: {
+        OR: [
+          { id },
+          { id: { startsWith: id } },
+        ],
+      },
+    });
+
+    if (!existing) {
+      throw Errors.notFound(`Incident ${id} not found`);
+    }
+
     const updated = await prisma.operationalAlert.update({
-      where: { id },
+      where: { id: existing.id },
       data: {
         acknowledged: true,
         acknowledgedAt: new Date(),
@@ -659,10 +691,115 @@ adminRouter.post(
       facilityId: updated.facilityId,
       action: 'INCIDENT_RESOLVED',
       entityType: 'OperationalAlert',
-      entityId: id,
+      entityId: updated.id,
     });
 
     res.json({ success: true, incident: updated });
+  }),
+);
+
+/**
+ * POST /api/admin/devices/:id/restart
+ * Remote reboot command
+ */
+adminRouter.post(
+  '/admin/devices/:id/restart',
+  ...requireCentralAdmin,
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const user = (req as any).user;
+
+    const device = await prisma.rFIDDevice.findFirst({
+      where: {
+        OR: [{ id }, { deviceCode: id }],
+      },
+    });
+
+    if (device) {
+      await prisma.rFIDDevice.update({
+        where: { id: device.id },
+        data: {
+          lastHeartbeatAt: new Date(),
+          status: 'ONLINE',
+        },
+      });
+
+      await recordAudit({
+        actorType: ActorType.ADMIN,
+        actorId: user?.sub,
+        facilityId: device.hospitalId ?? undefined,
+        action: 'DEVICE_REBOOT_TRIGGERED',
+        entityType: 'RFIDDevice',
+        entityId: device.id,
+        metadata: { deviceCode: device.deviceCode },
+      });
+
+      wsHub.broadcast({
+        type: 'KIOSK_STATUS_CHANGED',
+        payload: {
+          deviceId: device.id,
+          deviceCode: device.deviceCode,
+          hospitalId: device.hospitalId ?? undefined,
+          status: 'ONLINE',
+          location: device.location || undefined,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
+
+    res.json({ success: true, message: `Device ${id} reboot signal acknowledged` });
+  }),
+);
+
+/**
+ * POST /api/admin/devices/:id/quarantine
+ * Remote quarantine command
+ */
+adminRouter.post(
+  '/admin/devices/:id/quarantine',
+  ...requireCentralAdmin,
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const user = (req as any).user;
+
+    const device = await prisma.rFIDDevice.findFirst({
+      where: {
+        OR: [{ id }, { deviceCode: id }],
+      },
+    });
+
+    if (device) {
+      await prisma.rFIDDevice.update({
+        where: { id: device.id },
+        data: {
+          status: 'OFFLINE',
+        },
+      });
+
+      await recordAudit({
+        actorType: ActorType.ADMIN,
+        actorId: user?.sub,
+        facilityId: device.hospitalId ?? undefined,
+        action: 'DEVICE_QUARANTINED',
+        entityType: 'RFIDDevice',
+        entityId: device.id,
+        metadata: { deviceCode: device.deviceCode },
+      });
+
+      wsHub.broadcast({
+        type: 'KIOSK_STATUS_CHANGED',
+        payload: {
+          deviceId: device.id,
+          deviceCode: device.deviceCode,
+          hospitalId: device.hospitalId ?? undefined,
+          status: 'OFFLINE',
+          location: device.location || undefined,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
+
+    res.json({ success: true, message: `Device ${id} quarantined in maintenance mode` });
   }),
 );
 

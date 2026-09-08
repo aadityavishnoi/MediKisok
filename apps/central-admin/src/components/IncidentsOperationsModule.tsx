@@ -3,6 +3,7 @@ import { AlertCircle, CheckCircle2, UserCheck, RefreshCw, Plus, X } from 'lucide
 
 interface Incident {
   id: string;
+  displayId?: string;
   kioskId: string;
   facilityName: string;
   state: string;
@@ -14,19 +15,33 @@ interface Incident {
   slaRemaining: string;
 }
 
-const DEFAULT_INCIDENTS: Incident[] = [
-  { id: 'INC-2941', kioskId: 'MK-DEL-00421', facilityName: 'District Hospital X', state: 'Delhi NCR', issue: 'RFID Reader Unresponsive', severity: 'HIGH', detectedTime: '09:42 AM', status: 'Technician Assigned', assignedTechnician: 'Rajesh Kumar (Field Eng)', slaRemaining: '45 mins' },
-  { id: 'INC-2940', kioskId: 'MK-UP-00310', facilityName: 'Varanasi Civil Hospital', state: 'Uttar Pradesh', issue: 'Network Gateway Timeout (504)', severity: 'CRITICAL', detectedTime: '08:15 AM', status: 'In Progress', assignedTechnician: 'NOC Central Team', slaRemaining: '12 mins' },
-  { id: 'INC-2938', kioskId: 'MK-MH-00190', facilityName: 'KEM Hospital Mumbai', state: 'Maharashtra', issue: 'Prescription OCR Camera Misalignment', severity: 'MEDIUM', detectedTime: '07:30 AM', status: 'Open', assignedTechnician: 'Unassigned', slaRemaining: '2 hours' },
-];
-
 export function IncidentsOperationsModule() {
-  const [incidents, setIncidents] = useState<Incident[]>(DEFAULT_INCIDENTS);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [formFacilityId, setFormFacilityId] = useState('');
   const [formMessage, setFormMessage] = useState('');
   const [formSeverity, setFormSeverity] = useState<'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'>('HIGH');
+  const [facilitiesList, setFacilitiesList] = useState<{ id: string; name: string; code: string }[]>([]);
+
+  useEffect(() => {
+    async function loadFacilities() {
+      try {
+        const res = await fetch('/api/hospitals?limit=100');
+        if (res.ok) {
+          const data = await res.json();
+          const list = data.facilities || data.hospitals || [];
+          setFacilitiesList(list);
+          if (list.length > 0) {
+            setFormFacilityId(list[0].id);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load facilities for incidents:', err);
+      }
+    }
+    loadFacilities();
+  }, []);
 
   const fetchIncidents = async () => {
     setIsLoading(true);
@@ -34,10 +49,11 @@ export function IncidentsOperationsModule() {
       const res = await fetch('/api/admin/incidents');
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data.incidents) && data.incidents.length > 0) {
+        if (Array.isArray(data.incidents)) {
           const mapped: Incident[] = data.incidents.map((a: any) => ({
-            id: a.id.slice(0, 8).toUpperCase(),
-            kioskId: a.device?.deviceCode || a.deviceId || 'KIOSK-GENERIC',
+            id: a.id,
+            displayId: a.id.slice(0, 8).toUpperCase(),
+            kioskId: a.device?.deviceCode || a.deviceId || 'TERMINAL-01',
             facilityName: a.hospital?.name || 'Central Facility',
             state: a.hospital?.state || 'National',
             issue: a.message,
@@ -75,13 +91,14 @@ export function IncidentsOperationsModule() {
 
   const handleReportIncident = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formMessage.trim()) return;
     try {
       const res = await fetch('/api/admin/incidents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          facilityId: formFacilityId || 'hosp-aiims-delhi',
-          message: formMessage,
+          facilityId: formFacilityId || facilitiesList[0]?.id || 'hosp-national',
+          message: formMessage.trim(),
           severity: formSeverity,
           alertType: 'RFID_READER_FAILURE',
         }),
@@ -90,6 +107,9 @@ export function IncidentsOperationsModule() {
         setShowModal(false);
         setFormMessage('');
         fetchIncidents();
+      } else {
+        const err = await res.json();
+        alert(`Failed to report incident: ${err.error?.message || 'Server error'}`);
       }
     } catch (err) {
       console.error('Failed to create incident:', err);
@@ -136,24 +156,31 @@ export function IncidentsOperationsModule() {
 
       {/* Incident Cards */}
       <div className="grid grid-cols-1 gap-4">
-        {incidents.map((inc, i) => (
-          <div
-            key={inc.id}
-            className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm flex items-center justify-between transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md animate-slide-up stagger-item"
-            style={{ animationDelay: `${i * 50}ms` }}
-          >
-            <div className="flex items-start gap-4">
-              <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs border ${
-                  inc.severity === 'CRITICAL'
-                    ? 'bg-red-50 text-red-700 border-red-200 animate-pulse'
-                    : inc.severity === 'HIGH'
-                    ? 'bg-amber-50 text-amber-700 border-amber-200'
-                    : 'bg-blue-50 text-blue-700 border-blue-200'
-                }`}
-              >
-                {inc.id}
-              </div>
+        {incidents.length === 0 ? (
+          <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl text-slate-500 text-xs">
+            <CheckCircle2 size={32} className="mx-auto text-emerald-500 mb-2" />
+            <span className="font-bold block text-sm text-slate-800">All National Systems Operational</span>
+            No open hardware, network, or queue incidents reported. Click &quot;Report Incident&quot; above to log an issue.
+          </div>
+        ) : (
+          incidents.map((inc, i) => (
+            <div
+              key={inc.id}
+              className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm flex items-center justify-between transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md animate-slide-up stagger-item"
+              style={{ animationDelay: `${i * 50}ms` }}
+            >
+              <div className="flex items-start gap-4">
+                <div
+                  className={`w-12 h-10 rounded-xl flex items-center justify-center font-bold text-[11px] border font-mono ${
+                    inc.severity === 'CRITICAL'
+                      ? 'bg-red-50 text-red-700 border-red-200 animate-pulse'
+                      : inc.severity === 'HIGH'
+                      ? 'bg-amber-50 text-amber-700 border-amber-200'
+                      : 'bg-blue-50 text-blue-700 border-blue-200'
+                  }`}
+                >
+                  {inc.displayId || inc.id.slice(0, 8).toUpperCase()}
+                </div>
 
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
@@ -197,7 +224,7 @@ export function IncidentsOperationsModule() {
               )}
             </div>
           </div>
-        ))}
+        )))}
       </div>
 
       {showModal && (
@@ -215,14 +242,28 @@ export function IncidentsOperationsModule() {
 
             <form onSubmit={handleReportIncident} className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-slate-700">Facility ID</label>
-                <input
-                  type="text"
-                  placeholder="e.g. hosp-aiims-delhi"
-                  value={formFacilityId}
-                  onChange={(e) => setFormFacilityId(e.target.value)}
-                  className="w-full mt-1 px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
+                <label className="text-xs font-bold text-slate-700">Affected Healthcare Facility *</label>
+                {facilitiesList.length > 0 ? (
+                  <select
+                    value={formFacilityId}
+                    onChange={(e) => setFormFacilityId(e.target.value)}
+                    className="w-full mt-1 px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    {facilitiesList.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.name} ({f.code})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    placeholder="e.g. hosp-aiims-delhi"
+                    value={formFacilityId}
+                    onChange={(e) => setFormFacilityId(e.target.value)}
+                    className="w-full mt-1 px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                )}
               </div>
 
               <div>
