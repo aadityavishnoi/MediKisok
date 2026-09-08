@@ -31,8 +31,8 @@ try {
   console.error('❌ Failed to bundle Serverless API:', err);
 }
 
-// Run pnpm build for all 5 frontend applications
-execSync('pnpm --filter=@medikiosk/patient-kiosk --filter=patient-kiosk --filter=@medikiosk/doctor-dashboard --filter=doctor-dashboard --filter=@medikiosk/hospital-admin --filter=hospital-admin --filter=@medikiosk/rfid-portal --filter=rfid-portal --filter=@medikiosk/central-admin --filter=central-admin run build', {
+// Run pnpm build for all 6 frontend applications
+execSync('pnpm --filter=@medikiosk/patient-kiosk --filter=patient-kiosk --filter=@medikiosk/patient-portal --filter=patient-portal --filter=@medikiosk/doctor-dashboard --filter=doctor-dashboard --filter=@medikiosk/hospital-admin --filter=hospital-admin --filter=@medikiosk/rfid-portal --filter=rfid-portal --filter=@medikiosk/central-admin --filter=central-admin run build', {
   stdio: 'inherit',
   cwd: rootDir,
 });
@@ -46,6 +46,7 @@ fs.mkdirSync(distDir, { recursive: true });
 // App mappings
 const apps = [
   { name: 'kiosk', src: path.join(rootDir, 'apps', 'patient-kiosk', 'dist') },
+  { name: 'portal', src: path.join(rootDir, 'apps', 'patient-portal', 'dist') },
   { name: 'doctor', src: path.join(rootDir, 'apps', 'doctor-dashboard', 'dist') },
   { name: 'hospital', src: path.join(rootDir, 'apps', 'hospital-admin', 'dist') },
   { name: 'rfid', src: path.join(rootDir, 'apps', 'rfid-portal', 'dist') },
@@ -323,7 +324,25 @@ const masterHtml = `<!DOCTYPE html>
         <a href="./kiosk/" class="btn btn-primary">Launch Patient Kiosk →</a>
       </div>
 
-      <!-- Portal 2: Doctor Dashboard -->
+      <!-- Portal 2: Patient Health & Appointments Portal -->
+      <div class="portal-card">
+        <div class="card-top">
+          <div class="icon-badge">📱</div>
+          <h3 class="portal-title">Patient Health & Appointments Portal</h3>
+          <p class="portal-desc">
+            Patient self-service portal for online doctor appointment booking, OPD slot availability, electronic prescriptions, lab diagnostic reports, and UPI billing receipts.
+          </p>
+          <div class="tags">
+            <span class="tag">Online Booking</span>
+            <span class="tag">Rx & Lab Reports</span>
+            <span class="tag">UPI Payments</span>
+            <span class="tag">SMS / OTP Auth</span>
+          </div>
+        </div>
+        <a href="./portal/" class="btn btn-primary">Launch Patient Portal →</a>
+      </div>
+
+      <!-- Portal 3: Doctor Dashboard -->
       <div class="portal-card">
         <div class="card-top">
           <div class="icon-badge">👨‍⚕️</div>
@@ -405,4 +424,4 @@ const masterHtml = `<!DOCTYPE html>
 
 fs.writeFileSync(path.join(distDir, 'index.html'), masterHtml, 'utf8');
 
-console.log('✅ [MediKiosk] All 5 portals packaged successfully into dist/!');
+console.log('✅ [MediKiosk] All 6 portals packaged successfully into dist/!');
