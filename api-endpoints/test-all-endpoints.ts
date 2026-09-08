@@ -268,6 +268,19 @@ async function runSuite() {
       if (card.patientId !== testPatientId) throw new Error('Card patientId mismatch');
     });
 
+    await step('Patient Consent Grant (POST /api/consent)', async () => {
+      const res = await fetch(`${baseUrl}/api/consent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: testSessionId,
+          granted: true,
+          language: 'EN',
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+    });
+
     let currentAiQuestionId: string | null = null;
     await step('Clinical AI Question Generation: Start History (POST /api/history/start)', async () => {
       const res = await fetch(`${baseUrl}/api/history/start`, {
@@ -275,8 +288,8 @@ async function runSuite() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sessionId: testSessionId,
-          chiefComplaint: 'chest_pain',
-          mode: 'KIOSK',
+          chiefComplaintCategory: 'chest-pain',
+          mode: 'GENERAL',
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
@@ -297,12 +310,12 @@ async function runSuite() {
           sessionId: testSessionId,
           nodeId: currentAiQuestionId,
           answer: 'crushing',
-          mode: 'KIOSK',
+          mode: 'GENERAL',
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
       const data = await res.json();
-      if (typeof data.progress !== 'number') throw new Error('Expected numeric intake progress');
+      if (typeof data.historyComplete !== 'boolean') throw new Error('Expected historyComplete boolean');
     });
 
     await step('Issue OPD Queue Ticket (POST /api/queue/ticket)', async () => {
