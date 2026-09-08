@@ -540,7 +540,7 @@ export async function storeCreatePatient(data: {
   fullName: string;
   phone: string;
   email?: string | null;
-  passwordHash: string;
+  passwordHash?: string | null;
   dateOfBirth?: Date | null;
   gender?: string | null;
   bloodGroup?: string | null;
@@ -549,13 +549,14 @@ export async function storeCreatePatient(data: {
   emergencyPhone?: string | null;
   abhaId?: string | null;
 }): Promise<InMemoryPatient> {
+  const finalPasswordHash = data.passwordHash || (await bcrypt.hash('MediKiosk@123', 10));
   try {
     const created = await prisma.patient.create({
       data: {
         fullName: data.fullName,
         phone: data.phone,
         email: data.email ?? null,
-        passwordHash: data.passwordHash,
+        passwordHash: finalPasswordHash,
         dateOfBirth: data.dateOfBirth ?? null,
         gender: data.gender ?? null,
         bloodGroup: data.bloodGroup ?? null,
@@ -577,7 +578,7 @@ export async function storeCreatePatient(data: {
     fullName: data.fullName,
     phone: data.phone,
     email: data.email ?? null,
-    passwordHash: data.passwordHash,
+    passwordHash: finalPasswordHash,
     dateOfBirth: data.dateOfBirth ?? null,
     gender: data.gender ?? null,
     bloodGroup: data.bloodGroup ?? null,

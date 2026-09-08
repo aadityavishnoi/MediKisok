@@ -21,6 +21,7 @@ import { env } from '../lib/env.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { requirePatientAuth, type RequestWithPatient } from '../middleware/patientAuth.js';
 import { recordAudit } from '../lib/audit.js';
+import { OtpService } from '../services/otpService.js';
 import {
   storeFindPatientById,
   storeFindPatientByIdentifier,
@@ -135,8 +136,60 @@ patientPortalRouter.post(
 const loginSchema = z.object({
   identifier: z.string().min(1, 'Email, Phone, or Patient ID is required'),
   password: z.string().optional(),
+  otp: z.string().optional(),
   isDemo: z.boolean().optional(),
 });
+
+patientPortalRouter.post(
+  '/auth/otp/send',
+  asyncHandler(async (req, res) => {
+    const body = z.object({ phone: z.string().min(10) }).parse(req.body);
+    const result = await OtpService.sendOtp(body.phone);
+    res.status(200).json(result);
+  }),
+);
+
+patientPortalRouter.post(
+  '/auth/otp/verify',
+  asyncHandler(async (req, res) => {
+    const body = z.object({ phone: z.string().min(10), code: z.string().min(4).max(8) }).parse(req.body);
+    const result = await OtpService.verifyOtp(body.phone, body.code);
+    res.status(200).json(result);
+  }),
+);
+
+patientPortalRouter.post(
+  '/auth/login-otp',
+  asyncHandler(async (req, res) => {
+    const body = z.object({ phone: z.string().min(10), code: z.string().min(4).max(8) }).parse(req.body);
+    const verifyResult = await OtpService.verifyOtp(body.phone, body.code);
+    if (!verifyResult.verified) {
+      throw Errors.unauthorized(verifyResult.message || 'Invalid or expired OTP');
+    }
+
+    const cleanPhone = body.phone.replace(/\D/g, '').slice(-10);
+    let patient = await storeFindPatientByIdentifier(cleanPhone);
+    if (!patient) {
+      patient = await storeCreatePatient({
+        fullName: `Patient (${cleanPhone.slice(-4)})`,
+        phone: cleanPhone,
+      });
+    }
+
+    const token = jwt.sign(
+      { sub: patient.id, role: 'PATIENT', name: patient.fullName, phone: patient.phone, email: patient.email },
+      env.JWT_SECRET,
+      { expiresIn: env.JWT_EXPIRES_IN } as jwt.SignOptions,
+    );
+
+    const response: PatientAuthResponse = {
+      token,
+      role: 'PATIENT',
+      patient: formatPatientProfile(patient),
+    };
+    res.status(200).json(response);
+  }),
+);
 
 patientPortalRouter.post(
   '/auth/login',
@@ -150,9 +203,24 @@ patientPortalRouter.post(
       if (!patient) {
         patient = await storeFindPatientById('demo-patient-001');
       }
+    } else if (body.otp) {
+      // OTP-based authentication via login endpoint
+      patient = await storeFindPatientByIdentifier(body.identifier);
+      const phoneToVerify = patient?.phone || body.identifier;
+      const verifyResult = await OtpService.verifyOtp(phoneToVerify, body.otp);
+      if (!verifyResult.verified) {
+        throw Errors.unauthorized(verifyResult.message || 'Invalid or expired OTP');
+      }
+      if (!patient) {
+        const cleanPhone = body.identifier.replace(/\D/g, '').slice(-10);
+        patient = await storeCreatePatient({
+          fullName: `Patient (${cleanPhone.slice(-4)})`,
+          phone: cleanPhone,
+        });
+      }
     } else {
       if (!body.password) {
-        throw Errors.badRequest('Password is required for login');
+        throw Errors.badRequest('Password or OTP is required for login');
       }
 
       patient = await storeFindPatientByIdentifier(body.identifier);
