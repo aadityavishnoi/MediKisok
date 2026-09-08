@@ -64,13 +64,20 @@ const SECTION_LABELS: { key: keyof ClinicalHistory; label: string }[] = [
   { key: 'previousInvestigations', label: 'Previous Investigations' },
 ];
 
-function EntryList({ entries }: { entries: HistorySectionEntry[] }) {
+function EntryList({ entries, isMedication }: { entries: HistorySectionEntry[]; isMedication?: boolean }) {
   if (!entries || entries.length === 0) return <p className="text-sm italic text-slate-400">Not yet collected</p>;
   return (
     <ul className="space-y-1.5">
       {entries.map((e, i) => (
-        <li key={i} className="text-sm text-slate-700">
-          <span className="text-slate-400 font-medium">{e.label}:</span> {e.value}
+        <li key={i} className="text-sm text-slate-700 flex items-center justify-between gap-2">
+          <span>
+            <span className="text-slate-400 font-medium">{e.label}:</span> <strong className="text-slate-900">{e.value}</strong>
+          </span>
+          {isMedication && (
+            <span className="shrink-0 text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+              Kiosk Ingested
+            </span>
+          )}
         </li>
       ))}
     </ul>
@@ -552,12 +559,39 @@ export function SessionDetailScreen({
 
           {/* Section Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {SECTION_LABELS.map(({ key, label }) => (
-              <div key={key} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-2">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">{label}</h2>
-                <EntryList entries={(detail.history![key] as HistorySectionEntry[]) ?? []} />
-              </div>
-            ))}
+            {SECTION_LABELS.map(({ key, label }) => {
+              const isMedication = key === 'currentMedications';
+              const ocrDocsMeds = isMedication && (!detail.history![key] || (detail.history![key] as any[]).length === 0)
+                ? (detail.documents || [])
+                    .flatMap((d) => d.extractedData || [])
+                    .filter((e) => e.fieldType.toUpperCase().includes('MED'))
+                    .map((e) => ({ label: 'Prescription OCR', value: e.fieldValue }))
+                : [];
+              const effectiveEntries = (detail.history![key] as HistorySectionEntry[])?.length > 0
+                ? (detail.history![key] as HistorySectionEntry[])
+                : ocrDocsMeds;
+
+              return (
+                <div
+                  key={key}
+                  className={`rounded-2xl border bg-white p-5 shadow-sm space-y-2 ${
+                    isMedication && effectiveEntries.length > 0
+                      ? 'border-emerald-300 ring-1 ring-emerald-200'
+                      : 'border-slate-200'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">{label}</h2>
+                    {isMedication && effectiveEntries.length > 0 && (
+                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                        {effectiveEntries.length} Active
+                      </span>
+                    )}
+                  </div>
+                  <EntryList entries={effectiveEntries} isMedication={isMedication} />
+                </div>
+              );
+            })}
           </div>
 
           {/* AYUSH Assessment if mode is AYUSH */}
@@ -655,15 +689,27 @@ export function SessionDetailScreen({
               </button>
             </div>
           )}
-          <ConsultationRxWriter
-            sessionId={sessionId}
-            patientName={detail.patient.fullName}
-            patientAgeGender={`${detail.patient.gender ?? 'M'} · DOB ${detail.patient.dateOfBirth ? new Date(detail.patient.dateOfBirth).toLocaleDateString() : 'Unknown'}`}
-            doctorName={getDoctorName() ?? 'Dr. Rohan Mehta'}
-            consultation={detail.consultation}
-            onStartConsultation={handleStartConsultation}
-            onCompleteConsultation={handleCompleteConsultation}
-          />
+          {(() => {
+            const ocrDocsMeds = (detail.documents || [])
+              .flatMap((d) => d.extractedData || [])
+              .filter((e) => e.fieldType.toUpperCase().includes('MED'))
+              .map((e) => e.fieldValue);
+            const intakeMeds = (detail.history?.currentMedications || []).map((m) => m.value);
+            const allMeds = Array.from(new Set([...ocrDocsMeds, ...intakeMeds])).filter(Boolean);
+
+            return (
+              <ConsultationRxWriter
+                sessionId={sessionId}
+                patientName={detail.patient.fullName}
+                patientAgeGender={`${detail.patient.gender ?? 'M'} · DOB ${detail.patient.dateOfBirth ? new Date(detail.patient.dateOfBirth).toLocaleDateString() : 'Unknown'}`}
+                doctorName={getDoctorName() ?? 'Dr. Rohan Mehta'}
+                consultation={detail.consultation}
+                scannedMedications={allMeds}
+                onStartConsultation={handleStartConsultation}
+                onCompleteConsultation={handleCompleteConsultation}
+              />
+            );
+          })()}
         </div>
       )}
     </DashboardShell>
