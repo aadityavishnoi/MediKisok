@@ -92,3 +92,27 @@ surveillanceRouter.post('/surveillance/signal', async (req, res, next) => {
     next(err);
   }
 });
+
+/**
+ * GET /api/surveillance/regions/:regionId/risk
+ * Developer 2: Regional Disease Surveillance Risk & Outbreak Intelligence
+ * Computes observed positivity, Wilson confidence interval, Laplace-smoothed Bayesian risk,
+ * and sample-size uncertainty ratings. Supports controlled 8/10 DEMO mode.
+ */
+surveillanceRouter.get('/surveillance/regions/:regionId/risk', async (req, res, next) => {
+  try {
+    const { regionId } = req.params;
+    const { demo } = req.query;
+
+    const surveillanceModulePath = '../../../../ai/surveillance/src/index.js';
+    const { SurveillanceService } = await (import(surveillanceModulePath) as Promise<any>);
+
+    const riskSummary = SurveillanceService.getRegionalRisk(
+      regionId,
+      typeof demo === 'string' ? demo : undefined,
+    );
+    res.json(riskSummary);
+  } catch (err) {
+    next(err);
+  }
+});
