@@ -355,7 +355,24 @@ export function DocumentUploadScreen({ sessionId, patientId, language, onComplet
         }
       }
 
-      // 2. If direct canvas was CORS-blocked, fetch the pristine JPEG blob from our proxy
+      // 2. Try local Vite dev proxy first (runs on same Wi-Fi network as the phone!)
+      if (!base64Image && phoneIp) {
+        try {
+          const localRes = await fetch(`/local-droidcam-frame?ip=${encodeURIComponent(phoneIp)}`);
+          if (localRes.ok) {
+            const blob = await localRes.blob();
+            base64Image = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.readAsDataURL(blob);
+            });
+          }
+        } catch (localErr) {
+          console.warn('Local DroidCam proxy notice:', localErr);
+        }
+      }
+
+      // 3. Try backend proxy
       if (!base64Image && phoneIp) {
         try {
           const proxyRes = await fetch(`/api/devices/droidcam-frame?ip=${encodeURIComponent(phoneIp)}`);
@@ -372,16 +389,17 @@ export function DocumentUploadScreen({ sessionId, patientId, language, onComplet
         }
       }
 
-      if (!base64Image && !phoneIp) {
+      // 4. Validate that a frame was actually captured before calling the API
+      if (!base64Image) {
         setScanErrorMessage(
           isHindi
-            ? 'कृपया पहले DroidCam से कनेक्ट करें या फोन का IP दर्ज करें।'
-            : 'Please connect to DroidCam or verify your phone IP before scanning.'
+            ? 'फोन कैमरा से कोई फोटो प्राप्त नहीं हुई। कृपया DroidCam ऐप सक्रिय होने की पुष्टि करें, या "📷 USB / PC कैमरा" पर स्विच करके "DroidCam Source" चुनें।'
+            : 'Could not capture frame from phone. Please make sure DroidCam is active on your phone, or switch to "📷 USB / PC Webcam" mode and choose "DroidCam Source".'
         );
         return;
       }
 
-      await processImageForOcr(base64Image || undefined, phoneIp);
+      await processImageForOcr(base64Image, phoneIp);
     } else {
       const snapshot = captureSnapshot();
       if (snapshot && snapshot.base64) {
