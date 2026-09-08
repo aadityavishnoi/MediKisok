@@ -306,7 +306,7 @@ enum InteropTransactionType {
 
 model NationalAuthority {
   id        String   @id @default(cuid())
-  name      String   // "National Health Authority"
+  name      String // "National Health Authority"
   code      String   @unique // "NHA-INDIA"
   country   String   @default("India")
   status    String   @default("ACTIVE")
@@ -317,24 +317,26 @@ model NationalAuthority {
 }
 
 model State {
-  id                  String             @id @default(cuid())
+  id                  String   @id @default(cuid())
   nationalAuthorityId String?
-  name                String             // "Delhi", "Maharashtra"
-  code                String             @unique // "DL", "MH"
-  status              String             @default("ACTIVE")
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
+  name                String // "Delhi", "Maharashtra"
+  code                String   @unique // "DL", "MH"
+  status              String   @default("ACTIVE")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   nationalAuthority NationalAuthority? @relation(fields: [nationalAuthorityId], references: [id])
   districts         District[]
   hospitals         Hospital[]
+
+  @@index([nationalAuthorityId])
 }
 
 model District {
   id        String   @id @default(cuid())
   stateId   String
-  name      String   // "South Delhi", "Pune"
-  code      String   // "DL-SD", "MH-PU"
+  name      String // "South Delhi", "Pune"
+  code      String // "DL-SD", "MH-PU"
   status    String   @default("ACTIVE")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -343,6 +345,7 @@ model District {
   hospitals Hospital[]
 
   @@unique([stateId, code])
+  @@index([stateId])
 }
 
 // ---------------------------------------------------------------------------
@@ -352,14 +355,14 @@ model District {
 model Hospital {
   id             String         @id @default(cuid())
   code           String         @unique // e.g. "AIIMS-DEL-01"
-  name           String         // "All India Institute of Medical Sciences, New Delhi"
+  name           String // "All India Institute of Medical Sciences, New Delhi"
   type           HospitalType   @default(AIIMS)
-  state          String         // Legacy text representation: "Delhi"
-  district       String         // Legacy text representation: "South Delhi"
+  state          String // Legacy text representation: "Delhi"
+  district       String // Legacy text representation: "South Delhi"
   stateId        String?
   districtId     String?
   facilityStatus FacilityStatus @default(ACTIVE)
-  city           String         // "New Delhi"
+  city           String // "New Delhi"
   pinCode        String?
   address        String?
   latitude       Float?
@@ -374,39 +377,48 @@ model Hospital {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  stateRel          State?                        @relation(fields: [stateId], references: [id])
-  districtRel       District?                     @relation(fields: [districtId], references: [id])
-  departments       Department[]
-  doctors           Doctor[]
-  kiosks            RFIDDevice[]
-  rfidCards         RFIDCard[]
-  sessions          PatientSession[]
-  triageQueues      TriageQueue[]
-  patients          Patient[]
-  outbreaks         DiseaseOutbreakSignal[]
-  rfidEvents        RFIDEvent[]
-  operationalAlerts OperationalAlert[]
-  systemConfigs     SystemConfig[]
-  fhirMappings      FHIRResourceMapping[]
-  transactions      InteroperabilityTransaction[]
+  stateRel           State?                        @relation(fields: [stateId], references: [id])
+  districtRel        District?                     @relation(fields: [districtId], references: [id])
+  departments        Department[]
+  doctors            Doctor[]
+  kiosks             RFIDDevice[]
+  rfidCards          RFIDCard[]
+  sessions           PatientSession[]
+  triageQueues       TriageQueue[]
+  patients           Patient[]                     @relation("HospitalPatients")
+  registeredPatients Patient[]                     @relation("RegisteredFacilityPatients")
+  outbreaks          DiseaseOutbreakSignal[]
+  rfidEvents         RFIDEvent[]
+  operationalAlerts  OperationalAlert[]
+  systemConfigs      SystemConfig[]
+  fhirMappings       FHIRResourceMapping[]
+  transactions       InteroperabilityTransaction[]
+  appointments       Appointment[]
+
+  @@index([stateId])
+  @@index([districtId])
+  @@index([facilityStatus])
 }
 
 model Department {
   id               String   @id @default(cuid())
   hospitalId       String
-  name             String   // "Cardiology", "General Medicine", "Pediatrics", "AYUSH", "Emergency"
-  code             String   // "CARD", "GEN", "PED", "AYU", "EMG"
-  floor            String?  // "Ground Floor", "1st Floor"
-  roomNumber       String?  // "Room 102"
+  name             String // "Cardiology", "Pediatrics"
+  code             String // "CARD", "PEDS"
+  floor            String? // "1st Floor, Block B"
+  roomNumber       String? // "Room 102"
   active           Boolean  @default(true)
   headOfDepartment String?
   createdAt        DateTime @default(now())
 
-  hospital     Hospital      @relation(fields: [hospitalId], references: [id])
+  hospital     Hospital         @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
   doctors      Doctor[]
   triageQueues TriageQueue[]
+  sessions     PatientSession[]
+  appointments Appointment[]
 
   @@unique([hospitalId, code])
+  @@index([hospitalId])
 }
 
 // ---------------------------------------------------------------------------
@@ -416,7 +428,7 @@ model Department {
 model Role {
   id          String     @id @default(cuid())
   code        String     @unique // "SUPER_ADMIN", "CENTRAL_ADMIN", "HOSPITAL_ADMIN", "DOCTOR", "RFID_OFFICER", "AUDITOR"
-  name        String     // "Hospital Administrator"
+  name        String // "Hospital Administrator"
   scopeLevel  ScopeLevel @default(FACILITY)
   description String?
   createdAt   DateTime   @default(now())
@@ -428,7 +440,7 @@ model Role {
 model Permission {
   id          String   @id @default(cuid())
   code        String   @unique // "patient.read", "rfid.activate", "clinical.consult"
-  category    String   // "PATIENT", "RFID", "CLINICAL", "FACILITY", "DEVICE", "AI_MODEL", "AUDIT"
+  category    String // "PATIENT", "RFID", "CLINICAL", "FACILITY", "DEVICE", "AI_MODEL", "AUDIT"
   description String?
   createdAt   DateTime @default(now())
 
@@ -436,10 +448,10 @@ model Permission {
 }
 
 model RolePermission {
-  id           String     @id @default(cuid())
+  id           String   @id @default(cuid())
   roleId       String
   permissionId String
-  grantedAt    DateTime   @default(now())
+  grantedAt    DateTime @default(now())
 
   role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
@@ -449,7 +461,7 @@ model RolePermission {
 
 model UserRole {
   id         String   @id @default(cuid())
-  doctorId   String   // links to Doctor (user)
+  doctorId   String // links to Doctor (user)
   roleId     String
   facilityId String?
   stateId    String?
@@ -471,20 +483,26 @@ model Doctor {
   passwordHash       String
   role               DoctorRole   @default(DOCTOR)
   status             DoctorStatus @default(AVAILABLE)
-  department         String?      // text label fallback
+  department         String? // text label fallback
   roomNumber         String?
   qualification      String?
   registrationNumber String?
   avgConsultMinutes  Float?       @default(4.5)
   createdAt          DateTime     @default(now())
 
-  hospital      Hospital?      @relation(fields: [hospitalId], references: [id])
-  departmentRel Department?    @relation(fields: [departmentId], references: [id])
-  consultations Consultation[]
-  triageQueues  TriageQueue[]
-  prescriptions Prescription[]
-  userRoles     UserRole[]
-  doctorNotes   DoctorNote[]
+  hospital             Hospital?             @relation(fields: [hospitalId], references: [id])
+  departmentRel        Department?           @relation(fields: [departmentId], references: [id])
+  consultations        Consultation[]
+  triageQueues         TriageQueue[]
+  prescriptions        Prescription[]
+  userRoles            UserRole[]
+  doctorNotes          DoctorNote[]
+  appointments         Appointment[]
+  patientPrescriptions PatientPrescription[]
+
+  @@index([hospitalId])
+  @@index([departmentId])
+  @@index([status])
 }
 
 // ---------------------------------------------------------------------------
@@ -492,35 +510,51 @@ model Doctor {
 // ---------------------------------------------------------------------------
 
 model Patient {
-  id                 String               @id @default(cuid())
-  hospitalId         String?
-  fullName           String
-  dateOfBirth        DateTime?
-  age                Int?
-  gender             String?
-  bloodGroup         String?
-  phone              String?              @unique
-  abhaId             String?
-  registrationSource IdentificationMethod
-  isDemo             Boolean              @default(false)
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
+  id                   String               @id @default(cuid())
+  hospitalId           String?
+  fullName             String
+  dateOfBirth          DateTime?
+  age                  Int?
+  gender               String?
+  bloodGroup           String?
+  phone                String?              @unique
+  email                String?              @unique
+  passwordHash         String?
+  address              String?
+  emergencyContact     String?
+  emergencyPhone       String?
+  registeredFacilityId String?
+  abhaId               String?
+  registrationSource   IdentificationMethod
+  isDemo               Boolean              @default(false)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
 
-  hospital          Hospital?              @relation(fields: [hospitalId], references: [id])
-  rfidCards         RFIDCard[]
-  identifiers       PatientIdentifier[]
-  sessions          PatientSession[]
-  clinicalHistories ClinicalHistory[]
-  documents         MedicalDocument[]
-  timelineEvents    MedicalTimelineEvent[]
-  consultations     Consultation[]
-  alerts            Alert[]
-  aiSummaries       AISummary[]
-  triageQueues      TriageQueue[]
-  vitals            PatientVitals[]
-  prescriptions     Prescription[]
-  abdmConsents      AbdmConsentArtefact[]
-  symptoms          SessionSymptom[]
+  hospital             Hospital?              @relation("HospitalPatients", fields: [hospitalId], references: [id])
+  registeredFacility   Hospital?              @relation("RegisteredFacilityPatients", fields: [registeredFacilityId], references: [id])
+  rfidCards            RFIDCard[]
+  identifiers          PatientIdentifier[]
+  sessions             PatientSession[]
+  clinicalHistories    ClinicalHistory[]
+  documents            MedicalDocument[]
+  timelineEvents       MedicalTimelineEvent[]
+  consultations        Consultation[]
+  alerts               Alert[]
+  aiSummaries          AISummary[]
+  triageQueues         TriageQueue[]
+  vitals               PatientVitals[]
+  prescriptions        Prescription[]
+  abdmConsents         AbdmConsentArtefact[]
+  symptoms             SessionSymptom[]
+  appointments         Appointment[]
+  invoices             BillingInvoice[]
+  patientNotifications PatientNotification[]
+  patientPrescriptions PatientPrescription[]
+
+  @@index([hospitalId])
+  @@index([registeredFacilityId])
+  @@index([fullName])
+  @@index([createdAt])
 }
 
 model PatientIdentifier {
@@ -578,11 +612,12 @@ model RFIDEvent {
   metadata   Json?
   timestamp  DateTime      @default(now())
 
-  rfidCard RFIDCard? @relation(fields: [rfidCardId], references: [id])
+  rfidCard RFIDCard? @relation(fields: [rfidCardId], references: [id], onDelete: Cascade)
   hospital Hospital? @relation(fields: [facilityId], references: [id])
 
   @@index([cardUid, timestamp])
   @@index([facilityId, timestamp])
+  @@index([rfidCardId])
 }
 
 // ---------------------------------------------------------------------------
@@ -608,13 +643,15 @@ model RFIDDevice {
   heartbeats        DeviceHeartbeat[]
   events            DeviceEvent[]
   operationalAlerts OperationalAlert[]
+
+  @@index([hospitalId, status])
 }
 
 model DeviceHeartbeat {
   id         String   @id @default(cuid())
   deviceId   String
   status     String   @default("ONLINE")
-  metrics    Json?    // { cpuPct, memPct, printerPaperPercent, rfSignalDbm }
+  metrics    Json? // { cpuPct, memPct, printerPaperPercent, rfSignalDbm }
   recordedAt DateTime @default(now())
 
   device RFIDDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
@@ -645,6 +682,7 @@ model PatientSession {
   hospitalId    String?
   patientId     String?
   deviceId      String?
+  departmentId  String?
   status        SessionStatus         @default(CREATED)
   mode          Mode                  @default(GENERAL)
   language      Language              @default(EN)
@@ -656,6 +694,7 @@ model PatientSession {
   hospital        Hospital?         @relation(fields: [hospitalId], references: [id])
   patient         Patient?          @relation(fields: [patientId], references: [id])
   device          RFIDDevice?       @relation(fields: [deviceId], references: [id])
+  department      Department?       @relation(fields: [departmentId], references: [id])
   consent         Consent?
   clinicalHistory ClinicalHistory?
   documents       MedicalDocument[]
@@ -667,6 +706,12 @@ model PatientSession {
   symptoms        SessionSymptom[]
   ocrJobs         OCRJob[]
   aiAssistances   AIAssistance[]
+
+  @@index([patientId, status])
+  @@index([hospitalId, status])
+  @@index([deviceId])
+  @@index([departmentId])
+  @@index([createdAt])
 }
 
 model Consent {
@@ -679,7 +724,7 @@ model Consent {
   ipAddress          String?
   createdAt          DateTime      @default(now())
 
-  session PatientSession @relation(fields: [sessionId], references: [id])
+  session PatientSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 
 model ClinicalHistory {
@@ -704,9 +749,11 @@ model ClinicalHistory {
   completedAt            DateTime?
   createdAt              DateTime  @default(now())
 
-  session PatientSession   @relation(fields: [sessionId], references: [id])
+  session PatientSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   patient Patient          @relation(fields: [patientId], references: [id])
   answers ClinicalAnswer[]
+
+  @@index([patientId])
 }
 
 model ClinicalAnswer {
@@ -720,26 +767,30 @@ model ClinicalAnswer {
   isRedFlagTrigger      Boolean  @default(false)
   answeredAt            DateTime @default(now())
 
-  clinicalHistory ClinicalHistory @relation(fields: [clinicalHistoryId], references: [id])
+  clinicalHistory ClinicalHistory @relation(fields: [clinicalHistoryId], references: [id], onDelete: Cascade)
+
+  @@index([clinicalHistoryId])
 }
 
 model PatientVitals {
   id           String   @id @default(cuid())
   sessionId    String   @unique
   patientId    String
-  systolicBp   Int?     // e.g. 120
-  diastolicBp  Int?     // e.g. 80
-  pulse        Int?     // e.g. 72
-  spo2         Int?     // e.g. 98
-  temperatureF Float?   // e.g. 98.6
-  heightCm     Float?   // e.g. 172
-  weightKg     Float?   // e.g. 68
-  bmi          Float?   // e.g. 23.0
+  systolicBp   Int? // e.g. 120
+  diastolicBp  Int? // e.g. 80
+  pulse        Int? // e.g. 72
+  spo2         Int? // e.g. 98
+  temperatureF Float? // e.g. 98.6
+  heightCm     Float? // e.g. 172
+  weightKg     Float? // e.g. 68
+  bmi          Float? // e.g. 23.0
   source       String?  @default("KIOSK_IOT")
   recordedAt   DateTime @default(now())
 
-  session PatientSession @relation(fields: [sessionId], references: [id])
+  session PatientSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   patient Patient        @relation(fields: [patientId], references: [id])
+
+  @@index([patientId])
 }
 
 // ---------------------------------------------------------------------------
@@ -749,8 +800,8 @@ model PatientVitals {
 model Questionnaire {
   id        String   @id @default(cuid())
   code      String   @unique // "GEN_OPD_V1", "CARD_V1", "AYUSH_V1"
-  title     String   // "General OPD Clinical History"
-  category  String   // "TRIAGE", "CHIEF_COMPLAINT", "AYUSH"
+  title     String // "General OPD Clinical History"
+  category  String // "TRIAGE", "CHIEF_COMPLAINT", "AYUSH"
   version   String   @default("1.0")
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -761,11 +812,11 @@ model Questionnaire {
 model Question {
   id               String       @id @default(cuid())
   questionnaireId  String
-  nodeId           String       // tree node identifier
+  nodeId           String // tree node identifier
   text             String
   textLocalized    Json?
   type             QuestionType @default(SINGLE_CHOICE)
-  section          String       // "CHIEF_COMPLAINT", "HPI", "RED_FLAGS"
+  section          String // "CHIEF_COMPLAINT", "HPI", "RED_FLAGS"
   sequence         Int          @default(0)
   isRedFlagTrigger Boolean      @default(false)
   required         Boolean      @default(true)
@@ -773,16 +824,17 @@ model Question {
   questionnaire Questionnaire @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
 
   @@unique([questionnaireId, nodeId])
+  @@index([questionnaireId])
 }
 
 model SessionSymptom {
   id          String        @id @default(cuid())
   sessionId   String
   patientId   String
-  symptomName String        // "Chest Pain", "High Fever"
-  symptomCode String?       // ICD-10 e.g. "R07.9"
+  symptomName String // "Chest Pain", "High Fever"
+  symptomCode String? // ICD-10 e.g. "R07.9"
   severity    AlertSeverity @default(MEDIUM)
-  duration    String?       // "3 days"
+  duration    String? // "3 days"
   isRedFlag   Boolean       @default(false)
   source      String        @default("PATIENT") // "PATIENT", "DOCTOR", "AI_DERIVED"
   createdAt   DateTime      @default(now())
@@ -792,6 +844,7 @@ model SessionSymptom {
 
   @@index([sessionId, isRedFlag])
   @@index([symptomName])
+  @@index([patientId])
 }
 
 // ---------------------------------------------------------------------------
@@ -811,11 +864,14 @@ model MedicalDocument {
   processedAt      DateTime?
   createdAt        DateTime     @default(now())
 
-  session        PatientSession         @relation(fields: [sessionId], references: [id])
+  session        PatientSession         @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   patient        Patient                @relation(fields: [patientId], references: [id])
   extractedData  ExtractedMedicalData[]
   timelineEvents MedicalTimelineEvent[]
   ocrJobs        OCRJob[]
+
+  @@index([patientId])
+  @@index([sessionId])
 }
 
 model ExtractedMedicalData {
@@ -828,7 +884,9 @@ model ExtractedMedicalData {
   verifiedBy String?
   verifiedAt DateTime?
 
-  document MedicalDocument @relation(fields: [documentId], references: [id])
+  document MedicalDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
 }
 
 model OCRJob {
@@ -849,6 +907,7 @@ model OCRJob {
   session  PatientSession? @relation(fields: [sessionId], references: [id])
 
   @@index([documentId, status])
+  @@index([sessionId])
 }
 
 model MedicalTimelineEvent {
@@ -862,8 +921,11 @@ model MedicalTimelineEvent {
   metadata         Json?
   createdAt        DateTime          @default(now())
 
-  patient        Patient          @relation(fields: [patientId], references: [id])
+  patient        Patient          @relation(fields: [patientId], references: [id], onDelete: Cascade)
   sourceDocument MedicalDocument? @relation(fields: [sourceDocumentId], references: [id])
+
+  @@index([patientId, eventDate])
+  @@index([sourceDocumentId])
 }
 
 model AISummary {
@@ -878,8 +940,10 @@ model AISummary {
   confirmedAt         DateTime?
   createdAt           DateTime        @default(now())
 
-  session PatientSession @relation(fields: [sessionId], references: [id])
+  session PatientSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   patient Patient        @relation(fields: [patientId], references: [id])
+
+  @@index([patientId])
 }
 
 // ---------------------------------------------------------------------------
@@ -893,7 +957,7 @@ model TriageQueue {
   hospitalId        String
   departmentId      String?
   doctorId          String?
-  tokenNumber       String         // e.g. "CARD-102"
+  tokenNumber       String // e.g. "CARD-102"
   priority          TriagePriority @default(NORMAL)
   status            QueueStatus    @default(WAITING)
   estimatedWaitMins Int            @default(15)
@@ -901,7 +965,7 @@ model TriageQueue {
   calledAt          DateTime?
   completedAt       DateTime?
 
-  session    PatientSession @relation(fields: [sessionId], references: [id])
+  session    PatientSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   patient    Patient        @relation(fields: [patientId], references: [id])
   hospital   Hospital       @relation(fields: [hospitalId], references: [id])
   department Department?    @relation(fields: [departmentId], references: [id])
@@ -909,6 +973,8 @@ model TriageQueue {
 
   @@index([hospitalId, status])
   @@index([doctorId, status])
+  @@index([patientId])
+  @@index([priority, status])
 }
 
 // ---------------------------------------------------------------------------
@@ -931,6 +997,9 @@ model Consultation {
   prescription  Prescription?
   notesRel      DoctorNote[]
   aiAssistances AIAssistance[]
+
+  @@index([patientId])
+  @@index([doctorId, status])
 }
 
 model DoctorNote {
@@ -946,54 +1015,61 @@ model DoctorNote {
   doctor       Doctor       @relation(fields: [doctorId], references: [id])
 
   @@index([consultationId, noteType])
+  @@index([doctorId])
 }
 
 model AIAssistance {
   id                   String           @id @default(cuid())
   sessionId            String
   consultationId       String?
-  modelVersion         String           // "ClinicalSummarizer-v1.4"
+  modelVersion         String // "ClinicalSummarizer-v1.4"
   assistanceType       AIAssistanceType @default(SUMMARY)
   content              String
-  provenanceReferences Json?            // e.g. {"answerId": "123", "documentId": "456"}
-  feedback             String?          // "ACCEPTED", "REJECTED", "EDITED"
+  provenanceReferences Json? // e.g. {"answerId": "123", "documentId": "456"}
+  feedback             String? // "ACCEPTED", "REJECTED", "EDITED"
   createdAt            DateTime         @default(now())
 
   session      PatientSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   consultation Consultation?  @relation(fields: [consultationId], references: [id])
 
   @@index([sessionId, assistanceType])
+  @@index([consultationId])
 }
 
 model Prescription {
-  id             String   @id @default(cuid())
-  consultationId String   @unique
+  id             String    @id @default(cuid())
+  consultationId String    @unique
   patientId      String
   doctorId       String
   diagnosis      String
   clinicalNotes  String?
-  followUpDays   Int?     @default(7)
-  dispensed      Boolean  @default(false)
+  followUpDays   Int?      @default(7)
+  dispensed      Boolean   @default(false)
   dispensedAt    DateTime?
-  createdAt      DateTime @default(now())
+  createdAt      DateTime  @default(now())
 
   consultation Consultation       @relation(fields: [consultationId], references: [id])
   patient      Patient            @relation(fields: [patientId], references: [id])
   doctor       Doctor             @relation(fields: [doctorId], references: [id])
   items        PrescriptionItem[]
+
+  @@index([patientId])
+  @@index([doctorId])
 }
 
 model PrescriptionItem {
   id             String                @id @default(cuid())
   prescriptionId String
-  medicineName   String                // "Pantop 40mg", "Paracetamol 500mg"
-  dosage         String?               // "1 Tablet"
+  medicineName   String // "Pantop 40mg", "Paracetamol 500mg"
+  dosage         String? // "1 Tablet"
   frequency      PrescriptionFrequency @default(BD)
   durationDays   Int                   @default(5)
-  instructions   String?               // "After food", "Empty stomach"
-  timing         String?               // "Morning & Evening"
+  instructions   String? // "After food", "Empty stomach"
+  timing         String? // "Morning & Evening"
 
   prescription Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+
+  @@index([prescriptionId])
 }
 
 // ---------------------------------------------------------------------------
@@ -1013,8 +1089,11 @@ model Alert {
   acknowledgedAt         DateTime?
   createdAt              DateTime      @default(now())
 
-  session PatientSession @relation(fields: [sessionId], references: [id])
+  session PatientSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   patient Patient        @relation(fields: [patientId], references: [id])
+
+  @@index([sessionId])
+  @@index([patientId, acknowledged])
 }
 
 model OperationalAlert {
@@ -1037,7 +1116,7 @@ model OperationalAlert {
 
 model Notification {
   id          String           @id @default(cuid())
-  recipientId String?          // doctor or staff ID
+  recipientId String? // doctor or staff ID
   facilityId  String?
   type        NotificationType
   severity    AlertSeverity    @default(MEDIUM)
@@ -1058,9 +1137,9 @@ model Notification {
 model DiseaseOutbreakSignal {
   id           String        @id @default(cuid())
   hospitalId   String
-  diseaseName  String        // "Dengue Fever", "Malaria", "Typhoid", "Viral Influenza"
-  category     String?       // "VECTOR_BORNE", "RESPIRATORY", "WATER_BORNE"
-  icd10Code    String?       // "A90", "B54", "A01.0"
+  diseaseName  String // "Dengue Fever", "Malaria", "Typhoid", "Viral Influenza"
+  category     String? // "VECTOR_BORNE", "RESPIRATORY", "WATER_BORNE"
+  icd10Code    String? // "A90", "B54", "A01.0"
   caseCount    Int           @default(1)
   severity     AlertSeverity @default(MEDIUM)
   district     String
@@ -1070,17 +1149,18 @@ model DiseaseOutbreakSignal {
   hospital Hospital @relation(fields: [hospitalId], references: [id])
 
   @@index([state, district, diseaseName])
+  @@index([hospitalId])
 }
 
 model AIModel {
   id          String        @id @default(cuid())
   name        String
   version     String
-  modelType   String        // "SUMMARIZER", "OCR_LAYOUT", "SYMPTOM_CLASSIFIER"
+  modelType   String // "SUMMARIZER", "OCR_LAYOUT", "SYMPTOM_CLASSIFIER"
   status      AIModelStatus @default(DRAFT)
-  owner       String?       // team or organization
+  owner       String? // team or organization
   description String?
-  metrics     Json?         // { cer: 0.021, f1: 0.962, latency_ms: 420 }
+  metrics     Json? // { cer: 0.021, f1: 0.962, latency_ms: 420 }
   isDemo      Boolean       @default(true)
   approvedBy  String?
   approvedAt  DateTime?
@@ -1096,9 +1176,9 @@ model AIModel {
 model AIModelVersion {
   id            String        @id @default(cuid())
   modelId       String
-  versionNumber String        // "v2.1"
+  versionNumber String // "v2.1"
   status        AIModelStatus @default(DRAFT)
-  metrics       Json?         // { cer, f1, accuracy, latency_ms }
+  metrics       Json? // { cer, f1, accuracy, latency_ms }
   artifactUrl   String?
   approvedBy    String?
   approvedAt    DateTime?
@@ -1134,8 +1214,8 @@ model AbdmConsentArtefact {
   patientId         String
   abhaAddress       String
   consentArtefactId String        @unique
-  hipId             String        // Hospital Health Information Provider ID
-  hiuId             String?       // Health Information User ID
+  hipId             String // Hospital Health Information Provider ID
+  hiuId             String? // Health Information User ID
   purpose           String        @default("CARETREAT")
   status            ConsentStatus @default(GRANTED)
   dateFrom          DateTime?
@@ -1144,12 +1224,14 @@ model AbdmConsentArtefact {
   createdAt         DateTime      @default(now())
 
   patient Patient @relation(fields: [patientId], references: [id])
+
+  @@index([patientId])
 }
 
 model FHIRResourceMapping {
   id               String   @id @default(cuid())
   facilityId       String
-  resourceType     String   // "Patient", "Encounter", "Observation"
+  resourceType     String // "Patient", "Encounter", "Observation"
   internalEntityId String
   fhirResourceId   String
   status           String   @default("DEMO") // "DEMO", "SYNCED", "FAILED"
@@ -1184,7 +1266,7 @@ model AuditLog {
   id         String    @id @default(cuid())
   actorType  ActorType
   actorId    String?
-  facilityId String?   // for tenant-scoped audit queries
+  facilityId String? // for tenant-scoped audit queries
   action     String
   entityType String?
   entityId   String?
@@ -1197,10 +1279,10 @@ model AuditLog {
 
 model SystemConfig {
   id          String   @id @default(cuid())
-  facilityId  String?  // null = national configuration
+  facilityId  String? // null = national configuration
   configKey   String
   configValue Json
-  category    String   // "FEATURE_FLAGS", "KIOSK_SETTINGS", "LOCALIZATION"
+  category    String // "FEATURE_FLAGS", "KIOSK_SETTINGS", "LOCALIZATION"
   updatedBy   String?
   updatedAt   DateTime @updatedAt
 
@@ -1219,4 +1301,146 @@ model OtpVerification {
   createdAt DateTime @default(now())
 
   @@index([phone])
+}
+
+// ---------------------------------------------------------------------------
+// Patient Portal Domain Enums
+// ---------------------------------------------------------------------------
+
+enum AppointmentType {
+  IN_PERSON
+  VIDEO_CONSULT
+  FOLLOW_UP
+  EMERGENCY
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+}
+
+enum BillingStatus {
+  PENDING
+  PAID
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  UPI
+  CREDIT_CARD
+  DEBIT_CARD
+  NET_BANKING
+  CASH
+  ABDM_INSURANCE
+}
+
+enum PatientNotificationType {
+  APPOINTMENT_CONFIRMED
+  APPOINTMENT_REMINDER
+  APPOINTMENT_CANCELLED
+  APPOINTMENT_RESCHEDULED
+  PRESCRIPTION_ISSUED
+  LAB_REPORT_READY
+  BILL_GENERATED
+  BILL_PAID
+  HEALTH_ALERT
+}
+
+// ---------------------------------------------------------------------------
+// Patient Portal Domain Models
+// ---------------------------------------------------------------------------
+
+model Appointment {
+  id                 String            @id @default(cuid())
+  patientId          String
+  doctorId           String?
+  facilityId         String?
+  departmentId       String?
+  appointmentDate    DateTime
+  timeSlot           String
+  type               AppointmentType   @default(IN_PERSON)
+  status             AppointmentStatus @default(SCHEDULED)
+  reason             String
+  notes              String?
+  cancellationReason String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  patient       Patient               @relation(fields: [patientId], references: [id])
+  doctor        Doctor?               @relation(fields: [doctorId], references: [id])
+  facility      Hospital?             @relation(fields: [facilityId], references: [id])
+  department    Department?           @relation(fields: [departmentId], references: [id])
+  invoices      BillingInvoice[]
+  prescriptions PatientPrescription[]
+
+  @@index([patientId, appointmentDate])
+  @@index([doctorId, appointmentDate])
+  @@index([facilityId, status])
+  @@index([departmentId])
+}
+
+model BillingInvoice {
+  id                   String         @id @default(cuid())
+  patientId            String
+  appointmentId        String?
+  invoiceNumber        String         @unique
+  description          String
+  department           String?
+  totalAmount          Float
+  discountAmount       Float          @default(0)
+  netAmount            Float
+  status               BillingStatus  @default(PENDING)
+  paymentMethod        PaymentMethod?
+  paymentDate          DateTime?
+  transactionReference String?
+  items                Json?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  patient     Patient      @relation(fields: [patientId], references: [id])
+  appointment Appointment? @relation(fields: [appointmentId], references: [id])
+
+  @@index([patientId, status])
+  @@index([appointmentId])
+}
+
+model PatientNotification {
+  id        String                  @id @default(cuid())
+  patientId String
+  title     String
+  message   String
+  type      PatientNotificationType
+  read      Boolean                 @default(false)
+  actionUrl String?
+  createdAt DateTime                @default(now())
+
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  @@index([patientId, read, createdAt])
+}
+
+model PatientPrescription {
+  id               String   @id @default(cuid())
+  patientId        String
+  doctorId         String?
+  appointmentId    String?
+  prescriptionDate DateTime @default(now())
+  diagnosis        String
+  instructions     String?
+  medications      Json
+  pdfUrl           String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  patient     Patient      @relation(fields: [patientId], references: [id])
+  doctor      Doctor?      @relation(fields: [doctorId], references: [id])
+  appointment Appointment? @relation(fields: [appointmentId], references: [id])
+
+  @@index([patientId, prescriptionDate])
+  @@index([doctorId])
+  @@index([appointmentId])
 }
