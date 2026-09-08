@@ -68,3 +68,30 @@ aiRouter.post('/ai/copilot-chat', async (req, res, next) => {
     next(err);
   }
 });
+
+/**
+ * Developer 1: POST /api/ai/next-question
+ * Evaluates patient state and optional regional outbreak context to return the next best clinical question.
+ */
+aiRouter.post('/ai/next-question', async (req, res, next) => {
+  try {
+    const { patientState, regionalSignal } = req.body;
+    if (!patientState || !patientState.sessionId) {
+      res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'patientState with sessionId is required' } });
+      return;
+    }
+
+    // Load NextBestQuestionRanker via dynamic path
+    const clinicalAiPath = '../../../../ai/clinical-ai/src/index.js';
+    const { NextBestQuestionRanker } = await (import(clinicalAiPath) as Promise<any>);
+    const result = NextBestQuestionRanker.selectNextQuestion({
+      patientState,
+      regionalSignal,
+    });
+
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
