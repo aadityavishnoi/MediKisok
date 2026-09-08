@@ -28,6 +28,15 @@ export interface SurveillanceObservation {
   isDuplicate?: boolean;
 }
 
+export interface DataQualityAudit {
+  valid: boolean;
+  qualityScore: number; // 0.0 to 1.0 based on completeness and integrity
+  warnings: string[];
+  errors: string[];
+  missingFields: string[];
+  source: string;
+}
+
 export interface ValidationSummary {
   totalRecords: number;
   validRecords: number;
@@ -39,6 +48,44 @@ export interface ValidationSummary {
 
 export class SurveillanceQualityValidator {
   private static readonly MAX_FUTURE_DRIFT_HOURS = 24;
+
+  /**
+   * Performs an in-depth data quality audit returning completeness score, errors, and missing fields.
+   */
+  static auditObservation(raw: Partial<SurveillanceObservation>): DataQualityAudit {
+    const validated = this.validateObservation(raw);
+    const errors = validated.validationReasons || [];
+    const warnings: string[] = [];
+    const missingFields: string[] = [];
+
+    if (!raw.screened && !raw.positive) {
+      missingFields.push('screenedCount', 'positiveCount');
+      warnings.push('Denominator unobserved in municipal notification; positivity rate unavailable');
+    }
+    if (!raw.deaths) {
+      missingFields.push('deaths');
+    }
+    if (!raw.facilityIds || raw.facilityIds.length === 0) {
+      missingFields.push('facilityIds');
+      warnings.push('Reporting facility IDs not enumerated; localized to district level');
+    }
+
+    // Completeness calculation
+    const criticalFields = ['regionId', 'diseaseCode', 'observationDate', 'cases'];
+    const presentCritical = criticalFields.filter((f) => (raw as any)[f] !== undefined && (raw as any)[f] !== '').length;
+    const completenessRatio = presentCritical / criticalFields.length;
+    const penalty = errors.length > 0 ? 0.4 : (warnings.length * 0.1);
+    const qualityScore = Number(Math.max(0, Math.min(1, completenessRatio - penalty)).toFixed(2));
+
+    return {
+      valid: validated.isValid,
+      qualityScore,
+      warnings,
+      errors,
+      missingFields,
+      source: raw.source || 'UNKNOWN_SOURCE',
+    };
+  }
 
   /**
    * Validates a single surveillance observation according to epidemiological rules.
@@ -91,12 +138,14 @@ export class SurveillanceQualityValidator {
       reasons.push(`Negative positive count: ${raw.positive}`);
     }
 
-    // 5. Positive vs Screened Constraint
-    if (raw.screened !== undefined && raw.positive !== undefined) {
-      if (raw.positive > raw.screened) {
-        reasons.push(`Positive count (${raw.positive}) exceeds screened count (${raw.screened})`);
+    // 5. Positive vs Screened/Tested Constraint
+    const denominator = raw.screened !== undefined ? raw.screened : (raw as any).tested;
+    if (denominator !== undefined && raw.positive !== undefined) {
+      if (raw.positive > denominator) {
+        reasons.push(`Positive count (${raw.positive}) exceeds tested/screened count (${denominator})`);
       }
     }
+
 
     const isValid = reasons.length === 0;
 

@@ -7,3 +7,5 @@ export * from './features/TemporalFeatureExtractor';
 export * from './intelligence/OutbreakSignalEngine';
 export * from './prediction/OutbreakForecaster';
 export * from './aggregation/RegionalAggregator';
+export * from './normalization/GeographicNormalizer';
+

@@ -1,0 +1,5 @@
+# Raw surveillance datasets (bulk CSV/JSON/Parquet) must not be committed
+raw/*
+!raw/.gitkeep
+processed/*
+!processed/.gitkeep

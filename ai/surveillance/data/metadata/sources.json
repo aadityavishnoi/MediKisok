@@ -1,0 +1,76 @@
+{
+  "system": "MediKiosk Regional Disease Surveillance Subsystem",
+  "version": "2.1.0",
+  "dataCatalog": [
+    {
+      "id": "IDSP_WEEKLY_OUTBREAKS",
+      "name": "Integrated Disease Surveillance Programme (IDSP) Weekly Outbreak Reports",
+      "authority": "National Centre for Disease Control (NCDC), MoHFW, Govt. of India",
+      "portalUrl": "https://idsp.mohfw.gov.in",
+      "license": "Government Open Data License - India (GODL-India) / NDSAP",
+      "geographicCoverage": "Pan-India (36 States & UTs, 700+ Districts)",
+      "reportingUnit": "Weekly Outbreak Report (Epi Weeks 1 to 52)",
+      "fieldsAvailable": [
+        "reportingWeek",
+        "reportingYear",
+        "state",
+        "district",
+        "diseaseIllness",
+        "numberOfCases",
+        "numberOfDeaths",
+        "dateOfStartOfOutbreak",
+        "dateOfReporting",
+        "currentStatus",
+        "commentsActionTaken"
+      ],
+      "missingFields": [
+        "screenedCount (denominator not reported in municipal bulletins)",
+        "testedCount"
+      ],
+      "knownBiases": [
+        "Reporting delays between clinical onset and publication (7 to 14 days)",
+        "Syndromic reporting variation across primary vs tertiary institutions",
+        "Testing volume unobserved in non-laboratory notifications"
+      ],
+      "handlingPolicy": "Screened denominator preserved strictly as undefined; positivity rate is not calculated if denominator is missing."
+    },
+    {
+      "id": "COCKROACH_SENTINEL_STREAM",
+      "name": "CockroachDB Sentinel Hospital Outbreak Ledger (DiseaseOutbreakSignal)",
+      "authority": "MediKiosk Connected Hospital Network",
+      "schemaTable": "DiseaseOutbreakSignal",
+      "license": "Internal Enterprise / HIPAA & DISHA Compliant De-Identified Telemetry",
+      "geographicCoverage": "Anchor facilities (Delhi, Maharashtra, Kerala, Karnataka, UP)",
+      "reportingUnit": "Daily event stream / Kiosk intake aggregation",
+      "fieldsAvailable": [
+        "hospitalId",
+        "diseaseName",
+        "category",
+        "icd10Code",
+        "caseCount",
+        "severity",
+        "district",
+        "state",
+        "reportedDate"
+      ],
+      "handlingPolicy": "Normalized to ISO region hierarchy and ICD-10 taxonomy."
+    },
+    {
+      "id": "REGION_X_DEMO_SEED",
+      "name": "Region X 8/10 Controlled Outbreak Cluster Scenario",
+      "authority": "MediKiosk Clinical AI Evaluation Benchmark",
+      "license": "Public Benchmark / Testing Scenario",
+      "geographicCoverage": "Varanasi District (HOSP_BHU_VARANASI, HOSP_DISTRICT_CIVIL)",
+      "reportingUnit": "Deterministic Triage Cluster (10 screened, 8 positive)",
+      "fieldsAvailable": [
+        "regionId",
+        "screenedCount",
+        "positiveCount",
+        "positivityRate",
+        "disease",
+        "timestamp"
+      ],
+      "handlingPolicy": "Demonstrates small-sample uncertainty, Wilson CI [49%-94%], and Bayesian smoothing to prevent false individual diagnostic certainty."
+    }
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "version": "2.1.0",
+  "diseases": [
+    {
+      "canonicalName": "COVID-19",
+      "code": "U07.1",
+      "category": "RESPIRATORY",
+      "aliases": ["covid", "covid-19", "sars-cov-2", "corona", "novel coronavirus", "coronavirus", "acute respiratory infection covid"],
+      "sourceMappings": ["IDSP_COVID", "SENTINEL_COVID"]
+    },
+    {
+      "canonicalName": "Dengue Fever",
+      "code": "A90",
+      "category": "VECTOR_BORNE",
+      "aliases": ["dengue", "dengue fever", "breakbone fever", "dhf", "dengue hemorrhagic", "dss"],
+      "sourceMappings": ["IDSP_DENGUE", "NVBDCP_DENGUE"]
+    },
+    {
+      "canonicalName": "Malaria",
+      "code": "B54",
+      "category": "VECTOR_BORNE",
+      "aliases": ["malaria", "plasmodium vivax", "plasmodium falciparum", "p. vivax", "p. falciparum", "pv", "pf"],
+      "sourceMappings": ["IDSP_MALARIA", "NVBDCP_MALARIA"]
+    },
+    {
+      "canonicalName": "Chikungunya",
+      "code": "A92.0",
+      "category": "VECTOR_BORNE",
+      "aliases": ["chikungunya", "chikungunya fever", "chikv"],
+      "sourceMappings": ["IDSP_CHIKUNGUNYA"]
+    },
+    {
+      "canonicalName": "Influenza",
+      "code": "J10.1",
+      "category": "RESPIRATORY",
+      "aliases": ["influenza", "flu", "h1n1", "h3n2", "swine flu", "seasonal influenza", "influenza h3n2", "ili"],
+      "sourceMappings": ["IDSP_INFLUENZA", "IDSP_H1N1"]
+    },
+    {
+      "canonicalName": "Measles",
+      "code": "B05.9",
+      "category": "VACCINE_PREVENTABLE",
+      "aliases": ["measles", "rubeola", "khasra"],
+      "sourceMappings": ["IDSP_MEASLES"]
+    },
+    {
+      "canonicalName": "Cholera",
+      "code": "A00.9",
+      "category": "WATER_BORNE",
+      "aliases": ["cholera", "vibrio cholerae", "acute watery diarrhea", "awd"],
+      "sourceMappings": ["IDSP_CHOLERA"]
+    },
+    {
+      "canonicalName": "Typhoid Fever",
+      "code": "A01.0",
+      "category": "WATER_BORNE",
+      "aliases": ["typhoid", "enteric fever", "salmonella typhi", "paratyphoid"],
+      "sourceMappings": ["IDSP_TYPHOID"]
+    },
+    {
+      "canonicalName": "Leptospirosis",
+      "code": "A27.9",
+      "category": "ZOONOTIC",
+      "aliases": ["leptospirosis", "weil disease", "lepto"],
+      "sourceMappings": ["IDSP_LEPTO"]
+    },
+    {
+      "canonicalName": "Acute Diarrheal Disease",
+      "code": "A09",
+      "category": "WATER_BORNE",
+      "aliases": ["acute diarrheal disease", "add", "gastroenteritis", "infectious diarrhea"],
+      "sourceMappings": ["IDSP_ADD"]
+    },
+    {
+      "canonicalName": "Viral Hepatitis",
+      "code": "B19.9",
+      "category": "WATER_BORNE",
+      "aliases": ["viral hepatitis", "hepatitis a", "hepatitis e", "jaundice outbreak"],
+      "sourceMappings": ["IDSP_HEPATITIS"]
+    },
+    {
+      "canonicalName": "Japanese Encephalitis",
+      "code": "A83.0",
+      "category": "VECTOR_BORNE",
+      "aliases": ["japanese encephalitis", "je", "acute encephalitis syndrome", "aes"],
+      "sourceMappings": ["IDSP_JE", "NVBDCP_JE"]
+    },
+    {
+      "canonicalName": "Scrub Typhus",
+      "code": "A75.3",
+      "category": "ZOONOTIC",
+      "aliases": ["scrub typhus", "orientia tsutsugamushi", "tsutsugamushi disease"],
+      "sourceMappings": ["IDSP_SCRUB_TYPHUS"]
+    }
+  ]
+}
