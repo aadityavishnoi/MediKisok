@@ -32,6 +32,7 @@ export interface HistoryScreenProps {
   question: HistoryQuestion;
   redFlagActive: boolean;
   onAnswered: (result: HistoryAnswerResponse) => void;
+  onScanDocument?: () => void;
 }
 
 const PHASE_ORDER = ['symptoms', 'background', 'ayush'] as const;
@@ -51,7 +52,7 @@ const SECTION_PHASE: Record<string, Phase> = {
   ayush: 'ayush',
 };
 
-export function HistoryScreen({ sessionId, language, question, redFlagActive, onAnswered }: HistoryScreenProps) {
+export function HistoryScreen({ sessionId, language, question, redFlagActive, onAnswered, onScanDocument }: HistoryScreenProps) {
   const dict = getDictionary(language);
   const t = dict.history;
   const tc = dict.common;
@@ -258,6 +259,18 @@ export function HistoryScreen({ sessionId, language, question, redFlagActive, on
               {t.submit}
             </button>
           </div>
+        </div>
+      )}
+
+      {onScanDocument && (
+        <div className="pt-2 border-t border-slate-200/70 w-full flex justify-center">
+          <button
+            type="button"
+            onClick={onScanDocument}
+            className="text-xs font-bold text-blue-600 hover:text-blue-800 underline flex items-center justify-center gap-1 cursor-pointer py-1"
+          >
+            <span>{language === 'HI' ? '📄 सीधे पुराना पर्चा / दस्तावेज़ स्कैन करें (OCR) →' : '📄 Skip to Document Scan (OCR) →'}</span>
+          </button>
         </div>
       )}
     </div>

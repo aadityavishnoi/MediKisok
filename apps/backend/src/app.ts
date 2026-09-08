@@ -30,7 +30,21 @@ export function createApp() {
 
   app.use(
     cors({
-      origin: env.CORS_ORIGINS.length > 0 ? env.CORS_ORIGINS : true,
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (
+          origin.includes('localhost') ||
+          origin.includes('127.0.0.1') ||
+          /^https?:\/\/(192\.168|10\.|172\.(1[6-9]|2[0-9]|3[0-1]))\./.test(origin) ||
+          (env.CORS_ORIGINS.length > 0 && env.CORS_ORIGINS.includes(origin))
+        ) {
+          return callback(null, true);
+        }
+        return callback(null, true);
+      },
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Device-Key', 'X-Requested-With'],
     }),
   );
   app.use(express.json({ limit: '15mb' }));

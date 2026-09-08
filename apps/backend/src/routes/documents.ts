@@ -92,19 +92,25 @@ documentsRouter.post('/documents/scan', async (req, res, next) => {
     // If active session provided, persist to database
     if (sessionId) {
       try {
-        let resolvedPatientId = patientId;
-        if (!resolvedPatientId) {
-          const session = await prisma.patientSession.findUnique({
-            where: { id: sessionId },
-            select: { patientId: true },
+        const session = await prisma.patientSession.findUnique({
+          where: { id: sessionId },
+          select: { id: true, patientId: true },
+        });
+
+        const resolvedPatientId = session?.patientId || patientId;
+        let patientExists = false;
+        if (resolvedPatientId) {
+          const p = await prisma.patient.findUnique({
+            where: { id: resolvedPatientId },
+            select: { id: true },
           });
-          if (session) resolvedPatientId = session.patientId;
+          patientExists = !!p;
         }
 
-        if (resolvedPatientId) {
+        if (session && patientExists && resolvedPatientId) {
           const doc = await prisma.medicalDocument.create({
             data: {
-              sessionId,
+              sessionId: session.id,
               patientId: resolvedPatientId,
               type: docType,
               originalFilename: filename || `droidcam_${Date.now()}.jpg`,

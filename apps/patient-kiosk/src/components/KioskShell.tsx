@@ -47,12 +47,13 @@ export interface KioskShellProps {
   step: KioskStepId;
   language: string | null;
   onLanguageChange?: (language: string) => void;
+  onStepClick?: (step: KioskStepId) => void;
   wsState: WsConnectionState;
   sessionId?: string;
   children: ReactNode;
 }
 
-export function KioskShell({ step, language, onLanguageChange, wsState, sessionId, children }: KioskShellProps) {
+export function KioskShell({ step, language, onLanguageChange, onStepClick, wsState, sessionId, children }: KioskShellProps) {
   const [helpOpen, setHelpOpen] = useState(false);
   const t = getDictionary(language ?? 'EN');
   const stepIndex = STEP_ORDER.indexOf(step);
@@ -87,7 +88,14 @@ export function KioskShell({ step, language, onLanguageChange, wsState, sessionI
             const isCompleted = i < stepIndex;
             const isCurrent = i === stepIndex;
             return (
-              <li key={id} className="flex items-center gap-2">
+              <li
+                key={id}
+                onClick={() => onStepClick?.(id)}
+                className={`flex items-center gap-2 transition-all ${
+                  onStepClick ? 'cursor-pointer hover:opacity-85' : ''
+                }`}
+                title={onStepClick ? `Go to ${stepLabel(t, id, language)}` : undefined}
+              >
                 <span
                   className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold transition-all duration-300 ${
                     isCompleted

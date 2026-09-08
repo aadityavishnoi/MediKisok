@@ -63,6 +63,7 @@ export class ImageKitService {
         Authorization: authHeader,
       },
       body: formData,
+      signal: AbortSignal.timeout(8000),
     });
 
     if (!response.ok) {

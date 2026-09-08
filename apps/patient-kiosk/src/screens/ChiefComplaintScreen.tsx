@@ -20,9 +20,10 @@ export interface ChiefComplaintScreenProps {
   language: Language;
   onSelect: (category: ChiefComplaintCategory) => void;
   onBack?: () => void;
+  onScanDocument?: () => void;
 }
 
-export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefComplaintScreenProps) {
+export function ChiefComplaintScreen({ language, onSelect, onBack, onScanDocument }: ChiefComplaintScreenProps) {
   const isHindi = language === 'HI';
   const t = getDictionary(language ?? 'EN');
   const [isListening, setIsListening] = useState(false);
@@ -314,6 +315,31 @@ export function ChiefComplaintScreen({ language, onSelect, onBack }: ChiefCompla
             <span className="px-3 py-1.5 rounded-xl bg-red-600 text-white font-bold text-[10px] shrink-0 shadow-xs uppercase font-mono">
               {isHindi ? 'प्राथमिकता: रेड' : 'Priority Red'}
             </span>
+          </div>
+        )}
+
+        {onScanDocument && (
+          <div className="mt-4 pt-3 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-slate-50 p-3.5 rounded-2xl border border-blue-200/60 shadow-xs">
+            <div className="flex items-center gap-2.5 text-left">
+              <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs text-base">
+                📄
+              </div>
+              <div>
+                <div className="text-xs font-bold text-slate-800">
+                  {isHindi ? 'क्या आपके पास पुराना पर्चा या रिपोर्ट है?' : 'Have an existing prescription or lab report?'}
+                </div>
+                <div className="text-[10px] text-slate-500 font-medium">
+                  {isHindi ? 'दवाइयां और रिपोर्ट्स स्वचालित रूप से पढ़ने के लिए सीधे स्कैन करें।' : 'Skip intake questions and scan directly using AI Vision & OCR.'}
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onScanDocument}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs transition-all shrink-0 cursor-pointer"
+            >
+              <span>{isHindi ? 'दस्तावेज़ स्कैन करें (OCR) →' : 'Scan Document (OCR) →'}</span>
+            </button>
           </div>
         )}
 

@@ -28,5 +28,5 @@ export function App() {
     );
   }
 
-  return <PatientFlow sessionId={stage.sessionId} wsState={wsState} />;
+  return <PatientFlow sessionId={stage.sessionId} patientId={stage.patientId} wsState={wsState} />;
 }

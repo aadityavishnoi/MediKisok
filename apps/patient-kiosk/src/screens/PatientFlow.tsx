@@ -33,6 +33,7 @@ const STEP_BY_STAGE: Record<FlowStage['name'], KioskStepId> = {
 
 export interface PatientFlowProps {
   sessionId: string;
+  patientId?: string | null;
   wsState: WsConnectionState;
 }
 
@@ -45,7 +46,7 @@ interface IssuedTicket {
   departmentName?: string;
 }
 
-export function PatientFlow({ sessionId, wsState }: PatientFlowProps) {
+export function PatientFlow({ sessionId, patientId, wsState }: PatientFlowProps) {
   const [stage, setStage] = useState<FlowStage>({ name: 'LANGUAGE' });
   const [language, setLanguage] = useState<Language>(Language.EN);
   const [startError, setStartError] = useState<string | null>(null);
@@ -71,7 +72,11 @@ export function PatientFlow({ sessionId, wsState }: PatientFlowProps) {
       fetch('/api/queue/ticket', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, departmentName: 'General OPD' }),
+        body: JSON.stringify({
+          sessionId,
+          patientId: patientId || undefined,
+          departmentName: 'General OPD',
+        }),
       })
         .then(async (res) => {
           if (res.ok) {
@@ -132,7 +137,11 @@ export function PatientFlow({ sessionId, wsState }: PatientFlowProps) {
   } else if (stage.name === 'CHIEF_COMPLAINT') {
     content = (
       <>
-        <ChiefComplaintScreen language={language} onSelect={handleSelectComplaint} />
+        <ChiefComplaintScreen
+          language={language}
+          onSelect={handleSelectComplaint}
+          onScanDocument={() => setStage({ name: 'SCAN' })}
+        />
         {startError && (
           <div role="alert" className="fixed inset-x-0 bottom-20 mx-auto w-fit rounded-xl bg-danger-50 px-4 py-3 text-lg text-danger-800">
             {startError}
@@ -147,6 +156,7 @@ export function PatientFlow({ sessionId, wsState }: PatientFlowProps) {
         language={language}
         question={stage.question}
         redFlagActive={stage.redFlagActive}
+        onScanDocument={() => setStage({ name: 'SCAN' })}
         onAnswered={(result) => {
           const redFlagActive = stage.redFlagActive || result.redFlag !== null;
           if (result.historyComplete || !result.nextQuestion) {
@@ -161,6 +171,7 @@ export function PatientFlow({ sessionId, wsState }: PatientFlowProps) {
     content = (
       <DocumentUploadScreen
         sessionId={sessionId}
+        patientId={patientId || undefined}
         language={language}
         onComplete={() => setStage({ name: 'DONE' })}
         onSkip={() => setStage({ name: 'DONE' })}
@@ -225,6 +236,12 @@ export function PatientFlow({ sessionId, wsState }: PatientFlowProps) {
         step={STEP_BY_STAGE[stage.name]}
         language={stage.name === 'LANGUAGE' ? null : language}
         onLanguageChange={(lang) => setLanguage(lang as Language)}
+        onStepClick={(stepId) => {
+          if (stepId === 'SCAN') setStage({ name: 'SCAN' });
+          else if (stepId === 'CHIEF_COMPLAINT') setStage({ name: 'CHIEF_COMPLAINT' });
+          else if (stepId === 'LANGUAGE') setStage({ name: 'LANGUAGE' });
+          else if (stepId === 'CONSENT') setStage({ name: 'CONSENT' });
+        }}
         wsState={wsState}
         sessionId={sessionId}
       >

@@ -2,14 +2,16 @@
  * Generates high-fidelity clinical document images (Prescriptions, Lab Reports, ABHA cards)
  * on a browser canvas for instant zero-dependency testing and evaluation.
  */
+const MINIMAL_VALID_JPEG = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=';
+
 export function createSampleClinicalDocument(type: 'prescription' | 'lab' | 'id' = 'prescription'): string {
-  if (typeof document === 'undefined') return 'data:image/jpeg;base64,sample';
+  if (typeof document === 'undefined') return MINIMAL_VALID_JPEG;
 
   const canvas = document.createElement('canvas');
   canvas.width = 1000;
   canvas.height = 1400;
   const ctx = canvas.getContext('2d');
-  if (!ctx) return 'data:image/jpeg;base64,sample';
+  if (!ctx) return MINIMAL_VALID_JPEG;
 
   // Background - medical paper tone
   ctx.fillStyle = '#fbfbfd';

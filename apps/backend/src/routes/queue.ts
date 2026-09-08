@@ -25,10 +25,24 @@ const allowDemoOrAuth = (req: any, res: any, next: any) => {
  */
 queueRouter.post('/queue/ticket', async (req, res, next) => {
   try {
-    const { sessionId, patientId, hospitalId, departmentCode, priority } = req.body;
+    let { sessionId, patientId, hospitalId, departmentCode, priority } = req.body;
 
-    if (!sessionId || !patientId) {
-      res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'sessionId and patientId are required' } });
+    if (!sessionId) {
+      res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'sessionId is required' } });
+      return;
+    }
+
+    let targetPatientId = patientId;
+    if (!targetPatientId) {
+      const session = await prisma.patientSession.findUnique({
+        where: { id: sessionId },
+        select: { patientId: true },
+      });
+      targetPatientId = session?.patientId;
+    }
+
+    if (!targetPatientId) {
+      res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'Valid patientId or bound session is required' } });
       return;
     }
 
@@ -75,7 +89,7 @@ queueRouter.post('/queue/ticket', async (req, res, next) => {
     const triageQueue = await prisma.triageQueue.create({
       data: {
         sessionId,
-        patientId,
+        patientId: targetPatientId,
         hospitalId: targetHospitalId,
         departmentId,
         tokenNumber,
@@ -110,7 +124,7 @@ queueRouter.post('/queue/ticket', async (req, res, next) => {
         queueId: triageQueue.id,
         tokenNumber,
         hospitalId: targetHospitalId,
-        patientId,
+        patientId: targetPatientId,
         patientName: triageQueue.patient?.fullName,
         departmentId,
         priority: priorityVal,

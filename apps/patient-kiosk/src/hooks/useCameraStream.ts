@@ -172,18 +172,27 @@ export function useCameraStream() {
 
   // Capture current video frame to base64
   const captureSnapshot = useCallback((): { base64: string; width: number; height: number } | null => {
-    if (!videoRef.current || !isStreaming) return null;
     const video = videoRef.current;
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth || 1280;
-    canvas.height = video.videoHeight || 720;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return null;
+    if (!video) return null;
+    const w = video.videoWidth || video.clientWidth || 1280;
+    const h = video.videoHeight || video.clientHeight || 720;
+    if (w <= 10 || h <= 10) return null;
 
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const base64 = canvas.toDataURL('image/jpeg', 0.92);
-    return { base64, width: canvas.width, height: canvas.height };
-  }, [isStreaming]);
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+
+      ctx.drawImage(video, 0, 0, w, h);
+      const base64 = canvas.toDataURL('image/jpeg', 0.95);
+      return { base64, width: w, height: h };
+    } catch (e) {
+      console.warn('[useCameraStream] captureSnapshot error:', e);
+      return null;
+    }
+  }, []);
 
   // Initial load and device listener
   useEffect(() => {
