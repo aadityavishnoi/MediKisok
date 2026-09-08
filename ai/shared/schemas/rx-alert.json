@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RxAlert",
+  "type": "object",
+  "required": [
+    "severity",
+    "type",
+    "medications",
+    "reason",
+    "requiresDoctorReview"
+  ],
+  "properties": {
+    "alertId": { "type": "string" },
+    "severity": {
+      "type": "string",
+      "enum": ["LOW", "MODERATE", "HIGH", "CONTRAINDICATED"]
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "DRUG_INTERACTION",
+        "DUPLICATE_THERAPY",
+        "ALLERGY_CROSS_REACTIVITY",
+        "UNKNOWN_MEDICATION",
+        "CONTRAINDICATION"
+      ]
+    },
+    "medications": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "reason": { "type": "string" },
+    "mechanism": { "type": "string" },
+    "effect": { "type": "string" },
+    "management": { "type": "string" },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source", "evidenceType"],
+        "properties": {
+          "source": { "type": "string" },
+          "sourceVersion": { "type": "string" },
+          "retrievedAt": { "type": "string" },
+          "evidenceType": { "type": "string" },
+          "confidence": { "type": "string" }
+        }
+      }
+    },
+    "requiresDoctorReview": { "type": "boolean", "default": true },
+    "doctorAction": {
+      "type": "string",
+      "enum": ["PENDING", "ACKNOWLEDGED", "MODIFIED", "OVERRIDDEN"]
+    }
+  },
+  "additionalProperties": false
+}

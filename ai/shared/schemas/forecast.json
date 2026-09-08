@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ForecastSignal",
+  "type": "object",
+  "required": [
+    "horizonDays",
+    "targetDate",
+    "predictedCases",
+    "confidenceInterval",
+    "modelName",
+    "modelVersion"
+  ],
+  "properties": {
+    "horizonDays": { "type": "integer", "enum": [7, 14, 28] },
+    "targetDate": { "type": "string" },
+    "predictedCases": { "type": "number", "minimum": 0 },
+    "confidenceInterval": {
+      "type": "object",
+      "required": ["lower", "upper"],
+      "properties": {
+        "lower": { "type": "number", "minimum": 0 },
+        "upper": { "type": "number", "minimum": 0 }
+      }
+    },
+    "modelName": { "type": "string" },
+    "modelVersion": { "type": "string" },
+    "unit": { "type": "string", "default": "cases" }
+  },
+  "additionalProperties": false
+}

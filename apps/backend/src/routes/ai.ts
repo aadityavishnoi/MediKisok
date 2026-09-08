@@ -95,3 +95,112 @@ aiRouter.post('/ai/next-question', async (req, res, next) => {
   }
 });
 
+/**
+ * Developer 2 Phase 4: POST /api/ai/consultation/start
+ * Connects patient intake, symptoms, regional disease surveillance, and first Clinical AI question.
+ */
+aiRouter.post('/ai/consultation/start', async (req, res, next) => {
+  try {
+    const { sessionId, patientId, chiefComplaint, reportedSymptoms, district, state, facilityId, doctorId } = req.body;
+    if (!sessionId) {
+      res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'sessionId is required' } });
+      return;
+    }
+
+    const { ConsultationAiService } = await import('../services/consultationAiService.js');
+    const result = await ConsultationAiService.startConsultation({
+      sessionId,
+      patientId,
+      chiefComplaint,
+      reportedSymptoms,
+      district,
+      state,
+      facilityId,
+      doctorId,
+    });
+
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * Developer 2 Phase 4: POST /api/ai/consultation/answer
+ * Submits patient answer, updates Clinical AI graph, evaluates next question or completes intake.
+ */
+aiRouter.post('/ai/consultation/answer', async (req, res, next) => {
+  try {
+    const { sessionId, questionId, answerValue, questionText, isRedFlagTrigger } = req.body;
+    if (!sessionId || !questionId) {
+      res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'sessionId and questionId are required' } });
+      return;
+    }
+
+    const { ConsultationAiService } = await import('../services/consultationAiService.js');
+    const result = await ConsultationAiService.submitAnswer({
+      sessionId,
+      questionId,
+      answerValue,
+      questionText,
+      isRedFlagTrigger,
+    });
+
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * Developer 2 Phase 4: GET /api/ai/consultation/:sessionId/context
+ * Retrieves unified AI consultation context with patient state, regional signals, and Rx alerts.
+ */
+aiRouter.get('/ai/consultation/:sessionId/context', async (req, res, next) => {
+  try {
+    const { sessionId } = req.params;
+    const requestingDoctor = (req as any).user ? { id: (req as any).user.sub, facilityId: (req as any).user.facilityId } : undefined;
+
+    const { ConsultationAiService } = await import('../services/consultationAiService.js');
+    const context = await ConsultationAiService.getContext(sessionId, requestingDoctor);
+
+    res.status(200).json({ context });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * Developer 2 Phase 4: POST /api/consultations/:id/complete
+ * Doctor final clinical decision: diagnosis, notes, prescription issuance, and alert acknowledgements.
+ * Enforces doctor final authority (doctorFinalDecision: true, autonomousDiagnosis: false).
+ */
+aiRouter.post('/consultations/:id/complete', async (req, res, next) => {
+  try {
+    const sessionId = req.params.id;
+    const { doctorId, diagnosis, notes, prescriptions, acknowledgedAlerts } = req.body;
+
+    if (!diagnosis) {
+      res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'diagnosis is required for doctor completion' } });
+      return;
+    }
+
+    const effectiveDoctorId = doctorId || (req as any).user?.sub || 'doc_consulting_physician';
+
+    const { ConsultationAiService } = await import('../services/consultationAiService.js');
+    const result = await ConsultationAiService.completeConsultation({
+      sessionId,
+      doctorId: effectiveDoctorId,
+      diagnosis,
+      notes,
+      prescriptions,
+      acknowledgedAlerts,
+    });
+
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+

@@ -1,0 +1,106 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ConsultationAiContext",
+  "type": "object",
+  "required": [
+    "consultationId",
+    "sessionId",
+    "patient",
+    "symptoms",
+    "answers",
+    "requiresDoctorReview",
+    "status"
+  ],
+  "properties": {
+    "consultationId": { "type": "string" },
+    "sessionId": { "type": "string" },
+    "regionId": { "type": "string" },
+    "patient": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fullName": { "type": "string" },
+        "age": { "type": "number" },
+        "gender": { "type": "string" },
+        "district": { "type": "string" },
+        "state": { "type": "string" }
+      }
+    },
+    "symptoms": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "answers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["questionId", "answerValue", "answeredAt"],
+        "properties": {
+          "questionId": { "type": "string" },
+          "questionText": { "type": "string" },
+          "answerValue": { "type": "string" },
+          "isRedFlagTrigger": { "type": "boolean" },
+          "answeredAt": { "type": "string" }
+        }
+      }
+    },
+    "clinicalSignals": {
+      "type": "array",
+      "items": { "$ref": "clinical-signal.json#" }
+    },
+    "regionalSignals": {
+      "type": "array",
+      "items": { "$ref": "regional-signal.json#" }
+    },
+    "medications": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "rxAlerts": {
+      "type": "array",
+      "items": { "$ref": "rx-alert.json#" }
+    },
+    "forecasts": {
+      "type": "array",
+      "items": { "$ref": "forecast.json#" }
+    },
+    "requiresDoctorReview": { "type": "boolean", "default": true },
+    "status": {
+      "type": "string",
+      "enum": [
+        "IN_PROGRESS",
+        "AI_HISTORY_COMPLETE",
+        "DOCTOR_REVIEW",
+        "PRESCRIPTION_REVIEW",
+        "COMPLETED",
+        "CANCELLED"
+      ]
+    },
+    "doctorDecision": {
+      "type": "object",
+      "properties": {
+        "doctorId": { "type": "string" },
+        "diagnosis": { "type": "string" },
+        "notes": { "type": "string" },
+        "acknowledgedAlerts": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "completedAt": { "type": "string" }
+      }
+    },
+    "auditTrail": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "requestId": { "type": "string" },
+          "timestamp": { "type": "string" },
+          "module": { "type": "string" },
+          "action": { "type": "string" }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

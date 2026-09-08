@@ -180,3 +180,83 @@ export interface NextQuestionResponse {
   isComplete: boolean;
   clinicalSafetyNotes: string;
 }
+
+export interface RxAlertEvidence {
+  source: string;
+  sourceVersion?: string;
+  retrievedAt?: string;
+  evidenceType: string;
+  confidence?: string;
+}
+
+export interface RxAlert {
+  alertId?: string;
+  severity: 'LOW' | 'MODERATE' | 'HIGH' | 'CONTRAINDICATED';
+  type: 'DRUG_INTERACTION' | 'DUPLICATE_THERAPY' | 'ALLERGY_CROSS_REACTIVITY' | 'UNKNOWN_MEDICATION' | 'CONTRAINDICATION';
+  medications: string[];
+  reason: string;
+  mechanism?: string;
+  effect?: string;
+  management?: string;
+  evidence?: RxAlertEvidence[];
+  requiresDoctorReview: boolean;
+  doctorAction?: 'PENDING' | 'ACKNOWLEDGED' | 'MODIFIED' | 'OVERRIDDEN';
+}
+
+export interface ForecastSignal {
+  horizonDays: 7 | 14 | 28;
+  targetDate: string;
+  predictedCases: number;
+  confidenceInterval: {
+    lower: number;
+    upper: number;
+  };
+  modelName: string;
+  modelVersion: string;
+  unit?: string;
+}
+
+export type ConsultationAiStatus =
+  | 'IN_PROGRESS'
+  | 'AI_HISTORY_COMPLETE'
+  | 'DOCTOR_REVIEW'
+  | 'PRESCRIPTION_REVIEW'
+  | 'COMPLETED'
+  | 'CANCELLED';
+
+export interface ConsultationAiContext {
+  consultationId: string;
+  sessionId: string;
+  regionId?: string;
+  patient: {
+    id: string;
+    fullName: string;
+    age?: number;
+    gender?: string;
+    district?: string;
+    state?: string;
+  };
+  symptoms: string[];
+  answers: AnsweredQuestionEntry[];
+  clinicalSignals: ClinicalSignal[];
+  regionalSignals: RegionalSignal[];
+  medications: string[];
+  rxAlerts: RxAlert[];
+  forecasts: ForecastSignal[];
+  requiresDoctorReview: boolean;
+  status: ConsultationAiStatus;
+  doctorDecision?: {
+    doctorId?: string;
+    diagnosis?: string;
+    notes?: string;
+    acknowledgedAlerts?: string[];
+    completedAt?: string;
+  };
+  auditTrail?: Array<{
+    requestId?: string;
+    timestamp: string;
+    module: string;
+    action: string;
+  }>;
+}
+

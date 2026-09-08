@@ -92,8 +92,9 @@ export class GeographicNormalizer {
   static normalizeRegion(
     rawDistrict: string,
     rawState?: string,
-  ): NormalizedGeographicEntity {
+  ): NormalizedGeographicEntity | null {
     const cleanDist = (rawDistrict || '').trim().toLowerCase();
+
     const cleanState = (rawState || '').trim().toLowerCase();
 
     // 1. Check direct alias lookup or valid Indian state
@@ -141,6 +142,11 @@ export class GeographicNormalizer {
   static getStateCode(stateName: string): string | undefined {
     return INDIAN_STATE_CODES[(stateName || '').trim().toLowerCase()];
   }
+
+  static normalize(rawDistrict: string, rawState?: string): NormalizedGeographicEntity | null {
+    return GeographicNormalizer.normalizeRegion(rawDistrict, rawState);
+  }
+
 
   private static toTitleCase(str: string): string {
 
