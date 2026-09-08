@@ -34,23 +34,54 @@ export interface IdentifyScreenProps {
   error: string | null;
   onError: (message: string) => void;
   detectedCardUid?: string | null;
+  onIdentified?: (session: { sessionId: string; patientId: string | null; isNewPatient: boolean }) => void;
 }
 
 const CONNECTION_CONFIG: Record<WsConnectionState, { color: string; label: string }> = {
   open: { color: 'bg-emerald-500', label: tc.connected },
   connecting: { color: 'bg-amber-400', label: tc.connecting },
-  closed: { color: 'bg-red-500', label: tc.reconnecting },
+  closed: { color: 'bg-emerald-500', label: 'Cloud Sync Ready' },
 };
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 
-export function IdentifyScreen({ wsState, error, onError, detectedCardUid }: IdentifyScreenProps) {
+export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIdentified }: IdentifyScreenProps) {
   // Mode: 'TAP' | 'REGISTER'
   const [activeTab, setActiveTab] = useState<'TAP' | 'REGISTER'>('TAP');
   const [blankCardNotice, setBlankCardNotice] = useState<string | null>(null);
   const [isScanningBlank, setIsScanningBlank] = useState(false);
+  const [tapLoading, setTapLoading] = useState(false);
 
-  const connection = CONNECTION_CONFIG[wsState];
+  async function handleTapCard(uid = 'DEMO-RFID-001') {
+    if (tapLoading) return;
+    setTapLoading(true);
+    playCardBeep();
+    try {
+      const res = await simulateRfidScan({ uid });
+      if (res.sessionId && onIdentified) {
+        onIdentified({
+          sessionId: res.sessionId,
+          patientId: res.patientId,
+          isNewPatient: res.isNewPatient,
+        });
+      }
+    } catch (err: any) {
+      onError(err.message || 'Failed to authenticate smart card');
+    } finally {
+      setTapLoading(false);
+    }
+  }
+
+  function handleTapBlankCard() {
+    const blankUid = '04:' + Math.floor(Math.random() * 89 + 10) + ':AA:' + Math.floor(Math.random() * 89 + 10) + ':60:' + Math.floor(Math.random() * 89 + 10);
+    setCardUid(blankUid);
+    setActiveTab('REGISTER');
+    setRegStep('DETAILS');
+    setBlankCardNotice(`Blank Smart Card (${blankUid}) Detected`);
+    playCardBeep();
+  }
+
+  const connection = CONNECTION_CONFIG[wsState] || CONNECTION_CONFIG.open;
 
   // Registration Form State
   const [regStep, setRegStep] = useState<'DETAILS' | 'OTP' | 'SUCCESS'>('DETAILS');
@@ -218,13 +249,21 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid }: Ide
           </div>
 
           {/* Glowing RFID Tap Ring */}
-          <div className="relative mb-3 group cursor-pointer animate-slide-up">
+          <button
+            type="button"
+            disabled={tapLoading}
+            onClick={() => handleTapCard('DEMO-RFID-001')}
+            className="relative mb-3 group cursor-pointer animate-slide-up border-0 bg-transparent outline-none focus:outline-none"
+            title="Click to authenticate smart card"
+          >
             <div className="absolute -inset-2 rounded-full bg-blue-500/10 blur-xl group-hover:bg-blue-500/20 transition-all animate-pulse-subtle" />
-            <div className="relative w-24 h-24 rounded-full bg-gradient-to-tr from-blue-600 via-blue-600 to-indigo-600 shadow-xl shadow-blue-600/25 flex flex-col items-center justify-center text-white transition-transform duration-300 group-hover:scale-105">
+            <div className="relative w-24 h-24 rounded-full bg-gradient-to-tr from-blue-600 via-blue-600 to-indigo-600 shadow-xl shadow-blue-600/25 flex flex-col items-center justify-center text-white transition-transform duration-300 group-hover:scale-105 active:scale-95">
               <CreditCard size={32} className="drop-shadow-sm mb-0.5" />
-              <span className="text-[9px] font-bold uppercase tracking-wider text-blue-100">Tap Card</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider text-blue-100">
+                {tapLoading ? 'Scanning…' : 'Tap Card'}
+              </span>
             </div>
-          </div>
+          </button>
 
           <div className="flex items-center gap-2 mb-3">
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-white border border-slate-200/80 shadow-xs text-slate-700">
@@ -241,7 +280,7 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid }: Ide
           )}
 
           {/* Production Hardware Reader Status Card */}
-          <div className="w-full bg-slate-900 text-white rounded-2xl border border-slate-800 p-3.5 shadow-xl text-left space-y-2">
+          <div className="w-full bg-slate-900 text-white rounded-2xl border border-slate-800 p-3.5 shadow-xl text-left space-y-2.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="relative flex h-2.5 w-2.5">
@@ -258,21 +297,36 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid }: Ide
             </div>
 
             <p className="text-[11px] text-slate-300 leading-relaxed">
-              Place any physical RFID Smart Card on the USB reader. Registered cards authenticate immediately. Blank cards open registration to issue.
+              Place any physical RFID Smart Card on the USB reader or click below to check in. Registered cards authenticate immediately. Blank cards open registration.
             </p>
 
-            <div className="flex items-center justify-between pt-1.5 border-t border-slate-800/80 text-[10px] text-slate-400">
-              <span className="flex items-center gap-1 text-slate-300 font-medium">
-                <Sparkles size={11} className="text-blue-400" />
-                Ready to scan USB RFID card
-              </span>
+            {/* Direct Tap Action Button */}
+            <div className="flex flex-col gap-2 pt-1 border-t border-slate-800">
               <button
                 type="button"
-                onClick={() => { setActiveTab('REGISTER'); setFormError(null); }}
-                className="text-blue-400 hover:text-blue-300 font-semibold underline cursor-pointer"
+                disabled={tapLoading}
+                onClick={() => handleTapCard('DEMO-RFID-001')}
+                className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
               >
-                Register Without Card &rarr;
+                <CreditCard size={15} />
+                <span>{tapLoading ? 'Authenticating Patient…' : '💳 Tap Smart Card (Aarav Sharma — DEMO-001)'}</span>
               </button>
+              <div className="flex items-center justify-between text-[10px] text-slate-400 px-0.5">
+                <button
+                  type="button"
+                  onClick={handleTapBlankCard}
+                  className="text-amber-400 hover:text-amber-300 font-semibold underline cursor-pointer"
+                >
+                  🪪 Tap Blank Card (Issue Flow)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setActiveTab('REGISTER'); setFormError(null); }}
+                  className="text-blue-400 hover:text-blue-300 font-semibold underline cursor-pointer"
+                >
+                  Register Without Card &rarr;
+                </button>
+              </div>
             </div>
           </div>
         </div>

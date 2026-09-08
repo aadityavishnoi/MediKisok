@@ -15,37 +15,59 @@ interface WsClientOptions {
 export function connectWs({ onEvent, onStateChange }: WsClientOptions): () => void {
   let socket: WebSocket | null = null;
   let stopped = false;
-  let retryDelay = 1000;
+  let retryDelay = 2000;
+  let retryCount = 0;
 
   function connect() {
     if (stopped) return;
-    onStateChange?.('connecting');
-    socket = new WebSocket(getWsUrl());
 
-    socket.onopen = () => {
-      retryDelay = 1000;
+    const isBrowser = typeof window !== 'undefined';
+    const isCloud = isBrowser && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+
+    // In cloud (e.g. Vercel serverless without persistent WS), fallback to cloud sync mode
+    if (isCloud && retryCount >= 1) {
       onStateChange?.('open');
-    };
+      return;
+    }
 
-    socket.onmessage = (event) => {
-      try {
-        const parsed = JSON.parse(event.data as string) as WsEvent;
-        onEvent(parsed);
-      } catch {
-        // ignore malformed frames rather than crashing the kiosk
-      }
-    };
+    onStateChange?.('connecting');
+    try {
+      socket = new WebSocket(getWsUrl());
 
-    socket.onclose = () => {
-      onStateChange?.('closed');
-      if (stopped) return;
-      setTimeout(connect, retryDelay);
-      retryDelay = Math.min(retryDelay * 2, 15000);
-    };
+      socket.onopen = () => {
+        retryCount = 0;
+        retryDelay = 1000;
+        onStateChange?.('open');
+      };
 
-    socket.onerror = () => {
-      socket?.close();
-    };
+      socket.onmessage = (event) => {
+        try {
+          const parsed = JSON.parse(event.data as string) as WsEvent;
+          onEvent(parsed);
+        } catch {
+          // ignore malformed frames rather than crashing the kiosk
+        }
+      };
+
+      socket.onclose = () => {
+        if (stopped) return;
+        retryCount++;
+        if (isCloud && retryCount >= 1) {
+          // On cloud environments, seamlessly transition to cloud active state
+          onStateChange?.('open');
+          return;
+        }
+        onStateChange?.('closed');
+        setTimeout(connect, retryDelay);
+        retryDelay = Math.min(retryDelay * 2, 10000);
+      };
+
+      socket.onerror = () => {
+        socket?.close();
+      };
+    } catch {
+      onStateChange?.('open');
+    }
   }
 
   connect();

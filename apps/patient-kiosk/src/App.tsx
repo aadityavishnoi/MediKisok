@@ -5,7 +5,7 @@ import { PatientFlow } from './screens/PatientFlow.js';
 import { useKioskSession } from './state/useKioskSession.js';
 
 export function App() {
-  const { stage, wsState, identifyError, reportIdentifyError, blankCardUid } = useKioskSession();
+  const { stage, wsState, identifyError, reportIdentifyError, blankCardUid, onIdentified } = useKioskSession();
 
   // Clear any residual dev mode settings from localStorage on mount
   useEffect(() => {
@@ -22,6 +22,7 @@ export function App() {
           error={identifyError}
           onError={reportIdentifyError}
           detectedCardUid={blankCardUid}
+          onIdentified={onIdentified}
         />
       </KioskShell>
     );

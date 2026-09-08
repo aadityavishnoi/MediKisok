@@ -13,6 +13,7 @@ interface UseKioskSessionResult {
   blankCardUid: string | null;
   clearIdentifyError: () => void;
   reportIdentifyError: (message: string) => void;
+  onIdentified: (session: { sessionId: string; patientId: string | null; isNewPatient: boolean }) => void;
 }
 
 /**
@@ -60,5 +61,14 @@ export function useKioskSession(): UseKioskSessionResult {
     blankCardUid,
     clearIdentifyError: useCallback(() => setIdentifyError(null), []),
     reportIdentifyError: useCallback((message: string) => setIdentifyError(message), []),
+    onIdentified: useCallback((session: { sessionId: string; patientId: string | null; isNewPatient: boolean }) => {
+      setIdentifyError(null);
+      setStage({
+        name: 'IDENTIFIED',
+        sessionId: session.sessionId,
+        patientId: session.patientId,
+        isNewPatient: session.isNewPatient,
+      });
+    }, []),
   };
 }
