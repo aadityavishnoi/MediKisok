@@ -273,4 +273,117 @@ export interface AuthLoginResponse {
   name: string;
 }
 
+// ---------------------------------------------------------------------------
+// Hospital Admin Module
+// ---------------------------------------------------------------------------
+
+export interface HospitalDoctorItem {
+  id: string;
+  name: string;
+  dept: string;
+  room: string;
+  patientsWaiting: number;
+  status: 'Available' | 'In Consultation' | 'Off Duty';
+  avgConsultTime: string;
+  aiVerificationRate: string;
+}
+
+export interface HospitalKioskItem {
+  code: string;
+  location: string;
+  firmware: string;
+  heartbeat: string;
+  status: 'Online' | 'Degraded' | 'Offline';
+  rfidReader: 'Healthy' | 'Faulty';
+  ocrCamera: 'Healthy' | 'Degraded';
+  printerPaper: number;
+  mode: 'General OPD' | 'AYUSH Mode' | 'Emergency Priority';
+}
+
+export interface HospitalDepartmentItem {
+  id: string;
+  name: string;
+  code: string;
+  wing: string;
+  floor: string;
+  capacity: string;
+  doctors: string;
+  status: 'Optimal' | 'High Load' | 'Over Capacity';
+  mode: string;
+}
+
+export interface HospitalIncidentItem {
+  id: string;
+  title: string;
+  description: string;
+  severity: string;
+  status: string;
+  assignedStaff: string | null;
+  createdAt: string;
+}
+
+export interface HospitalOverviewResponse {
+  facility: {
+    id: string;
+    code: string;
+    name: string;
+    type: string;
+    abdmId: string;
+  };
+  metrics: {
+    todayIntake: number;
+    doctorsOnDuty: number;
+    avgTriageMinutes: number;
+    redFlagAlerts: number;
+    kioskOffloadPercentage: number;
+  };
+  doctors: HospitalDoctorItem[];
+  kiosks: HospitalKioskItem[];
+  alerts: HospitalIncidentItem[];
+}
+
+export interface HospitalRfidInventoryResponse {
+  totalAllocated: number;
+  availableStock: number;
+  issuedToPatients: number;
+  damagedReturned: number;
+  batches?: unknown[];
+}
+
+export interface HospitalHisIntegrationResponse {
+  connected: boolean;
+  adapter: string;
+  fhirGateway: string;
+  hfrFacilityId: string;
+  isLinkedHfr: boolean;
+  uptimePercentage: number;
+  syncHealth: string;
+  abdmMilestones: {
+    m1: boolean;
+    m2: boolean;
+    m3: boolean;
+  };
+}
+
+export interface KioskModeUpdateRequest {
+  mode: string;
+}
+
+export interface KioskModeUpdateResponse {
+  success: boolean;
+  terminalCode: string;
+  mode: string;
+}
+
+export interface HospitalIncidentDispatchRequest {
+  staffName?: string;
+}
+
+export interface HospitalIncidentDispatchResponse {
+  success: boolean;
+  incidentId: string;
+  status: string;
+  assignedStaff: string;
+}
+
 export type { DocumentType, IdentificationMethod, DeviceStatus };

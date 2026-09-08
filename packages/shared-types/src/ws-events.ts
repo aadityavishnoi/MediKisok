@@ -59,12 +59,44 @@ export interface HardwareStatusChangedEvent {
   };
 }
 
+export interface KioskModeChangedEvent {
+  type: 'KIOSK_MODE_CHANGED';
+  payload: {
+    terminalCode: string;
+    mode: string;
+    timestamp: string;
+  };
+}
+
+export interface HospitalIncidentUpdatedEvent {
+  type: 'HOSPITAL_INCIDENT_UPDATED';
+  payload: {
+    incidentId: string;
+    status: string;
+    assignedStaff: string | null;
+    timestamp: string;
+  };
+}
+
+export interface QueueUpdatedEvent {
+  type: 'QUEUE_UPDATED';
+  payload: {
+    departmentId: string;
+    totalWaiting: number;
+    timestamp: string;
+  };
+}
+
 export type WsEvent =
   | RfidScannedEvent
   | AlertRaisedEvent
   | AlertAcknowledgedEvent
   | SessionUpdatedEvent
   | SummaryReadyEvent
-  | HardwareStatusChangedEvent;
+  | HardwareStatusChangedEvent
+  | KioskModeChangedEvent
+  | HospitalIncidentUpdatedEvent
+  | QueueUpdatedEvent;
 
 export type WsEventType = WsEvent['type'];
+

@@ -233,6 +233,9 @@ importers:
 
   apps/hospital-admin:
     dependencies:
+      '@medikiosk/api-client':
+        specifier: workspace:*
+        version: link:../../packages/api-client
       '@medikiosk/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types

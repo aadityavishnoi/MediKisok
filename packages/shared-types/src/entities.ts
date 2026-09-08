@@ -12,6 +12,23 @@ import type {
   Mode,
   SessionStatus,
   TimelineEventType,
+  FacilityType,
+  DepartmentLoadStatus,
+  ShiftType,
+  DoctorDutyStatus,
+  QueuePriority,
+  QueueStatus,
+  KioskOperationalMode,
+  ComponentHealthStatus,
+  PrinterHealthStatus,
+  RfidCardType,
+  RfidCardStockStatus,
+  HisSystemType,
+  IntegrationHealthStatus,
+  IncidentType,
+  IncidentSeverity,
+  IncidentStatus,
+  HospitalStaffRole,
 } from './enums.js';
 
 /** All timestamps are ISO-8601 strings as they cross the wire (API responses are JSON). */
@@ -216,3 +233,196 @@ export interface HardwareDeviceState {
   firmwareVersion: string | null;
   isDemo: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Hospital Admin Domain Entities
+// ---------------------------------------------------------------------------
+
+export interface HospitalFacility {
+  id: string;
+  facilityCode: string;
+  name: string;
+  type: FacilityType;
+  abdmFacilityId: string | null;
+  address: string | null;
+  city: string;
+  state: string;
+  pincode: string | null;
+  contactPhone: string | null;
+  contactEmail: string | null;
+  active: boolean;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface Department {
+  id: string;
+  facilityId: string;
+  name: string;
+  code: string;
+  wingOrBlock: string | null;
+  floor: string | null;
+  dailyCapacity: number;
+  currentLoadStatus: DepartmentLoadStatus;
+  mode: Mode;
+  isActive: boolean;
+  headDoctorId: string | null;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface ConsultationRoom {
+  id: string;
+  facilityId: string;
+  departmentId: string;
+  roomNumber: string;
+  roomName: string;
+  floor: string | null;
+  isActive: boolean;
+  currentDoctorId: string | null;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface DoctorRoster {
+  id: string;
+  facilityId: string;
+  doctorId: string;
+  departmentId: string;
+  roomId: string | null;
+  shiftDate: ISODateString;
+  shiftType: ShiftType;
+  status: DoctorDutyStatus;
+  patientsWaitingCount: number;
+  patientsServedCount: number;
+  avgConsultTimeMinutes: number;
+  aiVerificationRate: number;
+  checkInTime: ISODateString | null;
+  checkOutTime: ISODateString | null;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface PatientQueueEntry {
+  id: string;
+  facilityId: string;
+  departmentId: string;
+  sessionId: string;
+  patientId: string;
+  rosterId: string | null;
+  doctorId: string | null;
+  tokenNumber: string;
+  priority: QueuePriority;
+  status: QueueStatus;
+  queuePosition: number;
+  estimatedWaitMinutes: number;
+  calledAt: ISODateString | null;
+  consultationStartedAt: ISODateString | null;
+  completedAt: ISODateString | null;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface KioskTerminalProfile {
+  id: string;
+  facilityId: string;
+  deviceId: string;
+  assignedDepartmentId: string | null;
+  terminalCode: string;
+  mode: KioskOperationalMode;
+  rfidReaderStatus: ComponentHealthStatus;
+  ocrCameraStatus: ComponentHealthStatus;
+  printerStatus: PrinterHealthStatus;
+  printerPaperLevel: number;
+  touchscreenStatus: ComponentHealthStatus;
+  batteryBackupPercentage: number | null;
+  lastSelfTestAt: ISODateString | null;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface RfidInventoryBatch {
+  id: string;
+  facilityId: string;
+  batchNumber: string;
+  cardType: RfidCardType;
+  totalAllocated: number;
+  availableStock: number;
+  issuedCount: number;
+  damagedReturnedCount: number;
+  reorderThreshold: number;
+  unitCost: number | null;
+  receivedDate: ISODateString;
+  supplier: string | null;
+  notes: string | null;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface HospitalIntegrationConfig {
+  id: string;
+  facilityId: string;
+  hisType: HisSystemType;
+  fhirGatewayUrl: string;
+  hfrFacilityId: string | null;
+  isLinkedHfr: boolean;
+  syncEnabled: boolean;
+  syncIntervalSeconds: number;
+  lastSyncAt: ISODateString | null;
+  syncHealthStatus: IntegrationHealthStatus;
+  uptimePercentage: number;
+  abdmMilestone1: boolean;
+  abdmMilestone2: boolean;
+  abdmMilestone3: boolean;
+  authClientId: string | null;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface MaintenanceIncident {
+  id: string;
+  facilityId: string;
+  kioskProfileId: string | null;
+  deviceId: string | null;
+  title: string;
+  description: string;
+  incidentType: IncidentType;
+  severity: IncidentSeverity;
+  status: IncidentStatus;
+  assignedStaff: string | null;
+  dispatchedAt: ISODateString | null;
+  resolvedAt: ISODateString | null;
+  resolutionNotes: string | null;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface HospitalStaff {
+  id: string;
+  facilityId: string;
+  name: string;
+  email: string;
+  role: HospitalStaffRole;
+  designation: string | null;
+  phone: string | null;
+  isActive: boolean;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface OpdMetricSnapshot {
+  id: string;
+  facilityId: string;
+  snapshotDate: ISODateString;
+  hour: number | null;
+  totalPatientIntake: number;
+  generalOpdIntake: number;
+  ayushIntake: number;
+  emergencyIntake: number;
+  doctorsOnDuty: number;
+  avgTriageMinutes: number;
+  redFlagAlerts: number;
+  kioskOffloadPercentage: number;
+  createdAt: ISODateString;
+}
+

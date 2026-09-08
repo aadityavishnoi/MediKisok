@@ -12,6 +12,7 @@ import { doctorRouter } from './routes/doctor.js';
 import { documentsRouter } from './routes/documents.js';
 import { aiRouter } from './routes/ai.js';
 import { adminRouter } from './routes/admin.js';
+import { hospitalAdminRouter } from './routes/hospitalAdmin.js';
 import { ttsRouter } from './routes/tts.js';
 
 export function createApp() {
@@ -34,6 +35,7 @@ export function createApp() {
   app.use('/api', documentsRouter);
   app.use('/api', aiRouter);
   app.use('/api', adminRouter);
+  app.use('/api/hospital', hospitalAdminRouter);
   app.use('/api', ttsRouter);
 
   app.use((_req, res) => {
