@@ -19,6 +19,8 @@
     "prisma:generate": "pnpm --filter backend prisma:generate",
     "prisma:migrate": "pnpm --filter backend prisma:migrate",
     "prisma:seed": "pnpm --filter backend prisma:seed",
+    "db:verify": "pnpm --filter backend db:verify",
+    "db:reset": "pnpm --filter backend db:reset",
     "rfid:test": "pnpm --filter backend rfid:bridge"
   },
   "devDependencies": {
