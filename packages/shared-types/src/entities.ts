@@ -29,6 +29,11 @@ import type {
   IncidentSeverity,
   IncidentStatus,
   HospitalStaffRole,
+  AppointmentType,
+  AppointmentStatus,
+  BillingStatus,
+  PaymentMethod,
+  PatientNotificationType,
 } from './enums.js';
 
 /** All timestamps are ISO-8601 strings as they cross the wire (API responses are JSON). */
@@ -45,6 +50,11 @@ export interface Patient {
   dateOfBirth: ISODateString | null;
   gender: string | null;
   phone: string | null;
+  email?: string | null;
+  bloodGroup?: string | null;
+  address?: string | null;
+  emergencyContact?: string | null;
+  emergencyPhone?: string | null;
   abhaId: string | null;
   registrationSource: IdentificationMethod;
   isDemo: boolean;
@@ -423,6 +433,127 @@ export interface OpdMetricSnapshot {
   avgTriageMinutes: number;
   redFlagAlerts: number;
   kioskOffloadPercentage: number;
+  createdAt: ISODateString;
+}
+
+// ---------------------------------------------------------------------------
+// Patient Portal Entities
+// ---------------------------------------------------------------------------
+
+export interface PatientPortalProfile {
+  id: string;
+  fullName: string;
+  dateOfBirth: ISODateString | null;
+  gender: string | null;
+  phone: string | null;
+  email: string | null;
+  bloodGroup: string | null;
+  address: string | null;
+  emergencyContact: string | null;
+  emergencyPhone: string | null;
+  abhaId: string | null;
+  registeredFacilityId: string | null;
+  createdAt: ISODateString;
+}
+
+export interface AppointmentEntity {
+  id: string;
+  patientId: string;
+  doctorId: string | null;
+  doctorName?: string | null;
+  doctorDepartment?: string | null;
+  facilityId: string | null;
+  facilityName?: string | null;
+  departmentId: string | null;
+  departmentName?: string | null;
+  appointmentDate: ISODateString;
+  timeSlot: string;
+  type: AppointmentType;
+  status: AppointmentStatus;
+  reason: string;
+  notes: string | null;
+  cancellationReason: string | null;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface BillingInvoiceItem {
+  description: string;
+  quantity?: number;
+  unitPrice?: number;
+  amount: number;
+}
+
+export interface BillingInvoiceEntity {
+  id: string;
+  patientId: string;
+  appointmentId: string | null;
+  invoiceNumber: string;
+  description: string;
+  department: string | null;
+  totalAmount: number;
+  discountAmount: number;
+  netAmount: number;
+  status: BillingStatus;
+  paymentMethod: PaymentMethod | null;
+  paymentDate: ISODateString | null;
+  transactionReference: string | null;
+  items: BillingInvoiceItem[] | null;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface PatientNotificationEntity {
+  id: string;
+  patientId: string;
+  title: string;
+  message: string;
+  type: PatientNotificationType;
+  read: boolean;
+  actionUrl: string | null;
+  createdAt: ISODateString;
+}
+
+export interface PrescriptionMedicationItem {
+  name: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  instructions: string;
+}
+
+export interface PrescriptionEntity {
+  id: string;
+  patientId: string;
+  doctorId: string | null;
+  doctorName?: string | null;
+  appointmentId: string | null;
+  prescriptionDate: ISODateString;
+  diagnosis: string;
+  instructions: string | null;
+  medications: PrescriptionMedicationItem[];
+  pdfUrl: string | null;
+  createdAt: ISODateString;
+}
+
+export interface LabReportEntity {
+  id: string;
+  patientId: string;
+  sessionId?: string | null;
+  title: string;
+  testDate: ISODateString;
+  category: string;
+  facilityName?: string | null;
+  status: 'COMPLETED' | 'PENDING';
+  parameters: Array<{
+    name: string;
+    value: string;
+    unit: string;
+    referenceRange: string;
+    status: 'NORMAL' | 'ABNORMAL' | 'CRITICAL';
+  }>;
+  doctorNotes?: string | null;
+  fileUrl?: string | null;
   createdAt: ISODateString;
 }
 

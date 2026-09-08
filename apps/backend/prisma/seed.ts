@@ -328,14 +328,14 @@ async function main() {
 
   // 11. 8 Synthetic Patients & Active Sessions
   const patientsData = [
-    { id: 'demo-patient-001', fullName: 'Aarav Sharma', gender: 'Male', dob: new Date('1985-03-14'), phone: '9999900001', rfidUid: 'DEMO-RFID-001', chiefComplaint: 'Chest pain', category: 'chest-pain', deptCode: 'CARD', isRedFlag: true },
-    { id: 'demo-patient-002', fullName: 'Priya Verma', gender: 'Female', dob: new Date('1992-07-22'), phone: '9999900002', rfidUid: 'DEMO-RFID-002', chiefComplaint: 'Severe breathlessness', category: 'breathing-difficulty', deptCode: 'GEN', isRedFlag: true },
-    { id: 'demo-patient-003', fullName: 'Ramesh Patel', gender: 'Male', dob: new Date('1968-11-05'), phone: '9999900003', rfidUid: 'DEMO-RFID-003', chiefComplaint: 'Chronic Type 2 Diabetes follow-up', category: 'general-fallback', deptCode: 'GEN', isRedFlag: false },
-    { id: 'demo-patient-004', fullName: 'Sunita Devi', gender: 'Female', dob: new Date('1975-01-30'), phone: '9999900004', rfidUid: 'DEMO-RFID-004', chiefComplaint: 'पेट में तेज दर्द (Severe Abdominal Pain)', category: 'abdominal-pain', deptCode: 'GEN', isRedFlag: true },
-    { id: 'demo-patient-005', fullName: 'Vikramaditya Joshi', gender: 'Male', dob: new Date('1990-09-18'), phone: '9999900005', rfidUid: 'DEMO-RFID-005', chiefComplaint: 'AYUSH Prakriti & Vata Imbalance Assessment', category: 'general-fallback', deptCode: 'AYUSH', isRedFlag: false },
-    { id: 'demo-patient-006', fullName: 'Ananya Roy', gender: 'Female', dob: new Date('1998-04-12'), phone: '9999900006', rfidUid: 'DEMO-RFID-006', chiefComplaint: 'Recurrent High Fever with Chills', category: 'fever', deptCode: 'PED', isRedFlag: false },
-    { id: 'demo-patient-007', fullName: 'Mohammed Iqbal', gender: 'Male', dob: new Date('1960-06-25'), phone: '9999900007', rfidUid: 'DEMO-RFID-007', chiefComplaint: 'Severe Headache & Blurred Vision (Allergy Conflict)', category: 'headache', deptCode: 'CARD', isRedFlag: false },
-    { id: 'demo-patient-008', fullName: 'Kavita Sundaram', gender: 'Female', dob: new Date('1982-12-08'), phone: '9999900008', rfidUid: 'DEMO-RFID-008', chiefComplaint: 'Fatigue & Abnormal Renal Function', category: 'general-fallback', deptCode: 'GEN', isRedFlag: false },
+    { id: 'demo-patient-001', fullName: 'Aarav Sharma', email: 'aarav.sharma@medikiosk.local', gender: 'Male', dob: new Date('1985-03-14'), phone: '9999900001', bloodGroup: 'B+', address: 'A-42, Hauz Khas, New Delhi', rfidUid: 'DEMO-RFID-001', chiefComplaint: 'Chest pain', category: 'chest-pain', deptCode: 'CARD', isRedFlag: true },
+    { id: 'demo-patient-002', fullName: 'Priya Verma', email: 'priya.verma@medikiosk.local', gender: 'Female', dob: new Date('1992-07-22'), phone: '9999900002', bloodGroup: 'O+', address: 'Plot 18, Sector 14, Rohini, New Delhi', rfidUid: 'DEMO-RFID-002', chiefComplaint: 'Severe breathlessness', category: 'breathing-difficulty', deptCode: 'GEN', isRedFlag: true },
+    { id: 'demo-patient-003', fullName: 'Ramesh Patel', email: 'ramesh.patel@medikiosk.local', gender: 'Male', dob: new Date('1968-11-05'), phone: '9999900003', bloodGroup: 'A+', address: 'C-301, Vasant Kunj, New Delhi', rfidUid: 'DEMO-RFID-003', chiefComplaint: 'Chronic Type 2 Diabetes follow-up', category: 'general-fallback', deptCode: 'GEN', isRedFlag: false },
+    { id: 'demo-patient-004', fullName: 'Sunita Devi', email: 'sunita.devi@medikiosk.local', gender: 'Female', dob: new Date('1975-01-30'), phone: '9999900004', bloodGroup: 'AB+', address: 'B-12, Mayur Vihar Phase 1, New Delhi', rfidUid: 'DEMO-RFID-004', chiefComplaint: 'पेट में तेज दर्द (Severe Abdominal Pain)', category: 'abdominal-pain', deptCode: 'GEN', isRedFlag: true },
+    { id: 'demo-patient-005', fullName: 'Vikramaditya Joshi', email: 'vikram.joshi@medikiosk.local', gender: 'Male', dob: new Date('1990-09-18'), phone: '9999900005', bloodGroup: 'O-', address: 'D-80, Saket, New Delhi', rfidUid: 'DEMO-RFID-005', chiefComplaint: 'AYUSH Prakriti & Vata Imbalance Assessment', category: 'general-fallback', deptCode: 'AYUSH', isRedFlag: false },
+    { id: 'demo-patient-006', fullName: 'Ananya Roy', email: 'ananya.roy@medikiosk.local', gender: 'Female', dob: new Date('1998-04-12'), phone: '9999900006', bloodGroup: 'B-', address: 'Flat 4B, CR Park, New Delhi', rfidUid: 'DEMO-RFID-006', chiefComplaint: 'Recurrent High Fever with Chills', category: 'fever', deptCode: 'PED', isRedFlag: false },
+    { id: 'demo-patient-007', fullName: 'Mohammed Iqbal', email: 'mohammed.iqbal@medikiosk.local', gender: 'Male', dob: new Date('1960-06-25'), phone: '9999900007', bloodGroup: 'A-', address: '72, Nizamuddin West, New Delhi', rfidUid: 'DEMO-RFID-007', chiefComplaint: 'Severe Headache & Blurred Vision (Allergy Conflict)', category: 'headache', deptCode: 'CARD', isRedFlag: false },
+    { id: 'demo-patient-008', fullName: 'Kavita Sundaram', email: 'kavita.sundaram@medikiosk.local', gender: 'Female', dob: new Date('1982-12-08'), phone: '9999900008', bloodGroup: 'O+', address: 'H-10, Green Park Extension, New Delhi', rfidUid: 'DEMO-RFID-008', chiefComplaint: 'Fatigue & Abnormal Renal Function', category: 'general-fallback', deptCode: 'GEN', isRedFlag: false },
   ];
 
   const primaryDevice = await prisma.rFIDDevice.findUnique({ where: { deviceCode: 'KIOSK-DEV-001' } });
@@ -344,13 +344,26 @@ async function main() {
     const p = patientsData[idx];
     const patient = await prisma.patient.upsert({
       where: { id: p.id },
-      update: { registeredFacilityId: facility.id },
+      update: {
+        registeredFacilityId: facility.id,
+        email: p.email,
+        passwordHash,
+        bloodGroup: p.bloodGroup,
+        address: p.address,
+      },
       create: {
         id: p.id,
         fullName: p.fullName,
         dateOfBirth: p.dob,
         gender: p.gender,
         phone: p.phone,
+        email: p.email,
+        passwordHash,
+        bloodGroup: p.bloodGroup,
+        address: p.address,
+        emergencyContact: 'Family Member',
+        emergencyPhone: '9810098100',
+        abhaId: `91-4821-${1000 + idx}-${2000 + idx}`,
         registrationSource: 'RFID',
         registeredFacilityId: facility.id,
         isDemo: true,
@@ -430,11 +443,167 @@ async function main() {
         estimatedWaitMinutes: (idx + 1) * 4,
       },
     });
+
+    // 12. Patient Portal Initial Data for Demo Patient 001 (Aarav Sharma)
+    if (p.id === 'demo-patient-001') {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(10, 0, 0, 0);
+
+      const pastApptDate = new Date();
+      pastApptDate.setDate(pastApptDate.getDate() - 14);
+      pastApptDate.setHours(11, 30, 0, 0);
+
+      // Upcoming Appointment
+      const upcomingAppt = await prisma.appointment.upsert({
+        where: { id: 'appt-demo-aarav-01' },
+        update: {},
+        create: {
+          id: 'appt-demo-aarav-01',
+          patientId: patient.id,
+          doctorId: 'DOC-01', // Dr. Rohan Mehta (Cardiology)
+          facilityId: facility.id,
+          departmentId: createdDepts['CARD'].id,
+          appointmentDate: tomorrow,
+          timeSlot: '10:00 AM',
+          type: 'FOLLOW_UP',
+          status: 'CONFIRMED',
+          reason: 'Cardiology Follow-up & ECG Review',
+          notes: 'Routine 2-week reassessment following cardiac triage at kiosk.',
+        },
+      });
+
+      // Past Appointment
+      await prisma.appointment.upsert({
+        where: { id: 'appt-demo-aarav-02' },
+        update: {},
+        create: {
+          id: 'appt-demo-aarav-02',
+          patientId: patient.id,
+          doctorId: 'DOC-01',
+          facilityId: facility.id,
+          departmentId: createdDepts['CARD'].id,
+          appointmentDate: pastApptDate,
+          timeSlot: '11:30 AM',
+          type: 'IN_PERSON',
+          status: 'COMPLETED',
+          reason: 'Initial Consultation: Acute Chest Heaviness',
+          notes: 'Triage conducted; advised echocardiography and lipid profile test.',
+        },
+      });
+
+      // Prescriptions
+      await prisma.patientPrescription.upsert({
+        where: { id: 'rx-demo-aarav-01' },
+        update: {},
+        create: {
+          id: 'rx-demo-aarav-01',
+          patientId: patient.id,
+          doctorId: 'DOC-01',
+          appointmentId: upcomingAppt.id,
+          prescriptionDate: new Date(),
+          diagnosis: 'Stable Angina / Essential Hypertension',
+          instructions: 'Take medications strictly after meals with plenty of water. Avoid high-sodium diet.',
+          medications: [
+            { name: 'Tab. Atorvastatin', dosage: '20 mg', frequency: 'Once daily at bedtime (OD)', duration: '30 days', instructions: 'After dinner' },
+            { name: 'Tab. Ramipril', dosage: '2.5 mg', frequency: 'Once daily morning (OD)', duration: '30 days', instructions: 'Before breakfast' },
+            { name: 'Tab. Ecosprin (Aspirin)', dosage: '75 mg', frequency: 'Once daily post lunch (OD)', duration: '30 days', instructions: 'After lunch' },
+            { name: 'Tab. Sorbitrate (SOS)', dosage: '5 mg', frequency: 'Sublingual if chest tightness occurs', duration: 'As needed', instructions: 'Under the tongue' },
+          ],
+        },
+      });
+
+      // Invoices
+      await prisma.billingInvoice.upsert({
+        where: { invoiceNumber: 'INV-2026-0001' },
+        update: {},
+        create: {
+          id: 'inv-aarav-001',
+          patientId: patient.id,
+          invoiceNumber: 'INV-2026-0001',
+          description: 'OPD Super-Specialist Consultation Fee (Cardiology)',
+          department: 'Cardiology OPD',
+          totalAmount: 300.0,
+          discountAmount: 50.0,
+          netAmount: 250.0,
+          status: 'PAID',
+          paymentMethod: 'UPI',
+          paymentDate: new Date(Date.now() - 14 * 86400000),
+          transactionReference: 'UPI/20260901/78394129',
+          items: [
+            { description: 'Senior Consultant Review Fee', quantity: 1, unitPrice: 250.0, amount: 250.0 },
+            { description: 'Digital ECG Recording & Interpretation', quantity: 1, unitPrice: 50.0, amount: 50.0 },
+          ],
+        },
+      });
+
+      await prisma.billingInvoice.upsert({
+        where: { invoiceNumber: 'INV-2026-0002' },
+        update: {},
+        create: {
+          id: 'inv-aarav-002',
+          patientId: patient.id,
+          appointmentId: upcomingAppt.id,
+          invoiceNumber: 'INV-2026-0002',
+          description: 'Follow-up Cardiology OPD & 2D Echo Doppler',
+          department: 'Cardiology Diagnostics',
+          totalAmount: 1450.0,
+          discountAmount: 150.0,
+          netAmount: 1300.0,
+          status: 'PENDING',
+          items: [
+            { description: 'OPD Follow-up Consultation Fee', quantity: 1, unitPrice: 200.0, amount: 200.0 },
+            { description: 'Transthoracic 2D Echo with Color Doppler', quantity: 1, unitPrice: 1250.0, amount: 1250.0 },
+          ],
+        },
+      });
+
+      // Notifications
+      await prisma.patientNotification.upsert({
+        where: { id: 'notif-aarav-01' },
+        update: {},
+        create: {
+          id: 'notif-aarav-01',
+          patientId: patient.id,
+          title: 'Upcoming Appointment Reminder',
+          message: `Reminder: Your Cardiology Consultation with Dr. Rohan Mehta is tomorrow at 10:00 AM (Room 102). Please arrive 15 minutes early.`,
+          type: 'APPOINTMENT_REMINDER',
+          read: false,
+        },
+      });
+
+      await prisma.patientNotification.upsert({
+        where: { id: 'notif-aarav-02' },
+        update: {},
+        create: {
+          id: 'notif-aarav-02',
+          patientId: patient.id,
+          title: 'Biochemistry Lab Reports Ready',
+          message: 'Your Complete Blood Count (CBC) and Lipid Profile reports have been processed and verified by AIIMS Pathology.',
+          type: 'LAB_REPORT_READY',
+          read: false,
+        },
+      });
+
+      await prisma.patientNotification.upsert({
+        where: { id: 'notif-aarav-03' },
+        update: {},
+        create: {
+          id: 'notif-aarav-03',
+          patientId: patient.id,
+          title: 'Invoice Generated for Follow-up Visit',
+          message: 'Invoice #INV-2026-0002 (₹1,300) for your scheduled visit has been generated. You can pay online via UPI or card.',
+          type: 'BILL_GENERATED',
+          read: true,
+        },
+      });
+    }
   }
 
-  console.log('Seed completed successfully: Hospital Admin facility, departments, staff, devices & queues initialized!');
+  console.log('Seed completed successfully: Hospital Admin & Patient Portal data initialized!');
   console.log('Hospital Admin: Dr. S. K. Gupta (admin.gupta@aiims.edu / MediKiosk@123)');
   console.log('Doctor login: demo.doctor@medikiosk.local / MediKiosk@123');
+  console.log('Patient Portal demo login: aarav.sharma@medikiosk.local / MediKiosk@123 (or 1-Click Demo Login)');
 }
 
 main()

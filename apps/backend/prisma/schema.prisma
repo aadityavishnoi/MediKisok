@@ -237,6 +237,53 @@ enum HospitalStaffRole {
 }
 
 // ---------------------------------------------------------------------------
+// Patient Portal Domain Enums
+// ---------------------------------------------------------------------------
+
+enum AppointmentType {
+  IN_PERSON
+  VIDEO_CONSULT
+  FOLLOW_UP
+  EMERGENCY
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+}
+
+enum BillingStatus {
+  PENDING
+  PAID
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  UPI
+  CREDIT_CARD
+  DEBIT_CARD
+  NET_BANKING
+  CASH
+  ABDM_INSURANCE
+}
+
+enum PatientNotificationType {
+  APPOINTMENT_CONFIRMED
+  APPOINTMENT_REMINDER
+  APPOINTMENT_CANCELLED
+  APPOINTMENT_RESCHEDULED
+  PRESCRIPTION_ISSUED
+  LAB_REPORT_READY
+  BILL_GENERATED
+  BILL_PAID
+  HEALTH_ALERT
+}
+
+// ---------------------------------------------------------------------------
 // Core Clinical & Kiosk Models
 // ---------------------------------------------------------------------------
 
@@ -246,6 +293,12 @@ model Patient {
   dateOfBirth          DateTime?
   gender               String?
   phone                String?              @unique
+  email                String?              @unique
+  passwordHash         String?
+  bloodGroup           String?
+  address              String?
+  emergencyContact     String?
+  emergencyPhone       String?
   abhaId               String?
   registrationSource   IdentificationMethod
   isDemo               Boolean              @default(false)
@@ -263,6 +316,10 @@ model Patient {
   alerts             Alert[]
   aiSummaries        AISummary[]
   queueEntries       PatientQueueEntry[]
+  appointments       Appointment[]
+  invoices           BillingInvoice[]
+  notifications      PatientNotification[]
+  prescriptions      PatientPrescription[]
 }
 
 model RFIDDevice {
@@ -460,6 +517,8 @@ model Doctor {
   assignedRooms     ConsultationRoom[] @relation("CurrentRoomDoctor")
   queueEntries      PatientQueueEntry[]
   headedDepartments Department[]       @relation("DepartmentHead")
+  appointments      Appointment[]
+  prescriptions     PatientPrescription[]
 }
 
 model Consultation {
@@ -543,6 +602,7 @@ model HospitalFacility {
   metricSnapshots      OpdMetricSnapshot[]
   queueEntries         PatientQueueEntry[]
   rosters              DoctorRoster[]
+  appointments         Appointment[]
 }
 
 model Department {
@@ -568,6 +628,7 @@ model Department {
   queueEntries PatientQueueEntry[]
   sessions     PatientSession[]
   kiosks       KioskTerminalProfile[]
+  appointments Appointment[]
 
   @@unique([facilityId, code])
 }
@@ -775,4 +836,92 @@ model OpdMetricSnapshot {
   facility HospitalFacility @relation(fields: [facilityId], references: [id])
 
   @@index([facilityId, snapshotDate])
+}
+
+// ---------------------------------------------------------------------------
+// Patient Portal Domain Models
+// ---------------------------------------------------------------------------
+
+model Appointment {
+  id                 String            @id @default(cuid())
+  patientId          String
+  doctorId           String?
+  facilityId         String?
+  departmentId       String?
+  appointmentDate    DateTime
+  timeSlot           String
+  type               AppointmentType   @default(IN_PERSON)
+  status             AppointmentStatus @default(SCHEDULED)
+  reason             String
+  notes              String?
+  cancellationReason String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  patient    Patient           @relation(fields: [patientId], references: [id])
+  doctor     Doctor?           @relation(fields: [doctorId], references: [id])
+  facility   HospitalFacility? @relation(fields: [facilityId], references: [id])
+  department Department?       @relation(fields: [departmentId], references: [id])
+  invoices   BillingInvoice[]
+
+  @@index([patientId, appointmentDate])
+  @@index([doctorId, appointmentDate])
+}
+
+model BillingInvoice {
+  id                   String         @id @default(cuid())
+  patientId            String
+  appointmentId        String?
+  invoiceNumber        String         @unique
+  description          String
+  department           String?
+  totalAmount          Float
+  discountAmount       Float          @default(0)
+  netAmount            Float
+  status               BillingStatus  @default(PENDING)
+  paymentMethod        PaymentMethod?
+  paymentDate          DateTime?
+  transactionReference String?
+  items                Json?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  patient     Patient      @relation(fields: [patientId], references: [id])
+  appointment Appointment? @relation(fields: [appointmentId], references: [id])
+
+  @@index([patientId, status])
+}
+
+model PatientNotification {
+  id        String                  @id @default(cuid())
+  patientId String
+  title     String
+  message   String
+  type      PatientNotificationType
+  read      Boolean                 @default(false)
+  actionUrl String?
+  createdAt DateTime                @default(now())
+
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  @@index([patientId, read, createdAt])
+}
+
+model PatientPrescription {
+  id               String   @id @default(cuid())
+  patientId        String
+  doctorId         String?
+  appointmentId    String?
+  prescriptionDate DateTime @default(now())
+  diagnosis        String
+  instructions     String?
+  medications      Json
+  pdfUrl           String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  patient Patient @relation(fields: [patientId], references: [id])
+  doctor  Doctor? @relation(fields: [doctorId], references: [id])
+
+  @@index([patientId, prescriptionDate])
 }

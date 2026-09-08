@@ -314,4 +314,53 @@ export const HospitalStaffRole = {
 } as const;
 export type HospitalStaffRole = (typeof HospitalStaffRole)[keyof typeof HospitalStaffRole];
 
+// Patient Portal Enums
+export const AppointmentType = {
+  IN_PERSON: 'IN_PERSON',
+  VIDEO_CONSULT: 'VIDEO_CONSULT',
+  FOLLOW_UP: 'FOLLOW_UP',
+  EMERGENCY: 'EMERGENCY',
+} as const;
+export type AppointmentType = (typeof AppointmentType)[keyof typeof AppointmentType];
+
+export const AppointmentStatus = {
+  SCHEDULED: 'SCHEDULED',
+  CONFIRMED: 'CONFIRMED',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED',
+  RESCHEDULED: 'RESCHEDULED',
+} as const;
+export type AppointmentStatus = (typeof AppointmentStatus)[keyof typeof AppointmentStatus];
+
+export const BillingStatus = {
+  PENDING: 'PENDING',
+  PAID: 'PAID',
+  CANCELLED: 'CANCELLED',
+  REFUNDED: 'REFUNDED',
+} as const;
+export type BillingStatus = (typeof BillingStatus)[keyof typeof BillingStatus];
+
+export const PaymentMethod = {
+  UPI: 'UPI',
+  CREDIT_CARD: 'CREDIT_CARD',
+  DEBIT_CARD: 'DEBIT_CARD',
+  NET_BANKING: 'NET_BANKING',
+  CASH: 'CASH',
+  ABDM_INSURANCE: 'ABDM_INSURANCE',
+} as const;
+export type PaymentMethod = (typeof PaymentMethod)[keyof typeof PaymentMethod];
+
+export const PatientNotificationType = {
+  APPOINTMENT_CONFIRMED: 'APPOINTMENT_CONFIRMED',
+  APPOINTMENT_REMINDER: 'APPOINTMENT_REMINDER',
+  APPOINTMENT_CANCELLED: 'APPOINTMENT_CANCELLED',
+  APPOINTMENT_RESCHEDULED: 'APPOINTMENT_RESCHEDULED',
+  PRESCRIPTION_ISSUED: 'PRESCRIPTION_ISSUED',
+  LAB_REPORT_READY: 'LAB_REPORT_READY',
+  BILL_GENERATED: 'BILL_GENERATED',
+  BILL_PAID: 'BILL_PAID',
+  HEALTH_ALERT: 'HEALTH_ALERT',
+} as const;
+export type PatientNotificationType = (typeof PatientNotificationType)[keyof typeof PatientNotificationType];
+
 
