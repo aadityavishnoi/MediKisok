@@ -1,0 +1,21 @@
+{
+  "model_version": "1.0.0-clinical-ai",
+  "tuned_parameters": {
+    "w_red_flag_critical": 1.50,
+    "w_red_flag_standard": 1.20,
+    "w_information_gain": 0.35,
+    "w_regional_critical": 0.50,
+    "w_regional_high": 0.35,
+    "w_regional_moderate": 0.15,
+    "w_regional_low": 0.05,
+    "w_symptom_relevance": 0.45,
+    "max_intake_questions": 6,
+    "minimum_confidence_threshold": 0.80
+  },
+  "benchmark_baselines": {
+    "top1_accuracy_target": 0.85,
+    "top3_recall_target": 0.95,
+    "red_flag_recall_target": 1.00,
+    "max_unnecessary_question_rate": 0.10
+  }
+}

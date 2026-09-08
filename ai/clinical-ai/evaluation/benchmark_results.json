@@ -1,0 +1,98 @@
+{
+  "dataset_version": "DDXPlus-benchmark-v1.0",
+  "total_test_trajectories": 7,
+  "metrics": {
+    "top1_accuracy": 1.0,
+    "top3_recall": 1.0,
+    "red_flag_recall": 1.0,
+    "unnecessary_question_rate": 0.04,
+    "average_questions_to_completion": 4.1
+  },
+  "performance_targets_met": {
+    "top1_accuracy_target_85_percent": true,
+    "top3_recall_target_95_percent": true,
+    "red_flag_recall_target_100_percent": true
+  },
+  "per_trajectory_results": [
+    {
+      "id": "BENCH_01_FEVER_SOLO",
+      "expected_top1": "FEV_001",
+      "predicted_top1": "FEV_001",
+      "predicted_top3": [
+        "FEV_001",
+        "FEV_002",
+        "CARD_001"
+      ],
+      "top1_match": true,
+      "top3_match": true
+    },
+    {
+      "id": "BENCH_02_FEVER_COUGH",
+      "expected_top1": "RESP_001",
+      "predicted_top1": "RESP_001",
+      "predicted_top3": [
+        "RESP_001",
+        "FEV_001",
+        "FEV_002"
+      ],
+      "top1_match": true,
+      "top3_match": true
+    },
+    {
+      "id": "BENCH_03_DYSPNEA_ACUTE",
+      "expected_top1": "RESP_001",
+      "predicted_top1": "RESP_001",
+      "predicted_top3": [
+        "RESP_001",
+        "FEV_001",
+        "FEV_002"
+      ],
+      "top1_match": true,
+      "top3_match": true
+    },
+    {
+      "id": "BENCH_04_CHEST_PAIN",
+      "expected_top1": "CARD_001",
+      "predicted_top1": "CARD_001",
+      "predicted_top3": [
+        "CARD_001",
+        "RESP_001",
+        "NEURO_001"
+      ],
+      "top1_match": true,
+      "top3_match": true
+    },
+    {
+      "id": "BENCH_05_COVID_REGIONAL_SURGE",
+      "expected_top1": "RESP_001",
+      "predicted_top1": "RESP_001",
+      "predicted_top3": [
+        "RESP_001",
+        "FEV_001",
+        "RESP_002"
+      ],
+      "top1_match": true,
+      "top3_match": true
+    },
+    {
+      "id": "BENCH_06_DENGUE_REGIONAL_SURGE",
+      "expected_top1": "DENGUE_001",
+      "predicted_top1": "DENGUE_001",
+      "predicted_top3": [
+        "DENGUE_001",
+        "FEV_001",
+        "FEV_002"
+      ],
+      "top1_match": true,
+      "top3_match": true
+    },
+    {
+      "id": "BENCH_07_EXHAUSTED_INTAKE",
+      "expected_top1": null,
+      "predicted_top1": null,
+      "predicted_top3": [],
+      "top1_match": true,
+      "top3_match": true
+    }
+  ]
+}

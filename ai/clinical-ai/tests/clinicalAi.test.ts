@@ -58,7 +58,7 @@ describe('Developer 1: Clinical AI Engine', () => {
     expect(response.nextQuestion).not.toBeNull();
     // Q_RESP_001 or Q_RESP_002 prioritized due to regional outbreak signal
     expect(response.nextQuestion?.relatedOutbreakDisease).toBe('COVID-19');
-    expect(response.suspectedDifferentials.some((d) => d.diseaseName.includes('SARS-CoV-2'))).toBe(true);
+    expect(response.suspectedDifferentials.some((d: any) => d.diseaseName.includes('SARS-CoV-2'))).toBe(true);
   });
 
   it('marks completion when maximum intake questions are answered', () => {
