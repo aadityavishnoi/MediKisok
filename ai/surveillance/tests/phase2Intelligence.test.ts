@@ -9,8 +9,10 @@ import {
   OutbreakForecaster,
   type TimeSeriesPoint,
 } from '../src/prediction/OutbreakForecaster';
+import { GeographicNormalizer } from '../src/normalization/GeographicNormalizer';
 
 describe('Developer 2 — Phase 2: Historical Surveillance → Outbreak Intelligence → Prediction', () => {
+
   // 1. Canonical Ingestion
   it('1. successfully ingests canonical surveillance observation', () => {
     const obs = SurveillanceQualityValidator.validateObservation({
@@ -395,4 +397,162 @@ describe('Developer 2 — Phase 2: Historical Surveillance → Outbreak Intellig
     expect(scF.positivityRate).toBeUndefined();
     expect(scF.evidence.some((e) => e.includes('denominator unrecorded'))).toBe(true);
   });
+
+  // 17. 7-Day and 14-Day Forward Multi-Horizon Forecasting
+  it('17. generates 7-day and 14-day forward outbreak projections with confidence intervals', () => {
+    const history = [10, 12, 14, 15, 18, 22, 28, 35, 42, 50];
+    const forecast7d = OutbreakForecaster.forecastHorizon(history, 7);
+    expect(forecast7d.horizonDays).toBe(7);
+    expect(forecast7d.dailyProjections.length).toBe(7);
+    expect(forecast7d.expectedTotalCases).toBeGreaterThan(0);
+    expect(forecast7d.trend).toBe('RISING');
+
+    // First and last projections
+    const day1 = forecast7d.dailyProjections[0];
+    const day7 = forecast7d.dailyProjections[6];
+    expect(day1.lowerCi95).toBeLessThanOrEqual(day1.predictedCases);
+    expect(day1.upperCi95).toBeGreaterThanOrEqual(day1.predictedCases);
+    expect(day7.upperCi95).toBeGreaterThan(day1.upperCi95); // Confidence interval widens with horizon
+
+    const forecast14d = OutbreakForecaster.forecastHorizon(history, 14);
+    expect(forecast14d.horizonDays).toBe(14);
+    expect(forecast14d.dailyProjections.length).toBe(14);
+    expect(forecast14d.expectedTotalCases).toBeGreaterThan(forecast7d.expectedTotalCases);
+  });
+
+  // 18. Tabular ML Autoregressive Benchmark & Promotion Decision
+  it('18. evaluates Tabular ML Ridge model against baselines and records transparent promotion decision', () => {
+    // 25 time steps for train (17) / val (4) / test (4)
+    const series: TimeSeriesPoint[] = Array.from({ length: 25 }, (_, i) => ({
+      date: `2026-08-${String(i + 1).padStart(2, '0')}`,
+      value: 10 + i * 2 + (i % 3 === 0 ? 3 : 0),
+    }));
+
+    const report = OutbreakForecaster.evaluateChronological(series, 'IN-UP-VARANASI', 'A90', { includeML: true });
+    expect(report.mlBenchmark).toBeDefined();
+    expect(report.mlBenchmark?.modelName).toBe('ML_TABULAR_AUTOREGRESSIVE');
+    expect(['PROMOTED', 'NOT_PROMOTED']).toContain(report.mlBenchmark?.promotionStatus);
+    expect(report.mlBenchmark?.decisionReason.length).toBeGreaterThan(10);
+    expect(report.mlBenchmark?.featuresUsed).toContain('cases1d');
+    expect(report.mlBenchmark?.featuresUsed).toContain('ma7');
+    expect(report.forecastHorizons?.['7d']).toBeDefined();
+    expect(report.forecastHorizons?.['14d']).toBeDefined();
+  });
+
+  // 19. Geographic Normalization & Stable Region Hierarchy
+  it('19. normalizes vernacular aliases and spelling variants into canonical hierarchical region IDs', () => {
+    // Alias Varanasi
+    const v1 = GeographicNormalizer.normalizeRegion('Varanasi');
+    const v2 = GeographicNormalizer.normalizeRegion('Banaras');
+    const v3 = GeographicNormalizer.normalizeRegion('Kashi');
+    expect(v1?.regionId).toBe('IN-UP-VARANASI');
+    expect(v2?.regionId).toBe('IN-UP-VARANASI');
+    expect(v3?.regionId).toBe('IN-UP-VARANASI');
+    expect(v1?.state).toBe('Uttar Pradesh');
+
+    // Alias Pune
+    const p1 = GeographicNormalizer.normalizeRegion('Poona');
+    expect(p1?.regionId).toBe('IN-MH-PUNE');
+
+    // State code resolution
+    expect(GeographicNormalizer.getStateCode('Uttar Pradesh')).toBe('UP');
+    expect(GeographicNormalizer.getStateCode('Maharashtra')).toBe('MH');
+    expect(GeographicNormalizer.getStateCode('Tamil Nadu')).toBe('TN');
+
+    // Unknown geography
+    expect(GeographicNormalizer.normalizeRegion('FictionalAtlantisDistrict')).toBeNull();
+  });
+
+  // 20. Surveillance Data Quality Engine Audit
+  it('20. audits observations for data quality, malformed records, and missing denominators', () => {
+    // Valid record
+    const validAudit = SurveillanceQualityValidator.auditObservation({
+      regionId: 'IN-UP-VARANASI',
+      diseaseCode: 'A90',
+      observationDate: '2026-08-10',
+      cases: 25,
+      screened: 250,
+      positive: 25,
+      source: 'IDSP',
+    });
+    expect(validAudit.valid).toBe(true);
+    expect(validAudit.qualityScore).toBeGreaterThanOrEqual(0.9);
+    expect(validAudit.errors.length).toBe(0);
+
+    // Negative counts error
+    const negAudit = SurveillanceQualityValidator.auditObservation({
+      regionId: 'IN-UP-VARANASI',
+      diseaseCode: 'A90',
+      observationDate: '2026-08-10',
+      cases: -5,
+    });
+    expect(negAudit.valid).toBe(false);
+    expect(negAudit.errors.some((e) => e.toLowerCase().includes('negative'))).toBe(true);
+
+    // Future timestamp error
+    const futureAudit = SurveillanceQualityValidator.auditObservation({
+      regionId: 'IN-UP-VARANASI',
+      diseaseCode: 'A90',
+      observationDate: '2099-01-01',
+      cases: 10,
+    });
+    expect(futureAudit.valid).toBe(false);
+    expect(futureAudit.errors.some((e) => e.toLowerCase().includes('future'))).toBe(true);
+
+    // Positive > tested error
+    const mismatchAudit = SurveillanceQualityValidator.auditObservation({
+      regionId: 'IN-UP-VARANASI',
+      diseaseCode: 'A90',
+      observationDate: '2026-08-10',
+      cases: 10,
+      tested: 5,
+      positive: 10,
+    });
+    expect(mismatchAudit.valid).toBe(false);
+    expect(mismatchAudit.errors.some((e) => e.toLowerCase().includes('exceeds tested'))).toBe(true);
+
+    // Missing denominator warning (NOT error — official bulletins often omit tested volume)
+    const noDenomAudit = SurveillanceQualityValidator.auditObservation({
+      regionId: 'IN-UP-VARANASI',
+      diseaseCode: 'A90',
+      observationDate: '2026-08-10',
+      cases: 15,
+    });
+    expect(noDenomAudit.valid).toBe(true);
+    expect(noDenomAudit.warnings.some((w) => w.toLowerCase().includes('denominator'))).toBe(true);
+  });
+
+  // 21. Multi-lag Temporal Features, Volatility, & Facility Clustering
+  it('21. extracts multi-scale moving averages, volatility metrics, and Herfindahl facility clustering', () => {
+    const dates = Array.from({ length: 30 }, (_, i) => `2026-08-${String(i + 1).padStart(2, '0')}`);
+    const obs: SurveillanceObservation[] = dates.map((d, i) => ({
+      id: `OBS_${i}`,
+      regionId: 'IN-UP-VARANASI',
+      diseaseCode: 'A90',
+      diseaseName: 'Dengue',
+      observationDate: d,
+      cases: 5 + i,
+      deaths: 0,
+      reportingFacilityId: `PHC_${i % 4}`,
+      source: 'IDSP',
+      isValid: true,
+    }));
+
+    const features = TemporalFeatureExtractor.extractFeatures(obs, '2026-08-30');
+    expect(features.cases1d).toBeDefined();
+    expect(features.cases3d).toBeGreaterThan(0);
+    expect(features.cases7d).toBeGreaterThan(0);
+    expect(features.cases14d).toBeGreaterThan(features.cases7d);
+    expect(features.cases28d).toBeGreaterThan(features.cases14d);
+    expect(features.growthRate7d).toBeDefined();
+    expect(features.ma3).toBeGreaterThan(0);
+    expect(features.ma7).toBeGreaterThan(0);
+    expect(features.rollingStd).toBeDefined();
+    expect(features.baseline4wMean).toBeGreaterThan(0);
+    expect(features.facilityConcentrationHHI).toBeDefined();
+    expect(features.facilityConcentrationHHI).toBeGreaterThan(0);
+    expect(features.facilityConcentrationHHI).toBeLessThanOrEqual(1.0);
+  });
+
 });
+

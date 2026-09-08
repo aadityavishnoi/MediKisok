@@ -145,4 +145,106 @@ describe('Developer 2: Medicine Intelligence & Rx Safety Engine', () => {
     expect(unknown.regulatorySchedule).toBe('UNKNOWN');
     expect(unknown.requiresDoctorVerification).toBe(true);
   });
+
+  // Test 12: Exact Duplicate Therapy (Different brand names of same active ingredient)
+  it('detects exact active ingredient duplicate therapy between Dolo and Calpol', () => {
+    const result = DrugSafetyEngine.checkPrescriptionSafety({
+      medications: ['Dolo 650', 'Calpol 500'],
+    });
+
+    expect(result.duplicateTherapy.length).toBeGreaterThan(0);
+    const dup = result.duplicateTherapy.find((d) => d.type === 'EXACT_DUPLICATE');
+    expect(dup).toBeDefined();
+    expect(dup?.activeIngredient).toBe('Paracetamol');
+    expect(dup?.severity).toBe('CRITICAL');
+    expect(dup?.evidenceProvenance.source).toBeDefined();
+    expect(result.requiresDoctorReview).toBe(true);
+  });
+
+  // Test 13: Class Duplicate Therapy (Two systemic NSAIDs)
+  it('detects pharmacological class duplicate therapy between Ibuprofen and Diclofenac', () => {
+    const result = DrugSafetyEngine.checkPrescriptionSafety({
+      medications: ['Brufen 400', 'Voveran 50'],
+    });
+
+    expect(result.duplicateTherapy.length).toBeGreaterThan(0);
+    const dup = result.duplicateTherapy.find((d) => d.type === 'POTENTIAL_DUPLICATE');
+    expect(dup).toBeDefined();
+    expect(dup?.pharmacologicalClass).toBe('NSAID');
+    expect(result.requiresDoctorReview).toBe(true);
+  });
+
+  // Test 14: Dual RAAS Blockade Contraindication (ACE Inhibitor + ARB)
+  it('flags contraindicated dual RAAS blockade between Enalapril and Telmisartan', () => {
+    const result = DrugSafetyEngine.checkPrescriptionSafety({
+      medications: ['Envas 5', 'Telma 40'],
+    });
+
+    expect(result.safe).toBe(false);
+    expect(result.interactions.length).toBeGreaterThan(0);
+    const raas = result.interactions.find((it) => it.severity === 'CONTRAINDICATED');
+    expect(raas).toBeDefined();
+    expect(raas?.description).toContain('Dual RAAS blockade');
+    expect(raas?.mechanism).toContain('renin-angiotensin');
+    expect(raas?.management).toBeDefined();
+  });
+
+  // Test 15: Cross-Reactivity Allergy Checking (Penicillin -> Cephalosporin)
+  it('evaluates beta-lactam class cross-reactivity for penicillin allergy with Ceftriaxone', () => {
+    const result = DrugSafetyEngine.checkPrescriptionSafety({
+      medications: ['Monocef 1g'],
+      allergies: ['penicillin'],
+    });
+
+    expect(result.allergyFlags.length).toBeGreaterThan(0);
+    const flag = result.allergyFlags.find((f) => f.medication.includes('Monocef'));
+    expect(flag).toBeDefined();
+    expect(flag?.matchType).toBe('POSSIBLE_MATCH');
+    expect(flag?.reason).toContain('beta-lactam cross-reactivity');
+    expect(flag?.severity).toBe('WARNING');
+  });
+
+  // Test 16: Structured Strength, Formulation, and Route Parsing
+  it('parses structured dosage quantity, unit, form, and route accurately', () => {
+    const parsed = MedicineNormalizer.normalizeMedicine('Tab Paracetamol 500 mg BD');
+    expect(parsed.genericName).toBe('Paracetamol');
+    expect(parsed.parsedDetails?.strengthNum).toBe(500);
+    expect(parsed.parsedDetails?.unit).toBe('mg');
+    expect(parsed.parsedDetails?.form).toBe('tablet');
+    expect(parsed.parsedDetails?.route).toBe('oral');
+    expect(parsed.parsedDetails?.frequency).toBe('BD');
+  });
+
+  // Test 17: Evidence Provenance on Interactions and Alerts
+  it('attaches verifiable regulatory provenance metadata to all drug interaction warnings', () => {
+    const result = DrugSafetyEngine.checkPrescriptionSafety({
+      medications: ['Deplatt 75', 'Omez 20'],
+    });
+
+    expect(result.interactions.length).toBeGreaterThan(0);
+    const interaction = result.interactions[0];
+    expect(interaction.evidenceProvenance).toBeDefined();
+    expect(interaction.evidenceProvenance?.source).toBeDefined();
+    expect(interaction.evidenceProvenance?.evidenceType).toBe('REGULATORY_COMPENDIUM');
+    expect(interaction.mechanism).toContain('CYP2C19');
+    expect(interaction.management).toContain('Pantoprazole');
+  });
+
+  // Test 18: Section 26 API Contract Compliance
+  it('returns full Section 26 contract format with versioning and clinical disclaimer', () => {
+    const result = DrugSafetyEngine.checkPrescriptionSafety({
+      medications: ['Dolo 650', 'Cifran 500'],
+      allergies: [],
+    });
+
+    expect(result.status).toBeDefined();
+    expect(result.doctorReviewRequired).toBe(result.requiresDoctorReview);
+    expect(result.normalizedMedications).toBeDefined();
+    expect(result.allergyFlags).toBeDefined();
+    expect(result.duplicateTherapy).toBeDefined();
+    expect(result.evidence).toBeDefined();
+    expect(result.rulesVersion).toBe('rx-rules-v2.1');
+    expect(result.clinicalDisclaimer).toContain('assistive clinical decision support tool');
+  });
 });
+
