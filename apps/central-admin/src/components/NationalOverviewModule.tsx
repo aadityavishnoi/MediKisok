@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Building2, Server, Users, ShieldCheck, TrendingUp, AlertTriangle, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 export interface NationalOverviewModuleProps {
   searchQuery: string;
 }
 
-const STATE_DATA = [
+const DEFAULT_STATE_DATA = [
   { state: 'Maharashtra', facilities: 142, kiosks: 1240, volume: '118,420', wait: '11 min', occupancy: '84%', trend: '↑ 4.2%', color: 'text-emerald-600' },
   { state: 'Uttar Pradesh', facilities: 186, kiosks: 1680, volume: '142,100', wait: '16 min', occupancy: '91%', trend: '↑ 8.1%', color: 'text-amber-600' },
   { state: 'Tamil Nadu', facilities: 118, kiosks: 980, volume: '94,600', wait: '10 min', occupancy: '76%', trend: '↓ 1.4%', color: 'text-emerald-600' },
@@ -18,7 +18,46 @@ const STATE_DATA = [
 ];
 
 export function NationalOverviewModule({ searchQuery }: NationalOverviewModuleProps) {
-  const filtered = STATE_DATA.filter((s) => s.state.toLowerCase().includes(searchQuery.toLowerCase()));
+  const [metrics, setMetrics] = useState<any>(null);
+  const [isLive, setIsLive] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadMetrics() {
+      try {
+        const res = await fetch('/api/admin/metrics');
+        if (res.ok) {
+          const data = await res.json();
+          if (mounted && data.overview) {
+            setMetrics(data);
+            setIsLive(true);
+          }
+        }
+      } catch (err) {
+        console.warn('Live admin metrics fetch failed:', err);
+      }
+    }
+    loadMetrics();
+    return () => { mounted = false; };
+  }, []);
+
+  const stateData = metrics?.regionalDistribution?.length
+    ? DEFAULT_STATE_DATA.map((s) => {
+        const match = metrics.regionalDistribution.find((r: any) =>
+          r.state?.toLowerCase().includes(s.state.toLowerCase()) || s.state.toLowerCase().includes(r.state?.toLowerCase())
+        );
+        if (match) {
+          return {
+            ...s,
+            facilities: match.facilities,
+            volume: match.sessionsToday ? `${match.sessionsToday} (Live)` : s.volume,
+          };
+        }
+        return s;
+      })
+    : DEFAULT_STATE_DATA;
+
+  const filtered = stateData.filter((s) => s.state.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
     <div className="space-y-6">
@@ -29,12 +68,16 @@ export function NationalOverviewModule({ searchQuery }: NationalOverviewModulePr
             <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
               <Building2 size={20} />
             </div>
-            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-              +14 This Month
+            <span className={`text-xs font-bold px-2 py-0.5 rounded border ${
+              isLive ? 'bg-emerald-50 text-emerald-700 border-emerald-200 font-mono' : 'bg-blue-50 text-blue-700 border-blue-200'
+            }`}>
+              {isLive ? '● CockroachDB Live' : '+14 This Month'}
             </span>
           </div>
           <div className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Public Hospitals Monitored</div>
-          <div className="text-3xl font-extrabold text-slate-900 mt-1 font-display">1,482</div>
+          <div className="text-3xl font-extrabold text-slate-900 mt-1 font-display">
+            {metrics ? metrics.overview.totalFacilities : '1,482'}
+          </div>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-blue-300 animate-slide-up stagger-item" style={{ animationDelay: '40ms' }}>
@@ -42,12 +85,16 @@ export function NationalOverviewModule({ searchQuery }: NationalOverviewModulePr
             <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
               <Server size={20} />
             </div>
-            <span className="text-xs font-mono font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-              99.94% Online
+            <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded border ${
+              isLive ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200'
+            }`}>
+              {isLive ? '● Live Fleet' : '99.94% Online'}
             </span>
           </div>
           <div className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Active RFID Intake Kiosks</div>
-          <div className="text-3xl font-extrabold text-slate-900 mt-1 font-display">12,450</div>
+          <div className="text-3xl font-extrabold text-slate-900 mt-1 font-display">
+            {metrics ? metrics.overview.activeKiosks : '12,450'}
+          </div>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-blue-300 animate-slide-up stagger-item" style={{ animationDelay: '80ms' }}>
@@ -56,11 +103,13 @@ export function NationalOverviewModule({ searchQuery }: NationalOverviewModulePr
               <Users size={20} />
             </div>
             <span className="text-xs font-bold text-emerald-600 flex items-center gap-0.5">
-              <ArrowUpRight size={14} /> 5.8%
+              <ArrowUpRight size={14} /> {isLive ? 'Real-time' : '5.8%'}
             </span>
           </div>
-          <div className="text-slate-500 text-xs font-semibold uppercase tracking-wider">24h National OPD Volume</div>
-          <div className="text-3xl font-extrabold text-slate-900 mt-1 font-display">842,910</div>
+          <div className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Registered Patient Intake</div>
+          <div className="text-3xl font-extrabold text-slate-900 mt-1 font-display">
+            {metrics ? metrics.overview.registeredPatients : '842,910'}
+          </div>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-emerald-300 animate-slide-up stagger-item" style={{ animationDelay: '120ms' }}>
@@ -68,7 +117,9 @@ export function NationalOverviewModule({ searchQuery }: NationalOverviewModulePr
             <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
               <ShieldCheck size={20} />
             </div>
-            <span className="text-xs font-bold text-emerald-600">Zero Flags</span>
+            <span className="text-xs font-bold text-emerald-600">
+              {metrics ? `${metrics.overview.emergencyAlerts || 0} Priority Alerts` : 'Zero Flags'}
+            </span>
           </div>
           <div className="text-slate-500 text-xs font-semibold uppercase tracking-wider">AI Clinical Safety Score</div>
           <div className="text-3xl font-extrabold text-emerald-600 mt-1 font-display">

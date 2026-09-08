@@ -22,7 +22,8 @@
     "db:verify": "pnpm --filter backend db:verify",
     "db:reset": "pnpm --filter backend db:reset",
     "db:clean": "pnpm --filter backend db:clean",
-    "rfid:test": "pnpm --filter backend rfid:bridge"
+    "rfid:test": "pnpm --filter backend rfid:bridge",
+    "test:api": "pnpm --filter backend exec tsx ../../api-endpoints/test-all-endpoints.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.12.0",

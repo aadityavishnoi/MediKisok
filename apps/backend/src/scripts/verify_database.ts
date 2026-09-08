@@ -15,7 +15,15 @@
  *
  * Run: npx tsx src/scripts/verify_database.ts
  */
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { PrismaClient } from '@prisma/client';
+
+// Load backend .env before PrismaClient initializes
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config();
 
 const prisma = new PrismaClient();
 

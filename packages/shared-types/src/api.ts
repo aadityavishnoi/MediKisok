@@ -371,4 +371,212 @@ export interface AuthLoginResponse {
   name: string;
 }
 
+// ---------------------------------------------------------------------------
+// Hospital Governance & Onboarding
+// ---------------------------------------------------------------------------
+
+export interface HospitalCreateRequest {
+  code: string;
+  name: string;
+  type?: string;
+  state: string;
+  district: string;
+  city: string;
+  pinCode?: string;
+  address?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  totalBeds?: number;
+  availableBeds?: number;
+  totalKiosks?: number;
+  activeKiosks?: number;
+  abdmFacilityId?: string;
+  facilityStatus?: string;
+}
+
+export interface HospitalStatusUpdateRequest {
+  status: 'APPROVED' | 'ACTIVE' | 'SUSPENDED' | 'REJECTED' | 'INACTIVE';
+  reason?: string;
+}
+
+export interface HospitalListResponse {
+  total: number;
+  page: number;
+  limit: number;
+  facilities: Array<{
+    id: string;
+    code: string;
+    name: string;
+    type: string;
+    state: string;
+    district: string;
+    city: string;
+    facilityStatus: string;
+    contactPhone?: string | null;
+    contactEmail?: string | null;
+    totalBeds: number;
+    availableBeds: number;
+    totalKiosks: number;
+    activeKiosks: number;
+    abdmFacilityId?: string | null;
+    createdAt: string | Date;
+    _count?: {
+      doctors: number;
+      departments: number;
+      kiosks: number;
+      sessions: number;
+    };
+  }>;
+}
+
+// ---------------------------------------------------------------------------
+// Departments & Staff
+// ---------------------------------------------------------------------------
+
+export interface DepartmentCreateRequest {
+  name: string;
+  code: string;
+  floor?: string;
+  roomNumber?: string;
+  headOfDepartment?: string;
+}
+
+export interface DoctorCreateRequest {
+  name: string;
+  email: string;
+  password?: string;
+  departmentId?: string;
+  department?: string;
+  roomNumber?: string;
+  qualification?: string;
+  registrationNumber?: string;
+  avgConsultMinutes?: number;
+}
+
+// ---------------------------------------------------------------------------
+// OPD Queue
+// ---------------------------------------------------------------------------
+
+export interface QueueTicketRequest {
+  sessionId: string;
+  patientId: string;
+  hospitalId?: string;
+  departmentCode?: string;
+  priority?: 'NORMAL' | 'URGENT' | 'EMERGENCY';
+}
+
+export interface QueueTicketResponse {
+  ticket: {
+    id: string;
+    sessionId: string;
+    patientId: string;
+    hospitalId: string;
+    departmentId?: string | null;
+    tokenNumber: string;
+    priority: string;
+    status: string;
+    estimatedWaitMins: number;
+    queuedAt: string | Date;
+  };
+  tokenNumber: string;
+  estimatedWaitMins: number;
+}
+
+export interface QueueItemRow {
+  id: string;
+  sessionId: string;
+  patientId: string;
+  hospitalId: string;
+  departmentId?: string | null;
+  doctorId?: string | null;
+  tokenNumber: string;
+  priority: string;
+  status: string;
+  estimatedWaitMins: number;
+  queuedAt: string | Date;
+  calledAt?: string | Date | null;
+  completedAt?: string | Date | null;
+  patient?: {
+    id: string;
+    fullName: string;
+    phone?: string | null;
+    gender?: string | null;
+    age?: number | null;
+    abhaId?: string | null;
+  };
+  department?: {
+    id: string;
+    name: string;
+    code: string;
+  } | null;
+  doctor?: {
+    id: string;
+    name: string;
+    roomNumber?: string | null;
+  } | null;
+}
+
+// ---------------------------------------------------------------------------
+// RFID Card Lifecycle
+// ---------------------------------------------------------------------------
+
+export interface RfidCardCreateRequest {
+  uid: string;
+  cardType?: string;
+  hospitalId?: string;
+}
+
+export interface RfidCardAssignRequest {
+  patientId: string;
+}
+
+export interface RfidCardActionRequest {
+  reason?: string;
+}
+
+export interface RfidCardReplaceRequest {
+  newUid: string;
+  reason?: string;
+}
+
+// ---------------------------------------------------------------------------
+// AI Model Registry & Surveillance
+// ---------------------------------------------------------------------------
+
+export interface AiModelCreateRequest {
+  name: string;
+  version: string;
+  modelType: string;
+  description?: string;
+  owner?: string;
+  metrics?: Record<string, unknown>;
+}
+
+export interface SurveillanceSignalCreateRequest {
+  hospitalId: string;
+  diseaseName: string;
+  category?: string;
+  icd10Code?: string;
+  caseCount?: number;
+  severity?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  district: string;
+  state: string;
+}
+
+// ---------------------------------------------------------------------------
+// Audit Log
+// ---------------------------------------------------------------------------
+
+export interface AuditLogRow {
+  id: string;
+  actorType: string;
+  actorId?: string | null;
+  facilityId?: string | null;
+  action: string;
+  entityType?: string | null;
+  entityId?: string | null;
+  metadata?: Record<string, unknown> | null;
+  createdAt: string | Date;
+}
+
 export type { DocumentType, IdentificationMethod, DeviceStatus };

@@ -1,7 +1,151 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
+import { wsHub } from '../ws/hub.js';
+import { recordAudit } from '../lib/audit.js';
+import { ActorType } from '@medikiosk/shared-types';
 
 export const surveillanceRouter = Router();
+
+/**
+ * GET /api/surveillance/signals
+ * Query disease outbreak signals with filters
+ */
+surveillanceRouter.get('/surveillance/signals', async (req, res, next) => {
+  try {
+    const { state, district, severity } = req.query;
+    const where: any = {};
+    if (state && typeof state === 'string') where.state = state;
+    if (district && typeof district === 'string') where.district = district;
+    if (severity && typeof severity === 'string') where.severity = severity as any;
+
+    const signals = await prisma.diseaseOutbreakSignal.findMany({
+      where,
+      include: {
+        hospital: {
+          select: { id: true, name: true, city: true, district: true, state: true },
+        },
+      },
+      orderBy: { reportedDate: 'desc' },
+      take: 100,
+    });
+
+    res.json({ total: signals.length, signals });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /api/surveillance/signals/:id/acknowledge
+ * Acknowledge an outbreak signal
+ */
+surveillanceRouter.post('/surveillance/signals/:id/acknowledge', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const signal = await prisma.diseaseOutbreakSignal.findUnique({ where: { id } });
+    if (!signal) {
+      res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Signal not found' } });
+      return;
+    }
+
+    await recordAudit({
+      actorType: ActorType.ADMIN,
+      facilityId: signal.hospitalId,
+      action: 'SURVEILLANCE_SIGNAL_ACKNOWLEDGED',
+      entityType: 'DiseaseOutbreakSignal',
+      entityId: signal.id,
+      metadata: { diseaseName: signal.diseaseName, severity: signal.severity },
+    });
+
+    wsHub.broadcast({
+      type: 'SURVEILLANCE_ALERT_UPDATED',
+      payload: {
+        signalId: signal.id,
+        status: 'ACKNOWLEDGED',
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+    res.json({ success: true, signal });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /api/surveillance/signals/:id/escalate
+ * Escalate an outbreak signal
+ */
+surveillanceRouter.post('/surveillance/signals/:id/escalate', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const signal = await prisma.diseaseOutbreakSignal.findUnique({ where: { id } });
+    if (!signal) {
+      res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Signal not found' } });
+      return;
+    }
+
+    await recordAudit({
+      actorType: ActorType.ADMIN,
+      facilityId: signal.hospitalId,
+      action: 'SURVEILLANCE_SIGNAL_ESCALATED',
+      entityType: 'DiseaseOutbreakSignal',
+      entityId: signal.id,
+      metadata: { diseaseName: signal.diseaseName, severity: signal.severity },
+    });
+
+    wsHub.broadcast({
+      type: 'SURVEILLANCE_ALERT_UPDATED',
+      payload: {
+        signalId: signal.id,
+        status: 'ESCALATED',
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+    res.json({ success: true, signal });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /api/surveillance/signals/:id/resolve
+ * Resolve an outbreak signal with resolution notes
+ */
+surveillanceRouter.post('/surveillance/signals/:id/resolve', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { note } = req.body || {};
+    const signal = await prisma.diseaseOutbreakSignal.findUnique({ where: { id } });
+    if (!signal) {
+      res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Signal not found' } });
+      return;
+    }
+
+    await recordAudit({
+      actorType: ActorType.ADMIN,
+      facilityId: signal.hospitalId,
+      action: 'SURVEILLANCE_SIGNAL_RESOLVED',
+      entityType: 'DiseaseOutbreakSignal',
+      entityId: signal.id,
+      metadata: { diseaseName: signal.diseaseName, resolutionNote: note },
+    });
+
+    wsHub.broadcast({
+      type: 'SURVEILLANCE_ALERT_UPDATED',
+      payload: {
+        signalId: signal.id,
+        status: 'RESOLVED',
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+    res.json({ success: true, signal });
+  } catch (err) {
+    next(err);
+  }
+});
 
 /**
  * GET /api/surveillance/outbreaks
@@ -84,6 +228,28 @@ surveillanceRouter.post('/surveillance/signal', async (req, res, next) => {
         severity: severity || 'MEDIUM',
         district,
         state,
+      },
+    });
+
+    await recordAudit({
+      actorType: ActorType.SYSTEM,
+      facilityId: hospitalId,
+      action: 'SURVEILLANCE_SIGNAL_RECORDED',
+      entityType: 'DiseaseOutbreakSignal',
+      entityId: signal.id,
+      metadata: { diseaseName, district, state, caseCount: signal.caseCount, severity: signal.severity },
+    });
+
+    wsHub.broadcast({
+      type: 'SURVEILLANCE_ALERT_CREATED',
+      payload: {
+        signalId: signal.id,
+        diseaseName: signal.diseaseName,
+        district: signal.district,
+        state: signal.state,
+        severity: signal.severity,
+        caseCount: signal.caseCount,
+        timestamp: new Date().toISOString(),
       },
     });
 

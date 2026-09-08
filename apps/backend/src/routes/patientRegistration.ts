@@ -72,13 +72,19 @@ patientRegistrationRouter.post(
       where: { uid: assignedUid },
       update: {
         patientId: patient.id,
+        cardStatus: 'ACTIVE',
         active: true,
+        issuedAt: new Date(),
+        cardStatusChangedAt: new Date(),
       },
       create: {
         uid: assignedUid,
         patientId: patient.id,
+        cardStatus: 'ACTIVE',
         active: true,
         isDemo: true,
+        issuedAt: new Date(),
+        cardStatusChangedAt: new Date(),
       },
     });
 

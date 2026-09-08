@@ -4,10 +4,28 @@ import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { requireAuth, requireRole, type RequestWithUser } from '../middleware/userAuth.js';
 
+import { env } from '../lib/env.js';
+
 export const adminRouter = Router();
 
-// All admin routes require authentication and CENTRAL_ADMIN/ADMIN role
-const requireCentralAdmin = [requireAuth, requireRole('CENTRAL_ADMIN', 'ADMIN')];
+// Central admin routes with demo-mode fallback support
+const requireCentralAdmin = [
+  (req: any, res: any, next: any) => {
+    const authHeader = req.header('Authorization');
+    if (!authHeader && env.DEMO_MODE) {
+      req.user = {
+        sub: 'demo-central-admin',
+        role: 'CENTRAL_ADMIN',
+        name: 'Demo Central Administrator',
+        facilityId: null,
+      };
+      return next();
+    }
+    return requireAuth(req, res, () => {
+      requireRole('CENTRAL_ADMIN', 'ADMIN')(req, res, next);
+    });
+  },
+];
 
 /**
  * GET /api/admin/metrics
@@ -330,3 +348,128 @@ adminRouter.get(
     res.json({ total, page, limit, logs });
   }),
 );
+
+/**
+ * GET /api/audit-logs
+ * Public/Admin alias for central audit logs
+ */
+adminRouter.get(
+  '/audit-logs',
+  ...requireCentralAdmin,
+  asyncHandler(async (req, res) => {
+    const facilityId = req.query.facilityId as string | undefined;
+    const action = req.query.action as string | undefined;
+    const entityType = req.query.entityType as string | undefined;
+    const page = Math.max(1, parseInt((req.query.page as string) || '1', 10));
+    const limit = Math.min(100, parseInt((req.query.limit as string) || '50', 10));
+
+    const where: Record<string, unknown> = {};
+    if (facilityId) where.facilityId = facilityId;
+    if (action) where.action = { contains: action, mode: 'insensitive' };
+    if (entityType) where.entityType = entityType;
+
+    const [logs, total] = await Promise.all([
+      prisma.auditLog.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.auditLog.count({ where }),
+    ]);
+
+    res.json({ total, page, limit, logs });
+  }),
+);
+
+/**
+ * POST /api/admin/ai-models/:id/deploy
+ * Deploy an AI model version to staging or production
+ */
+adminRouter.post(
+  '/admin/ai-models/:id/deploy',
+  ...requireCentralAdmin,
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { environment = 'PRODUCTION' } = req.body;
+    const user = (req as RequestWithUser).user!;
+
+    const model = await prisma.aIModel.update({
+      where: { id },
+      data: {
+        status: 'DEPLOYED',
+        deployedAt: new Date(),
+        approvedBy: user.name || 'Central Authority',
+      },
+    });
+
+    res.json({ success: true, model });
+  }),
+);
+
+/**
+ * POST /api/admin/ai-models/:id/rollback
+ * Rollback an AI model version
+ */
+adminRouter.post(
+  '/admin/ai-models/:id/rollback',
+  ...requireCentralAdmin,
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { reason = 'Validation anomaly' } = req.body;
+
+    const model = await prisma.aIModel.update({
+      where: { id },
+      data: {
+        status: 'RETIRED',
+      },
+    });
+
+    res.json({ success: true, model, rollbackReason: reason });
+  }),
+);
+
+/**
+ * POST /api/admin/kiosks
+ * Register or onboard a new Kiosk Terminal at national level
+ */
+const nationalKioskSchema = z.object({
+  deviceCode: z.string().min(2),
+  hospitalId: z.string().optional(),
+  location: z.string().optional(),
+  kioskType: z.string().default('SELF_SERVICE'),
+  firmwareVersion: z.string().default('v4.2.0'),
+  printerPaperPercent: z.number().int().min(0).max(100).default(90),
+  status: z.enum(['ONLINE', 'DEGRADED', 'OFFLINE']).default('ONLINE'),
+});
+
+adminRouter.post(
+  '/admin/kiosks',
+  ...requireCentralAdmin,
+  asyncHandler(async (req, res) => {
+    const data = nationalKioskSchema.parse(req.body);
+
+    const kiosk = await prisma.rFIDDevice.upsert({
+      where: { deviceCode: data.deviceCode },
+      update: {
+        location: data.location,
+        firmwareVersion: data.firmwareVersion,
+        printerPaperPercent: data.printerPaperPercent,
+        status: data.status as any,
+        lastHeartbeatAt: new Date(),
+      },
+      create: {
+        deviceCode: data.deviceCode,
+        hospitalId: data.hospitalId || null,
+        location: data.location || 'Main OPD Lobby',
+        firmwareVersion: data.firmwareVersion,
+        printerPaperPercent: data.printerPaperPercent,
+        status: data.status as any,
+        lastHeartbeatAt: new Date(),
+      },
+    });
+
+    res.status(201).json({ success: true, kiosk });
+  }),
+);
+

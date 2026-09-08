@@ -70,14 +70,64 @@ export type Language = (typeof Language)[keyof typeof Language];
 
 
 export const RFIDCardStatus = {
+  MANUFACTURED: 'MANUFACTURED',
+  AVAILABLE: 'AVAILABLE',
+  ASSIGNED: 'ASSIGNED',
   ACTIVE: 'ACTIVE',
   SUSPENDED: 'SUSPENDED',
   LOST: 'LOST',
   STOLEN: 'STOLEN',
+  BLOCKED: 'BLOCKED',
+  REPLACED: 'REPLACED',
+  RETIRED: 'RETIRED',
+  // legacy aliases
   DEACTIVATED: 'DEACTIVATED',
   EXPIRED: 'EXPIRED',
 } as const;
 export type RFIDCardStatus = (typeof RFIDCardStatus)[keyof typeof RFIDCardStatus];
+
+export const FacilityStatus = {
+  DRAFT: 'DRAFT',
+  PENDING_APPROVAL: 'PENDING_APPROVAL',
+  APPROVED: 'APPROVED',
+  ACTIVE: 'ACTIVE',
+  SUSPENDED: 'SUSPENDED',
+  INACTIVE: 'INACTIVE',
+  REJECTED: 'REJECTED',
+} as const;
+export type FacilityStatus = (typeof FacilityStatus)[keyof typeof FacilityStatus];
+
+export const QueueStatus = {
+  WAITING: 'WAITING',
+  CALLED: 'CALLED',
+  IN_CONSULTATION: 'IN_CONSULTATION',
+  COMPLETED: 'COMPLETED',
+  NO_SHOW: 'NO_SHOW',
+  CANCELLED: 'CANCELLED',
+} as const;
+export type QueueStatus = (typeof QueueStatus)[keyof typeof QueueStatus];
+
+export const TriagePriority = {
+  NORMAL: 'NORMAL',
+  URGENT: 'URGENT',
+  EMERGENCY: 'EMERGENCY',
+} as const;
+export type TriagePriority = (typeof TriagePriority)[keyof typeof TriagePriority];
+
+export const DoctorStatus = {
+  AVAILABLE: 'AVAILABLE',
+  IN_CONSULTATION: 'IN_CONSULTATION',
+  ON_BREAK: 'ON_BREAK',
+  OFF_DUTY: 'OFF_DUTY',
+} as const;
+export type DoctorStatus = (typeof DoctorStatus)[keyof typeof DoctorStatus];
+
+export const KioskStatus = {
+  ONLINE: 'ONLINE',
+  DEGRADED: 'DEGRADED',
+  OFFLINE: 'OFFLINE',
+} as const;
+export type KioskStatus = (typeof KioskStatus)[keyof typeof KioskStatus];
 
 export const DeviceStatus = {
   CONNECTED: 'CONNECTED',

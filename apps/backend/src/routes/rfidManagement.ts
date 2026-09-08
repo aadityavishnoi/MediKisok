@@ -17,19 +17,38 @@ import { requireAuth, requireRole, requireFacilityScope, type RequestWithUser } 
 import { recordAudit } from '../lib/audit.js';
 import { ActorType } from '@medikiosk/shared-types';
 
+import { env } from '../lib/env.js';
+import { wsHub } from '../ws/hub.js';
+
 export const rfidManagementRouter = Router();
 
-const RFID_ROLES = [requireAuth, requireRole('RFID_OFFICER', 'HOSPITAL_ADMIN', 'CENTRAL_ADMIN', 'ADMIN')];
+const rfidAuthMiddleware = (req: any, res: any, next: any) => {
+  const authHeader = req.header('Authorization');
+  if (!authHeader && env.DEMO_MODE) {
+    req.user = {
+      sub: 'demo-rfid-officer',
+      role: 'RFID_OFFICER',
+      name: 'Demo RFID Officer',
+      facilityId: null,
+    };
+    return next();
+  }
+  return requireAuth(req, res, () => {
+    requireRole('RFID_OFFICER', 'HOSPITAL_ADMIN', 'CENTRAL_ADMIN', 'ADMIN')(req, res, next);
+  });
+};
+
+const RFID_ROLES = [rfidAuthMiddleware];
 
 /**
  * Valid lifecycle transitions. Prevents impossible state jumps.
  */
 const VALID_TRANSITIONS: Record<string, string[]> = {
-  MANUFACTURED: ['AVAILABLE'],
+  MANUFACTURED: ['AVAILABLE', 'ASSIGNED', 'RETIRED'],
   AVAILABLE: ['ASSIGNED', 'RETIRED'],
   ASSIGNED: ['ACTIVE', 'AVAILABLE', 'RETIRED'],
   ACTIVE: ['SUSPENDED', 'LOST', 'STOLEN', 'BLOCKED', 'REPLACED', 'RETIRED'],
-  SUSPENDED: ['ACTIVE', 'BLOCKED', 'RETIRED'],
+  SUSPENDED: ['ACTIVE', 'BLOCKED', 'LOST', 'RETIRED', 'REPLACED'],
   LOST: ['REPLACED', 'RETIRED'],
   STOLEN: ['REPLACED', 'RETIRED', 'BLOCKED'],
   BLOCKED: ['RETIRED'],
@@ -65,7 +84,7 @@ rfidManagementRouter.get(
     const where: Record<string, unknown> = {};
 
     // Hospital admins / RFID officers can only see their own facility's cards
-    if (user.role === 'HOSPITAL_ADMIN' || user.role === 'RFID_OFFICER') {
+    if (user.facilityId && (user.role === 'HOSPITAL_ADMIN' || user.role === 'RFID_OFFICER')) {
       where.hospitalId = user.facilityId;
     } else if (query.hospitalId) {
       where.hospitalId = query.hospitalId;
@@ -137,6 +156,7 @@ rfidManagementRouter.get(
 const registerCardSchema = z.object({
   uid: z.string().min(1),
   cardType: z.string().default('STANDARD_MIFARE'),
+  cardStatus: z.enum(['MANUFACTURED', 'AVAILABLE']).default('AVAILABLE'),
   hospitalId: z.string().optional(),
   isDemo: z.boolean().default(false),
 });
@@ -161,7 +181,7 @@ rfidManagementRouter.post(
         uid: data.uid,
         cardType: data.cardType,
         hospitalId: hospitalId ?? null,
-        cardStatus: 'MANUFACTURED',
+        cardStatus: data.cardStatus,
         active: false,
         isDemo: data.isDemo,
         cardStatusChangedAt: new Date(),
@@ -258,6 +278,103 @@ rfidManagementRouter.post(
       entityType: 'RFIDCard',
       entityId: card.id,
       metadata: { uid },
+    });
+
+    wsHub.broadcast({
+      type: 'RFID_STATUS_CHANGED',
+      payload: {
+        uid,
+        status: 'ACTIVE',
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+    res.json({ card: updated });
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// Suspend card (ACTIVE → SUSPENDED)
+// ---------------------------------------------------------------------------
+
+rfidManagementRouter.post(
+  '/rfid/cards/:uid/suspend',
+  ...RFID_ROLES,
+  asyncHandler(async (req, res) => {
+    const { uid } = req.params;
+    const { reason = 'Temporary security hold' } = req.body || {};
+    const user = (req as RequestWithUser).user!;
+
+    const card = await prisma.rFIDCard.findUnique({ where: { uid } });
+    if (!card) throw Errors.notFound(`Card ${uid} not found`);
+    assertTransition(card.cardStatus, 'SUSPENDED');
+
+    const updated = await prisma.rFIDCard.update({
+      where: { uid },
+      data: { cardStatus: 'SUSPENDED', active: false, blockReason: reason, cardStatusChangedAt: new Date() },
+    });
+
+    await recordAudit({
+      actorType: ActorType.ADMIN,
+      actorId: user.sub,
+      facilityId: card.hospitalId,
+      action: 'RFID_CARD_SUSPENDED',
+      entityType: 'RFIDCard',
+      entityId: card.id,
+      metadata: { uid, reason },
+    });
+
+    wsHub.broadcast({
+      type: 'RFID_STATUS_CHANGED',
+      payload: {
+        uid,
+        status: 'SUSPENDED',
+        reason,
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+    res.json({ card: updated });
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// Reactivate card (SUSPENDED → ACTIVE)
+// ---------------------------------------------------------------------------
+
+rfidManagementRouter.post(
+  '/rfid/cards/:uid/reactivate',
+  ...RFID_ROLES,
+  asyncHandler(async (req, res) => {
+    const { uid } = req.params;
+    const user = (req as RequestWithUser).user!;
+
+    const card = await prisma.rFIDCard.findUnique({ where: { uid } });
+    if (!card) throw Errors.notFound(`Card ${uid} not found`);
+    assertTransition(card.cardStatus, 'ACTIVE');
+
+    const updated = await prisma.rFIDCard.update({
+      where: { uid },
+      data: { cardStatus: 'ACTIVE', active: true, blockReason: null, cardStatusChangedAt: new Date() },
+    });
+
+    await recordAudit({
+      actorType: ActorType.ADMIN,
+      actorId: user.sub,
+      facilityId: card.hospitalId,
+      action: 'RFID_CARD_REACTIVATED',
+      entityType: 'RFIDCard',
+      entityId: card.id,
+      metadata: { uid },
+    });
+
+    wsHub.broadcast({
+      type: 'RFID_STATUS_CHANGED',
+      payload: {
+        uid,
+        status: 'ACTIVE',
+        timestamp: new Date().toISOString(),
+      },
     });
 
     res.json({ card: updated });

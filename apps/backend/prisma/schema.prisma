@@ -9,7 +9,7 @@ datasource db {
 }
 
 // ---------------------------------------------------------------------------
-// Enums
+// Core System & Domain Enums
 // ---------------------------------------------------------------------------
 
 enum crdb_internal_region {
@@ -35,6 +35,29 @@ enum AlertSeverity {
   MEDIUM
   HIGH
   CRITICAL
+}
+
+enum RFIDCardStatus {
+  MANUFACTURED
+  AVAILABLE
+  ASSIGNED
+  ACTIVE
+  SUSPENDED
+  LOST
+  STOLEN
+  BLOCKED
+  REPLACED
+  RETIRED
+}
+
+enum AIModelStatus {
+  DRAFT
+  VALIDATING
+  APPROVED
+  STAGED
+  DEPLOYED
+  RETIRED
+  REJECTED
 }
 
 enum SessionStatus {
@@ -113,6 +136,10 @@ enum ConsultationStatus {
 enum DoctorRole {
   DOCTOR
   ADMIN
+  HOSPITAL_ADMIN
+  RFID_OFFICER
+  CENTRAL_ADMIN
+  SUPER_ADMIN
 }
 
 enum HospitalType {
@@ -159,40 +186,209 @@ enum PrescriptionFrequency {
   SOS
 }
 
+enum QuestionType {
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  TEXT
+  NUMBER
+  DATE
+  BOOLEAN
+}
+
+enum FacilityStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+  REJECTED
+}
+
+enum ScopeLevel {
+  NATIONAL
+  STATE
+  DISTRICT
+  FACILITY
+  DEPARTMENT
+}
+
+enum IdentifierType {
+  RFID
+  ABHA
+  PHONE
+  NATIONAL_ID
+  HOSPITAL_MRN
+}
+
+enum RFIDEventType {
+  CARD_REGISTERED
+  CARD_ASSIGNED
+  CARD_ACTIVATED
+  CARD_BLOCKED
+  CARD_LOST
+  CARD_REPLACED
+  CARD_REISSUED
+  CARD_RETIRED
+  CARD_SCANNED
+}
+
+enum DeviceEventType {
+  HEARTBEAT
+  ONLINE
+  OFFLINE
+  MAINTENANCE
+  DISABLED
+  ERROR
+  FIRMWARE_UPDATE
+  SCANNER_TRIGGER
+}
+
+enum OperationalAlertType {
+  KIOSK_OFFLINE
+  RFID_READER_FAILURE
+  QUEUE_OVERLOAD
+  DEVICE_ERROR
+  NETWORK_LATENCY
+  PRINTER_PAPER_LOW
+}
+
+enum NoteType {
+  SUBJECTIVE
+  OBJECTIVE
+  ASSESSMENT
+  PLAN
+  GENERAL
+}
+
+enum AIAssistanceType {
+  SUMMARY
+  TRIAGE_ROUTING
+  DIAGNOSTIC_SUGGESTION
+  SAFETY_CHECK
+}
+
+enum DeploymentEnvironment {
+  DEVELOPMENT
+  STAGING
+  PRODUCTION
+}
+
+enum DeploymentStatus {
+  DRAFT
+  VALIDATING
+  APPROVED
+  STAGED
+  DEPLOYED
+  ROLLED_BACK
+  RETIRED
+  REJECTED
+}
+
+enum NotificationType {
+  CLINICAL_ALERT
+  SYSTEM_ALERT
+  DEVICE_ALERT
+  QUEUE_ALERT
+  ADMIN_ALERT
+}
+
+enum InteropTransactionType {
+  FHIR_BUNDLE_EXPORT
+  ABHA_LOOKUP
+  CONSENT_REQUEST
+  DISCHARGE_SUMMARY_PUSH
+}
+
 // ---------------------------------------------------------------------------
-// Multi-Hospital & Facility Governance (Central Admin & Hospital Admin)
+// 1. National & Regional Governance Hierarchy
+// ---------------------------------------------------------------------------
+
+model NationalAuthority {
+  id        String   @id @default(cuid())
+  name      String   // "National Health Authority"
+  code      String   @unique // "NHA-INDIA"
+  country   String   @default("India")
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  states State[]
+}
+
+model State {
+  id                  String             @id @default(cuid())
+  nationalAuthorityId String?
+  name                String             // "Delhi", "Maharashtra"
+  code                String             @unique // "DL", "MH"
+  status              String             @default("ACTIVE")
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  nationalAuthority NationalAuthority? @relation(fields: [nationalAuthorityId], references: [id])
+  districts         District[]
+  hospitals         Hospital[]
+}
+
+model District {
+  id        String   @id @default(cuid())
+  stateId   String
+  name      String   // "South Delhi", "Pune"
+  code      String   // "DL-SD", "MH-PU"
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  state     State      @relation(fields: [stateId], references: [id])
+  hospitals Hospital[]
+
+  @@unique([stateId, code])
+}
+
+// ---------------------------------------------------------------------------
+// 2. Multi-Hospital & Facility Governance (Primary Operational Tenant)
 // ---------------------------------------------------------------------------
 
 model Hospital {
-  id             String       @id @default(cuid())
-  code           String       @unique // e.g. "AIIMS-DEL-01"
-  name           String       // "All India Institute of Medical Sciences, New Delhi"
-  type           HospitalType @default(AIIMS)
-  state          String       // "Delhi"
-  district       String       // "New Delhi"
-  city           String       // "New Delhi"
+  id             String         @id @default(cuid())
+  code           String         @unique // e.g. "AIIMS-DEL-01"
+  name           String         // "All India Institute of Medical Sciences, New Delhi"
+  type           HospitalType   @default(AIIMS)
+  state          String         // Legacy text representation: "Delhi"
+  district       String         // Legacy text representation: "South Delhi"
+  stateId        String?
+  districtId     String?
+  facilityStatus FacilityStatus @default(ACTIVE)
+  city           String         // "New Delhi"
   pinCode        String?
   address        String?
   latitude       Float?
   longitude      Float?
   contactPhone   String?
   contactEmail   String?
-  totalBeds      Int          @default(2500)
-  availableBeds  Int          @default(340)
-  totalKiosks    Int          @default(12)
-  activeKiosks   Int          @default(11)
-  abdmFacilityId String?      @unique // HFR ID e.g. "IN0710000001"
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  totalBeds      Int            @default(2500)
+  availableBeds  Int            @default(340)
+  totalKiosks    Int            @default(12)
+  activeKiosks   Int            @default(11)
+  abdmFacilityId String?        @unique // HFR ID e.g. "IN0710000001"
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
-  departments  Department[]
-  doctors      Doctor[]
-  kiosks       RFIDDevice[]
-  rfidCards    RFIDCard[]
-  sessions     PatientSession[]
-  triageQueues TriageQueue[]
-  patients     Patient[]
-  outbreaks    DiseaseOutbreakSignal[]
+  stateRel          State?                        @relation(fields: [stateId], references: [id])
+  districtRel       District?                     @relation(fields: [districtId], references: [id])
+  departments       Department[]
+  doctors           Doctor[]
+  kiosks            RFIDDevice[]
+  rfidCards         RFIDCard[]
+  sessions          PatientSession[]
+  triageQueues      TriageQueue[]
+  patients          Patient[]
+  outbreaks         DiseaseOutbreakSignal[]
+  rfidEvents        RFIDEvent[]
+  operationalAlerts OperationalAlert[]
+  systemConfigs     SystemConfig[]
+  fhirMappings      FHIRResourceMapping[]
+  transactions      InteroperabilityTransaction[]
 }
 
 model Department {
@@ -214,7 +410,85 @@ model Department {
 }
 
 // ---------------------------------------------------------------------------
-// Patient & Smart Card Models (Patient Kiosk & RFID Portal)
+// 3. Normalized Role-Based Access Control (RBAC) & Staff
+// ---------------------------------------------------------------------------
+
+model Role {
+  id          String     @id @default(cuid())
+  code        String     @unique // "SUPER_ADMIN", "CENTRAL_ADMIN", "HOSPITAL_ADMIN", "DOCTOR", "RFID_OFFICER", "AUDITOR"
+  name        String     // "Hospital Administrator"
+  scopeLevel  ScopeLevel @default(FACILITY)
+  description String?
+  createdAt   DateTime   @default(now())
+
+  permissions RolePermission[]
+  userRoles   UserRole[]
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  code        String   @unique // "patient.read", "rfid.activate", "clinical.consult"
+  category    String   // "PATIENT", "RFID", "CLINICAL", "FACILITY", "DEVICE", "AI_MODEL", "AUDIT"
+  description String?
+  createdAt   DateTime @default(now())
+
+  roles RolePermission[]
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  permissionId String
+  grantedAt    DateTime   @default(now())
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+}
+
+model UserRole {
+  id         String   @id @default(cuid())
+  doctorId   String   // links to Doctor (user)
+  roleId     String
+  facilityId String?
+  stateId    String?
+  districtId String?
+  assignedAt DateTime @default(now())
+
+  doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([doctorId, roleId, facilityId])
+}
+
+model Doctor {
+  id                 String       @id @default(cuid())
+  hospitalId         String?
+  departmentId       String?
+  name               String
+  email              String       @unique
+  passwordHash       String
+  role               DoctorRole   @default(DOCTOR)
+  status             DoctorStatus @default(AVAILABLE)
+  department         String?      // text label fallback
+  roomNumber         String?
+  qualification      String?
+  registrationNumber String?
+  avgConsultMinutes  Float?       @default(4.5)
+  createdAt          DateTime     @default(now())
+
+  hospital      Hospital?      @relation(fields: [hospitalId], references: [id])
+  departmentRel Department?    @relation(fields: [departmentId], references: [id])
+  consultations Consultation[]
+  triageQueues  TriageQueue[]
+  prescriptions Prescription[]
+  userRoles     UserRole[]
+  doctorNotes   DoctorNote[]
+}
+
+// ---------------------------------------------------------------------------
+// 4. Patient & Normalized Identification
 // ---------------------------------------------------------------------------
 
 model Patient {
@@ -234,6 +508,7 @@ model Patient {
 
   hospital          Hospital?              @relation(fields: [hospitalId], references: [id])
   rfidCards         RFIDCard[]
+  identifiers       PatientIdentifier[]
   sessions          PatientSession[]
   clinicalHistories ClinicalHistory[]
   documents         MedicalDocument[]
@@ -245,42 +520,124 @@ model Patient {
   vitals            PatientVitals[]
   prescriptions     Prescription[]
   abdmConsents      AbdmConsentArtefact[]
+  symptoms          SessionSymptom[]
 }
 
-model RFIDDevice {
-  id                 String      @id @default(cuid())
-  hospitalId         String?
-  deviceCode         String      @unique
-  location           String?
-  kioskType          String?     @default("SELF_SERVICE")
-  status             KioskStatus @default(ONLINE)
-  printerPaperPercent Int?       @default(85)
-  lastHeartbeatAt    DateTime?
-  firmwareVersion    String?
-  ipAddress          String?
-  isDemo             Boolean     @default(false)
-  createdAt          DateTime    @default(now())
+model PatientIdentifier {
+  id         String         @id @default(cuid())
+  patientId  String
+  type       IdentifierType
+  value      String
+  status     String         @default("ACTIVE")
+  verified   Boolean        @default(false)
+  verifiedAt DateTime?
+  createdAt  DateTime       @default(now())
 
-  hospital Hospital?        @relation(fields: [hospitalId], references: [id])
-  sessions PatientSession[]
-}
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
-model RFIDCard {
-  id         String   @id @default(cuid())
-  hospitalId String?
-  uid        String   @unique
-  patientId  String?
-  cardType   String?  @default("STANDARD_MIFARE")
-  isDemo     Boolean  @default(false)
-  active     Boolean  @default(true)
-  issuedAt   DateTime @default(now())
-
-  hospital Hospital? @relation(fields: [hospitalId], references: [id])
-  patient  Patient?  @relation(fields: [patientId], references: [id])
+  @@unique([type, value])
+  @@index([patientId, type])
 }
 
 // ---------------------------------------------------------------------------
-// Patient Intake Session (Kiosk Lifecycle)
+// 5. Smart Card RFID Lifecycle & Event Stream
+// ---------------------------------------------------------------------------
+
+model RFIDCard {
+  id                  String         @id @default(cuid())
+  hospitalId          String?
+  uid                 String         @unique
+  patientId           String?
+  cardType            String?        @default("STANDARD_MIFARE")
+  isDemo              Boolean        @default(false)
+  active              Boolean        @default(true) // legacy compat - derived from cardStatus
+  cardStatus          RFIDCardStatus @default(AVAILABLE)
+  blockReason         String?
+  cardStatusChangedAt DateTime?
+  issuedAt            DateTime       @default(now())
+  activatedAt         DateTime?
+  blockedAt           DateTime?
+  replacedAt          DateTime?
+  retiredAt           DateTime?
+
+  hospital Hospital?   @relation(fields: [hospitalId], references: [id])
+  patient  Patient?    @relation(fields: [patientId], references: [id])
+  events   RFIDEvent[]
+
+  @@index([hospitalId, cardStatus])
+  @@index([patientId])
+}
+
+model RFIDEvent {
+  id         String        @id @default(cuid())
+  rfidCardId String?
+  cardUid    String
+  facilityId String?
+  actorId    String?
+  eventType  RFIDEventType
+  metadata   Json?
+  timestamp  DateTime      @default(now())
+
+  rfidCard RFIDCard? @relation(fields: [rfidCardId], references: [id])
+  hospital Hospital? @relation(fields: [facilityId], references: [id])
+
+  @@index([cardUid, timestamp])
+  @@index([facilityId, timestamp])
+}
+
+// ---------------------------------------------------------------------------
+// 6. Hardware Terminal & Device Telemetry
+// ---------------------------------------------------------------------------
+
+model RFIDDevice {
+  id                  String      @id @default(cuid())
+  hospitalId          String?
+  deviceCode          String      @unique
+  location            String?
+  kioskType           String?     @default("SELF_SERVICE")
+  status              KioskStatus @default(ONLINE)
+  printerPaperPercent Int?        @default(85)
+  lastHeartbeatAt     DateTime?
+  firmwareVersion     String?
+  ipAddress           String?
+  isDemo              Boolean     @default(false)
+  createdAt           DateTime    @default(now())
+
+  hospital          Hospital?          @relation(fields: [hospitalId], references: [id])
+  sessions          PatientSession[]
+  heartbeats        DeviceHeartbeat[]
+  events            DeviceEvent[]
+  operationalAlerts OperationalAlert[]
+}
+
+model DeviceHeartbeat {
+  id         String   @id @default(cuid())
+  deviceId   String
+  status     String   @default("ONLINE")
+  metrics    Json?    // { cpuPct, memPct, printerPaperPercent, rfSignalDbm }
+  recordedAt DateTime @default(now())
+
+  device RFIDDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId, recordedAt])
+}
+
+model DeviceEvent {
+  id        String          @id @default(cuid())
+  deviceId  String
+  eventType DeviceEventType
+  severity  AlertSeverity   @default(LOW)
+  message   String
+  metadata  Json?
+  createdAt DateTime        @default(now())
+
+  device RFIDDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// 7. Patient Intake Session (Kiosk Lifecycle)
 // ---------------------------------------------------------------------------
 
 model PatientSession {
@@ -296,9 +653,9 @@ model PatientSession {
   createdAt     DateTime              @default(now())
   updatedAt     DateTime              @updatedAt
 
-  hospital        Hospital?        @relation(fields: [hospitalId], references: [id])
-  patient         Patient?         @relation(fields: [patientId], references: [id])
-  device          RFIDDevice?      @relation(fields: [deviceId], references: [id])
+  hospital        Hospital?         @relation(fields: [hospitalId], references: [id])
+  patient         Patient?          @relation(fields: [patientId], references: [id])
+  device          RFIDDevice?       @relation(fields: [deviceId], references: [id])
   consent         Consent?
   clinicalHistory ClinicalHistory?
   documents       MedicalDocument[]
@@ -307,6 +664,9 @@ model PatientSession {
   triageQueue     TriageQueue?
   vitals          PatientVitals?
   alerts          Alert[]
+  symptoms        SessionSymptom[]
+  ocrJobs         OCRJob[]
+  aiAssistances   AIAssistance[]
 }
 
 model Consent {
@@ -383,7 +743,59 @@ model PatientVitals {
 }
 
 // ---------------------------------------------------------------------------
-// Document OCR & Multimodal Ingestion (ImageKit + Gemini Vision)
+// 8. Questionnaire & Clinical Decision Trees
+// ---------------------------------------------------------------------------
+
+model Questionnaire {
+  id        String   @id @default(cuid())
+  code      String   @unique // "GEN_OPD_V1", "CARD_V1", "AYUSH_V1"
+  title     String   // "General OPD Clinical History"
+  category  String   // "TRIAGE", "CHIEF_COMPLAINT", "AYUSH"
+  version   String   @default("1.0")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  questions Question[]
+}
+
+model Question {
+  id               String       @id @default(cuid())
+  questionnaireId  String
+  nodeId           String       // tree node identifier
+  text             String
+  textLocalized    Json?
+  type             QuestionType @default(SINGLE_CHOICE)
+  section          String       // "CHIEF_COMPLAINT", "HPI", "RED_FLAGS"
+  sequence         Int          @default(0)
+  isRedFlagTrigger Boolean      @default(false)
+  required         Boolean      @default(true)
+
+  questionnaire Questionnaire @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
+
+  @@unique([questionnaireId, nodeId])
+}
+
+model SessionSymptom {
+  id          String        @id @default(cuid())
+  sessionId   String
+  patientId   String
+  symptomName String        // "Chest Pain", "High Fever"
+  symptomCode String?       // ICD-10 e.g. "R07.9"
+  severity    AlertSeverity @default(MEDIUM)
+  duration    String?       // "3 days"
+  isRedFlag   Boolean       @default(false)
+  source      String        @default("PATIENT") // "PATIENT", "DOCTOR", "AI_DERIVED"
+  createdAt   DateTime      @default(now())
+
+  session PatientSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  patient Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, isRedFlag])
+  @@index([symptomName])
+}
+
+// ---------------------------------------------------------------------------
+// 9. Document OCR & Multimodal Ingestion Pipeline
 // ---------------------------------------------------------------------------
 
 model MedicalDocument {
@@ -403,6 +815,7 @@ model MedicalDocument {
   patient        Patient                @relation(fields: [patientId], references: [id])
   extractedData  ExtractedMedicalData[]
   timelineEvents MedicalTimelineEvent[]
+  ocrJobs        OCRJob[]
 }
 
 model ExtractedMedicalData {
@@ -416,6 +829,26 @@ model ExtractedMedicalData {
   verifiedAt DateTime?
 
   document MedicalDocument @relation(fields: [documentId], references: [id])
+}
+
+model OCRJob {
+  id             String    @id @default(cuid())
+  documentId     String
+  sessionId      String?
+  status         String    @default("COMPLETED") // "PENDING", "PROCESSING", "COMPLETED", "FAILED"
+  provider       String    @default("LOCAL") // "LOCAL", "GEMINI_VISION", "IMAGEKIT"
+  modelVersion   String    @default("MediOCR-v2.1")
+  rawText        String?
+  structuredData Json?
+  confidence     Float?
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+
+  document MedicalDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  session  PatientSession? @relation(fields: [sessionId], references: [id])
+
+  @@index([documentId, status])
 }
 
 model MedicalTimelineEvent {
@@ -450,7 +883,7 @@ model AISummary {
 }
 
 // ---------------------------------------------------------------------------
-// Live OPD Queue & Triage Routing (Kiosk -> Hospital Admin -> Doctor Dashboard)
+// 10. Live OPD Queue & Triage Routing
 // ---------------------------------------------------------------------------
 
 model TriageQueue {
@@ -479,31 +912,8 @@ model TriageQueue {
 }
 
 // ---------------------------------------------------------------------------
-// Clinical Consultation & Digital Prescriptions (Doctor Dashboard)
+// 11. Clinical Consultation, Doctor Notes & Digital Prescriptions
 // ---------------------------------------------------------------------------
-
-model Doctor {
-  id                 String       @id @default(cuid())
-  hospitalId         String?
-  departmentId       String?
-  name               String
-  email              String       @unique
-  passwordHash       String
-  role               DoctorRole   @default(DOCTOR)
-  status             DoctorStatus @default(AVAILABLE)
-  department         String?      // text label fallback
-  roomNumber         String?
-  qualification      String?
-  registrationNumber String?
-  avgConsultMinutes  Float?       @default(4.5)
-  createdAt          DateTime     @default(now())
-
-  hospital      Hospital?      @relation(fields: [hospitalId], references: [id])
-  departmentRel Department?    @relation(fields: [departmentId], references: [id])
-  consultations Consultation[]
-  triageQueues  TriageQueue[]
-  prescriptions Prescription[]
-}
 
 model Consultation {
   id          String             @id @default(cuid())
@@ -515,23 +925,57 @@ model Consultation {
   startedAt   DateTime?
   completedAt DateTime?
 
-  session      PatientSession @relation(fields: [sessionId], references: [id])
-  patient      Patient        @relation(fields: [patientId], references: [id])
-  doctor       Doctor?        @relation(fields: [doctorId], references: [id])
-  prescription Prescription?
+  session       PatientSession @relation(fields: [sessionId], references: [id])
+  patient       Patient        @relation(fields: [patientId], references: [id])
+  doctor        Doctor?        @relation(fields: [doctorId], references: [id])
+  prescription  Prescription?
+  notesRel      DoctorNote[]
+  aiAssistances AIAssistance[]
+}
+
+model DoctorNote {
+  id             String   @id @default(cuid())
+  consultationId String
+  doctorId       String
+  noteType       NoteType @default(GENERAL)
+  content        String
+  authoredAt     DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  consultation Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  doctor       Doctor       @relation(fields: [doctorId], references: [id])
+
+  @@index([consultationId, noteType])
+}
+
+model AIAssistance {
+  id                   String           @id @default(cuid())
+  sessionId            String
+  consultationId       String?
+  modelVersion         String           // "ClinicalSummarizer-v1.4"
+  assistanceType       AIAssistanceType @default(SUMMARY)
+  content              String
+  provenanceReferences Json?            // e.g. {"answerId": "123", "documentId": "456"}
+  feedback             String?          // "ACCEPTED", "REJECTED", "EDITED"
+  createdAt            DateTime         @default(now())
+
+  session      PatientSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  consultation Consultation?  @relation(fields: [consultationId], references: [id])
+
+  @@index([sessionId, assistanceType])
 }
 
 model Prescription {
-  id             String             @id @default(cuid())
-  consultationId String             @unique
+  id             String   @id @default(cuid())
+  consultationId String   @unique
   patientId      String
   doctorId       String
   diagnosis      String
   clinicalNotes  String?
-  followUpDays   Int?               @default(7)
-  dispensed      Boolean            @default(false)
+  followUpDays   Int?     @default(7)
+  dispensed      Boolean  @default(false)
   dispensedAt    DateTime?
-  createdAt      DateTime           @default(now())
+  createdAt      DateTime @default(now())
 
   consultation Consultation       @relation(fields: [consultationId], references: [id])
   patient      Patient            @relation(fields: [patientId], references: [id])
@@ -553,7 +997,7 @@ model PrescriptionItem {
 }
 
 // ---------------------------------------------------------------------------
-// Alerts, Audit & ABDM Compliance (Central Admin & Governance)
+// 12. Clinical Alerts (Red Flags) vs Operational Incidents
 // ---------------------------------------------------------------------------
 
 model Alert {
@@ -573,6 +1017,44 @@ model Alert {
   patient Patient        @relation(fields: [patientId], references: [id])
 }
 
+model OperationalAlert {
+  id             String               @id @default(cuid())
+  facilityId     String
+  deviceId       String?
+  alertType      OperationalAlertType
+  severity       AlertSeverity        @default(MEDIUM)
+  message        String
+  acknowledged   Boolean              @default(false)
+  acknowledgedAt DateTime?
+  acknowledgedBy String?
+  createdAt      DateTime             @default(now())
+
+  hospital Hospital    @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  device   RFIDDevice? @relation(fields: [deviceId], references: [id])
+
+  @@index([facilityId, acknowledged])
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  recipientId String?          // doctor or staff ID
+  facilityId  String?
+  type        NotificationType
+  severity    AlertSeverity    @default(MEDIUM)
+  title       String
+  message     String
+  readAt      DateTime?
+  metadata    Json?
+  createdAt   DateTime         @default(now())
+
+  @@index([recipientId, readAt])
+  @@index([facilityId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// 13. National Surveillance & AI Model Governance Registry
+// ---------------------------------------------------------------------------
+
 model DiseaseOutbreakSignal {
   id           String        @id @default(cuid())
   hospitalId   String
@@ -589,6 +1071,63 @@ model DiseaseOutbreakSignal {
 
   @@index([state, district, diseaseName])
 }
+
+model AIModel {
+  id          String        @id @default(cuid())
+  name        String
+  version     String
+  modelType   String        // "SUMMARIZER", "OCR_LAYOUT", "SYMPTOM_CLASSIFIER"
+  status      AIModelStatus @default(DRAFT)
+  owner       String?       // team or organization
+  description String?
+  metrics     Json?         // { cer: 0.021, f1: 0.962, latency_ms: 420 }
+  isDemo      Boolean       @default(true)
+  approvedBy  String?
+  approvedAt  DateTime?
+  deployedAt  DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  versions AIModelVersion[]
+
+  @@index([status])
+}
+
+model AIModelVersion {
+  id            String        @id @default(cuid())
+  modelId       String
+  versionNumber String        // "v2.1"
+  status        AIModelStatus @default(DRAFT)
+  metrics       Json?         // { cer, f1, accuracy, latency_ms }
+  artifactUrl   String?
+  approvedBy    String?
+  approvedAt    DateTime?
+  createdAt     DateTime      @default(now())
+
+  model       AIModel             @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  deployments AIModelDeployment[]
+
+  @@unique([modelId, versionNumber])
+}
+
+model AIModelDeployment {
+  id             String                @id @default(cuid())
+  versionId      String
+  environment    DeploymentEnvironment @default(DEVELOPMENT)
+  facilityId     String?
+  status         DeploymentStatus      @default(DEPLOYED)
+  deployedAt     DateTime              @default(now())
+  deployedBy     String?
+  rollbackReason String?
+
+  version AIModelVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@index([versionId, environment])
+}
+
+// ---------------------------------------------------------------------------
+// 14. Interoperability (FHIR R4 & ABDM Compliance - DEMO / PRODUCTION)
+// ---------------------------------------------------------------------------
 
 model AbdmConsentArtefact {
   id                String        @id @default(cuid())
@@ -607,15 +1146,67 @@ model AbdmConsentArtefact {
   patient Patient @relation(fields: [patientId], references: [id])
 }
 
+model FHIRResourceMapping {
+  id               String   @id @default(cuid())
+  facilityId       String
+  resourceType     String   // "Patient", "Encounter", "Observation"
+  internalEntityId String
+  fhirResourceId   String
+  status           String   @default("DEMO") // "DEMO", "SYNCED", "FAILED"
+  payload          Json
+  lastSyncedAt     DateTime @default(now())
+
+  hospital Hospital @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+
+  @@unique([facilityId, resourceType, internalEntityId])
+}
+
+model InteroperabilityTransaction {
+  id              String                 @id @default(cuid())
+  facilityId      String
+  transactionType InteropTransactionType
+  mode            String                 @default("DEMO")
+  status          String                 @default("SUCCESS")
+  requestPayload  Json?
+  responsePayload Json?
+  createdAt       DateTime               @default(now())
+
+  hospital Hospital @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+
+  @@index([facilityId, transactionType])
+}
+
+// ---------------------------------------------------------------------------
+// 15. Governance, Audit Trail & System Configuration
+// ---------------------------------------------------------------------------
+
 model AuditLog {
   id         String    @id @default(cuid())
   actorType  ActorType
   actorId    String?
+  facilityId String?   // for tenant-scoped audit queries
   action     String
   entityType String?
   entityId   String?
   metadata   Json?
   createdAt  DateTime  @default(now())
+
+  @@index([facilityId, createdAt])
+  @@index([action, createdAt])
+}
+
+model SystemConfig {
+  id          String   @id @default(cuid())
+  facilityId  String?  // null = national configuration
+  configKey   String
+  configValue Json
+  category    String   // "FEATURE_FLAGS", "KIOSK_SETTINGS", "LOCALIZATION"
+  updatedBy   String?
+  updatedAt   DateTime @updatedAt
+
+  hospital Hospital? @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+
+  @@unique([facilityId, configKey])
 }
 
 model OtpVerification {

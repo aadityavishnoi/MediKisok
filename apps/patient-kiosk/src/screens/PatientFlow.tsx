@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getDictionary } from '@medikiosk/ui';
 import { Language, Mode, type HistoryQuestion } from '@medikiosk/shared-types';
 import { startHistory, type WsConnectionState } from '@medikiosk/api-client';
@@ -36,10 +36,21 @@ export interface PatientFlowProps {
   wsState: WsConnectionState;
 }
 
+interface IssuedTicket {
+  id: string;
+  tokenNumber: string;
+  priority: string;
+  estimatedWaitMins: number;
+  roomNumber?: string;
+  departmentName?: string;
+}
+
 export function PatientFlow({ sessionId, wsState }: PatientFlowProps) {
   const [stage, setStage] = useState<FlowStage>({ name: 'LANGUAGE' });
   const [language, setLanguage] = useState<Language>(Language.EN);
   const [startError, setStartError] = useState<string | null>(null);
+  const [ticket, setTicket] = useState<IssuedTicket | null>(null);
+  const [issuingTicket, setIssuingTicket] = useState(false);
 
   async function handleSelectComplaint(category: ChiefComplaintCategory) {
     setStartError(null);
@@ -52,6 +63,45 @@ export function PatientFlow({ sessionId, wsState }: PatientFlowProps) {
       setStartError(toUserMessage(err, getDictionary(language)));
     }
   }
+
+  // Issue real queue ticket when patient reaches DONE
+  useEffect(() => {
+    if (stage.name === 'DONE' && !ticket && !issuingTicket) {
+      setIssuingTicket(true);
+      fetch('/api/queue/ticket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, departmentName: 'General OPD' }),
+      })
+        .then(async (res) => {
+          if (res.ok) {
+            const data = await res.json();
+            setTicket(data.ticket);
+          } else {
+            // Fallback token if queue issue fails
+            setTicket({
+              id: 'fallback',
+              tokenNumber: `OPD-${Math.floor(100 + Math.random() * 900)}`,
+              priority: 'ROUTINE',
+              estimatedWaitMins: 15,
+              roomNumber: 'OPD Room 102',
+              departmentName: 'General OPD',
+            });
+          }
+        })
+        .catch(() => {
+          setTicket({
+            id: 'fallback',
+            tokenNumber: `OPD-${Math.floor(100 + Math.random() * 900)}`,
+            priority: 'ROUTINE',
+            estimatedWaitMins: 15,
+            roomNumber: 'OPD Room 102',
+            departmentName: 'General OPD',
+          });
+        })
+        .finally(() => setIssuingTicket(false));
+    }
+  }, [stage.name, sessionId, ticket, issuingTicket]);
 
   let content;
   if (stage.name === 'LANGUAGE') {
@@ -119,13 +169,52 @@ export function PatientFlow({ sessionId, wsState }: PatientFlowProps) {
   } else {
     const t = getDictionary(language).history;
     content = (
-      <div className="flex flex-col items-center gap-4 text-center bg-white border border-slate-200 p-8 rounded-2xl shadow-sm">
+      <div className="flex flex-col items-center gap-4 text-center bg-white border border-slate-200 p-8 rounded-2xl shadow-sm max-w-lg mx-auto">
         <div className="text-6xl animate-bounce">✅</div>
         <h1 className="text-3xl font-black text-slate-900 font-display">{t.thankYouTitle}</h1>
         <p className="text-base text-slate-600 font-medium max-w-md">{t.thankYouBody}</p>
-        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl text-xs font-bold text-blue-900 w-full">
-          Token #OPD-204 · Registered at Triage Desk. Please proceed to Waiting Room B.
+
+        {/* Live Queue Ticket Slip */}
+        <div className="mt-4 p-5 bg-gradient-to-tr from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-2xl text-left w-full space-y-3 shadow-md">
+          <div className="flex items-center justify-between border-b border-blue-200 pb-2">
+            <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider font-mono">OPD Triage Slip</span>
+            <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${
+              ticket?.priority === 'EMERGENCY' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'
+            }`}>
+              {ticket?.priority || 'ROUTINE'}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-xs text-slate-500 block">Your Token Number:</span>
+              <span className="text-3xl font-black text-blue-900 font-mono tracking-tight">
+                {ticket?.tokenNumber || (issuingTicket ? 'Generating...' : 'OPD-101')}
+              </span>
+            </div>
+            <div className="text-right">
+              <span className="text-xs text-slate-500 block">Est. Wait:</span>
+              <span className="text-base font-extrabold text-indigo-700 font-mono">
+                ~{ticket?.estimatedWaitMins ?? 12} mins
+              </span>
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-blue-200 text-xs text-slate-700 space-y-1">
+            <div>Department: <strong>{ticket?.departmentName || 'General OPD'}</strong></div>
+            <div>Consultation Room: <strong>{ticket?.roomNumber || 'OPD Room 102'}</strong></div>
+            <div className="text-[11px] text-blue-700 font-medium pt-1">
+              Please proceed to the waiting area. Your token will be announced on the digital display.
+            </div>
+          </div>
         </div>
+
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-4 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-md transition-all"
+        >
+          Return to Start Screen
+        </button>
       </div>
     );
   }
@@ -149,5 +238,3 @@ export function PatientFlow({ sessionId, wsState }: PatientFlowProps) {
     </>
   );
 }
-
-

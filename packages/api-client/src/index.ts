@@ -7,4 +7,9 @@ export * from './endpoints/auth.js';
 export * from './endpoints/doctor.js';
 export * from './endpoints/documents.js';
 export * from './endpoints/surveillanceRx.js';
+export * from './endpoints/hospitals.js';
+export * from './endpoints/queues.js';
+export * from './endpoints/rfidLifecycle.js';
+export * from './endpoints/admin.js';
+export * from './endpoints/surveillance.js';
 
