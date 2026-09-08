@@ -37,8 +37,14 @@ export class OtpService {
     }
 
     // Dispatch via TextBee Android Phone SMS Gateway (100% Free & Verified Real SIM SMS)
-    const textbeeApiKey = process.env.TEXTBEE_API_KEY || 'txb_9LK7dSkLAKsxSHUPtlDkQ3HLYLS7fDR7';
-    const textbeeDeviceId = process.env.TEXTBEE_DEVICE_ID || '6aa07fb6ccb6c7270942b550';
+    const textbeeApiKey =
+      process.env.TEXTBEE_API_KEY && process.env.TEXTBEE_API_KEY !== 'txb_PmYNoZxGzXS10wKgi1kdnnMliCvfpWNY'
+        ? process.env.TEXTBEE_API_KEY
+        : 'txb_9LK7dSkLAKsxSHUPtlDkQ3HLYLS7fDR7';
+    const textbeeDeviceId =
+      process.env.TEXTBEE_DEVICE_ID && process.env.TEXTBEE_DEVICE_ID !== '6a9eac8accb6c72709c589e0'
+        ? process.env.TEXTBEE_DEVICE_ID
+        : '6aa07fb6ccb6c7270942b550';
 
     if (!textbeeApiKey || !textbeeDeviceId) {
       console.warn('⚠️ [TextBee Gateway]: Missing TEXTBEE_API_KEY or TEXTBEE_DEVICE_ID in .env');
