@@ -32,24 +32,31 @@ export function createApp() {
   app.use(express.json({ limit: '15mb' }));
   app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
-  app.use('/api', healthRouter);
-  app.use('/api', rfidRouter);
-  app.use('/api', sessionRouter);
-  app.use('/api', consentRouter);
-  app.use('/api', historyRouter);
-  app.use('/api', authRouter);
-  app.use('/api', doctorRouter);
-  app.use('/api', documentsRouter);
-  app.use('/api', aiRouter);
-  app.use('/api', adminRouter);
-  app.use('/api', ttsRouter);
-  app.use('/api', otpRouter);
-  app.use('/api', patientRegistrationRouter);
-  app.use('/api', discoveryRouter);
-  app.use('/api', hospitalRouter);
-  app.use('/api', queueRouter);
-  app.use('/api', prescriptionsRouter);
-  app.use('/api', surveillanceRouter);
+  const routers = [
+    healthRouter,
+    rfidRouter,
+    sessionRouter,
+    consentRouter,
+    historyRouter,
+    authRouter,
+    doctorRouter,
+    documentsRouter,
+    aiRouter,
+    adminRouter,
+    ttsRouter,
+    otpRouter,
+    patientRegistrationRouter,
+    discoveryRouter,
+    hospitalRouter,
+    queueRouter,
+    prescriptionsRouter,
+    surveillanceRouter,
+  ];
+
+  for (const r of routers) {
+    app.use('/api', r);
+    app.use('/', r);
+  }
 
   app.use((_req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Route not found' } });

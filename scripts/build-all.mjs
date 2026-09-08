@@ -7,15 +7,28 @@ const distDir = path.join(rootDir, 'dist');
 
 console.log('🚀 [MediKiosk] Building all applications for Vercel deployment...');
 
+
 // Generate Prisma Client for serverless backend API
 try {
   console.log('⚡ Generating Prisma Client for CockroachDB...');
-  execSync('pnpm --filter=backend prisma:generate', {
+  execSync('npx prisma generate --schema=prisma/schema.prisma', {
     stdio: 'inherit',
     cwd: rootDir,
   });
 } catch {
   console.log('ℹ️ Prisma client already generated or locked on local machine.');
+}
+
+// Bundle Serverless Backend API bundle for Vercel
+try {
+  console.log('⚡ Bundling Backend Serverless API for Vercel...');
+  execSync('npx esbuild api/serverless.ts --bundle --platform=node --target=node20 --format=esm --outfile=api/index.js --external:@prisma/client --external:.prisma/client --external:serialport --external:@serialport/parser-readline', {
+    stdio: 'inherit',
+    cwd: rootDir,
+  });
+  fs.copyFileSync(path.join(rootDir, 'api', 'index.js'), path.join(rootDir, 'api', '[...path].js'));
+} catch (err) {
+  console.error('❌ Failed to bundle Serverless API:', err);
 }
 
 // Run pnpm build for all 5 frontend applications

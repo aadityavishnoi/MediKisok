@@ -11,12 +11,28 @@
  *   - Fully non-crashing: runs safely in background without killing the host server.
  */
 
-import { SerialPort } from 'serialport';
-import { ReadlineParser } from '@serialport/parser-readline';
 import { DeviceStatus } from '@medikiosk/shared-types';
 import { env } from '../lib/env.js';
 import { wsHub } from '../ws/hub.js';
 import { handleRfidScan, normalizeRfidUid, getPatientByRfid, formatRfidScanBanner } from './rfidService.js';
+
+let SerialPortLib: any = null;
+let ReadlineParserLib: any = null;
+
+async function getSerialPortLibs() {
+  if (!SerialPortLib) {
+    try {
+      const sp = await import('serialport');
+      SerialPortLib = sp.SerialPort;
+      const rp = await import('@serialport/parser-readline');
+      ReadlineParserLib = rp.ReadlineParser;
+    } catch {
+      SerialPortLib = null;
+      ReadlineParserLib = null;
+    }
+  }
+  return { SerialPort: SerialPortLib, ReadlineParser: ReadlineParserLib };
+}
 
 
 export type BridgeConnectionState = 'DISCONNECTED' | 'CONNECTING' | 'CONNECTED' | 'RECONNECTING';
@@ -163,6 +179,8 @@ export class RfidSerialBridge {
   /** Lists all serial/COM ports currently recognized by the operating system */
   public static async listAvailablePorts() {
     try {
+      const { SerialPort } = await getSerialPortLibs();
+      if (!SerialPort) return [];
       const ports = await SerialPort.list();
       return ports.map((p: any) => ({
         path: p.path,
@@ -184,20 +202,27 @@ export class RfidSerialBridge {
     this.state = 'CONNECTING';
 
     try {
-      const ports = await RfidSerialBridge.listAvailablePorts();
-      const ch340OrArduino = ports.find(
-        (p) => (p.friendlyName && /CH340|Arduino|USB-SERIAL/i.test(p.friendlyName)) ||
-               (p.manufacturer && /wch|arduino/i.test(p.manufacturer)) ||
-               (p.vendorId && /1a86/i.test(p.vendorId))
-      );
-      if (ch340OrArduino && ch340OrArduino.path) {
-        this.portPath = ch340OrArduino.path;
+      const { SerialPort, ReadlineParser } = await getSerialPortLibs();
+      if (!SerialPort || !ReadlineParser) {
+        console.log('[RFID Serial] Hardware serial port driver unavailable in this environment (Cloud/Serverless mode). Hardware RFID listener skipped.');
+        this.state = 'DISCONNECTED';
+        return;
       }
-    } catch {}
 
-    console.log(`[RFID Serial] Attempting connection on ${this.portPath} at ${this.baudRate} baud...`);
+      try {
+        const ports = await RfidSerialBridge.listAvailablePorts();
+        const ch340OrArduino = ports.find(
+          (p) => (p.friendlyName && /CH340|Arduino|USB-SERIAL/i.test(p.friendlyName)) ||
+                 (p.manufacturer && /wch|arduino/i.test(p.manufacturer)) ||
+                 (p.vendorId && /1a86/i.test(p.vendorId))
+        );
+        if (ch340OrArduino && ch340OrArduino.path) {
+          this.portPath = ch340OrArduino.path;
+        }
+      } catch {}
 
-    try {
+      console.log(`[RFID Serial] Attempting connection on ${this.portPath} at ${this.baudRate} baud...`);
+
       this.port = new SerialPort({
         path: this.portPath,
         baudRate: this.baudRate,
