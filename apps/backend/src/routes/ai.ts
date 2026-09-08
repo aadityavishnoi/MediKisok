@@ -71,26 +71,58 @@ aiRouter.post('/ai/copilot-chat', async (req, res, next) => {
 
 /**
  * Developer 1: POST /api/ai/next-question
- * Evaluates patient state and optional regional outbreak context to return the next best clinical question.
+ * Evaluates reported symptoms, prior answers, demographics, and regional outbreak signals
+ * to determine the next highest-yield clinical question.
+ * The doctor remains the final decision maker (requiresDoctorReview: true).
  */
 aiRouter.post('/ai/next-question', async (req, res, next) => {
   try {
-    const { patientState, regionalSignal } = req.body;
-    if (!patientState || !patientState.sessionId) {
-      res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'patientState with sessionId is required' } });
+    const { ClinicalQuestionEngine, NextQuestionApiRequestSchema } = await import('@medikiosk/clinical-ai');
+
+    // Handle legacy patientState format if passed
+    let payload = req.body;
+    if (payload && payload.patientState && !payload.patient) {
+      const ps = payload.patientState;
+      const symptomsList: string[] = [];
+      if (ps.chiefComplaint) symptomsList.push(ps.chiefComplaint);
+      if (Array.isArray(ps.reportedSymptoms)) symptomsList.push(...ps.reportedSymptoms);
+
+      const answersMap: Record<string, string | boolean | number> = {};
+      if (Array.isArray(ps.answeredQuestions)) {
+        for (const ans of ps.answeredQuestions) {
+          answersMap[ans.questionId] = ans.answerValue;
+        }
+      }
+
+      const signals = payload.regionalSignal ? [payload.regionalSignal] : [];
+
+      payload = {
+        patient: {
+          age: typeof ps.demographics?.age === 'number' ? ps.demographics.age : 30,
+          gender: ps.demographics?.gender ? String(ps.demographics.gender) : 'M',
+        },
+        symptoms: symptomsList,
+        answers: answersMap,
+        regionalSignals: signals,
+      };
+    }
+
+    // Validate request schema
+    const parseResult = NextQuestionApiRequestSchema.safeParse(payload);
+    if (!parseResult.success) {
+      const issueMessages = parseResult.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
+      res.status(400).json({
+        error: {
+          code: 'BAD_REQUEST',
+          message: `Validation failed: ${issueMessages}`,
+        },
+      });
       return;
     }
 
-    // Import NextBestQuestionRanker dynamically/directly
-    const { NextBestQuestionRanker } = await import('../../../../ai/clinical-ai/src/index.js');
-    const result = NextBestQuestionRanker.selectNextQuestion({
-      patientState,
-      regionalSignal,
-    });
-
-    res.status(200).json(result);
+    const evaluation = ClinicalQuestionEngine.evaluateNextQuestion(parseResult.data);
+    res.status(200).json(evaluation);
   } catch (err) {
     next(err);
   }
 });
-

@@ -24,6 +24,7 @@
   "dependencies": {
     "@libsql/client": "^0.18.0",
     "@medikiosk/clinical-engine": "workspace:*",
+    "@medikiosk/clinical-ai": "workspace:*",
     "@medikiosk/ai-service": "workspace:*",
     "@medikiosk/shared-types": "workspace:*",
     "@prisma/adapter-libsql": "^7.10.0",
