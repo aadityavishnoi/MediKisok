@@ -119,9 +119,9 @@ export class RfidSerialBridge {
   constructor(options: RfidSerialBridgeOptions = {}) {
     this.portPath = options.portPath || env.RFID_SERIAL_PORT || 'COM3';
     this.baudRate = options.baudRate || env.RFID_SERIAL_BAUD || 9600;
-    this.debounceMs = options.debounceMs ?? env.RFID_DEBOUNCE_MS ?? 1000;
+    this.debounceMs = options.debounceMs ?? env.RFID_DEBOUNCE_MS ?? 500;
     this.deviceCode = options.deviceCode || 'KIOSK-DEV-001';
-    this.reconnectIntervalMs = options.reconnectIntervalMs || 5000;
+    this.reconnectIntervalMs = options.reconnectIntervalMs || 1200;
     this.customOnScan = options.onScan;
     this.customOnStatusChange = options.onStatusChange;
   }
@@ -350,13 +350,16 @@ export class RfidSerialBridge {
     }
 
     if (this.port) {
+      const activePort = this.port;
+      this.port = null;
       try {
-        this.port.removeAllListeners();
-        if (this.port.isOpen) {
-          this.port.close();
+        activePort.removeAllListeners();
+        if (activePort.isOpen) {
+          activePort.close(() => {
+            // Silently release file descriptors on Windows
+          });
         }
       } catch {}
-      this.port = null;
     }
   }
 
@@ -432,14 +435,14 @@ export class RfidSerialBridge {
         });
         console.log(`[RFID Serial] Intake session established: session=${result.sessionId}, patient=${result.patientId || 'NEW'}`);
 
-        // Forward to live Vercel kiosk deployment
+        // Forward to live Vercel kiosk deployment (non-blocking, fire-and-forget with 1.5s timeout)
         try {
-          await fetch('https://medikiosk-sih26047-three.vercel.app/api/rfid/trigger-scan', {
+          fetch('https://medikiosk-sih26047-three.vercel.app/api/rfid/trigger-scan', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ deviceCode: this.deviceCode, uid: normalizedUid }),
-          });
-          console.log(`[RFID Serial Cloud Sync] Synced ${normalizedUid} to live Vercel Kiosk!`);
+            signal: AbortSignal.timeout(1500),
+          }).catch(() => {});
         } catch {}
       }
     } catch (err: any) {
