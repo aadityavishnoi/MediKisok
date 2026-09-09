@@ -327,6 +327,29 @@ queueRouter.post('/queues/:id/call-next', allowDemoOrAuth, async (req, res, next
       },
     });
 
+    if (updated.patientId) {
+      await prisma.patientNotification.create({
+        data: {
+          patientId: updated.patientId,
+          title: `Token #${updated.tokenNumber} Called!`,
+          message: `Please proceed to ${updated.doctor?.roomNumber || 'Consultation Room'} for your consultation with ${updated.doctor?.name || 'Doctor'}.`,
+          type: 'QUEUE_CALLED',
+          actionUrl: '/dashboard',
+        },
+      }).catch(() => {});
+
+      wsHub.broadcast({
+        type: 'PATIENT_NOTIFICATION',
+        payload: {
+          patientId: updated.patientId,
+          title: `Token #${updated.tokenNumber} Called!`,
+          message: `Please proceed to ${updated.doctor?.roomNumber || 'Room 101'} - ${updated.doctor?.name || 'Doctor'}.`,
+          type: 'QUEUE_CALLED',
+          priority: 'urgent',
+        } as any,
+      });
+    }
+
     res.json({ success: true, item: updated });
   } catch (err) {
     next(err);

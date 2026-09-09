@@ -436,11 +436,60 @@ export async function completeConsultation(
       data: { status: 'COMPLETED' },
     });
 
+    // Complete triage queue ticket if active
+    await prisma.triageQueue.updateMany({
+      where: { sessionId },
+      data: { status: 'COMPLETED', completedAt: now },
+    }).catch(() => {});
+
+    // If doctor prescribed medicines, persist to PatientPrescription & Clinical Prescription
+    if (payload.prescriptions && payload.prescriptions.length > 0) {
+      await prisma.patientPrescription.create({
+        data: {
+          patientId: session.patient.id,
+          doctorId: validDoctorId,
+          diagnosis: 'OPD Clinical Consultation',
+          instructions: payload.notes || 'Take medications strictly as instructed by your doctor.',
+          medications: payload.prescriptions.map((p) => ({
+            name: p.medicineName,
+            dosage: p.dosage,
+            frequency: p.frequency,
+            duration: p.duration,
+            instructions: p.instructions,
+            route: 'Oral',
+          })),
+        },
+      }).catch((err) => console.warn('[Prescription] Error persisting patientPrescription:', err));
+
+      // Also create notification for the patient
+      await prisma.patientNotification.create({
+        data: {
+          patientId: session.patient.id,
+          title: 'Prescription Issued',
+          message: `Doctor completed your consultation and prescribed ${payload.prescriptions.length} medication(s). Available in Rx Meds.`,
+          type: 'PRESCRIPTION_ISSUED',
+          actionUrl: '/prescriptions',
+        },
+      }).catch(() => {});
+
+      wsHub.broadcast({
+        type: 'PATIENT_NOTIFICATION',
+        payload: {
+          patientId: session.patient.id,
+          title: 'Prescription Issued',
+          message: `Your digital prescription is ready. Tap to view medications.`,
+          type: 'PRESCRIPTION_ISSUED',
+          priority: 'high',
+        } as any,
+      });
+    }
+
     wsHub.broadcast({
       type: 'SESSION_UPDATED',
       payload: {
         sessionId,
         status: 'COMPLETED',
+        patientId: session.patient.id,
         timestamp: now.toISOString(),
       },
     });

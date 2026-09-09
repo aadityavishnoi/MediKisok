@@ -12,6 +12,7 @@ import type {
   PrescriptionEntity,
 } from '@medikiosk/shared-types';
 import { prisma } from '../lib/prisma.js';
+import { wsHub } from '../ws/hub.js';
 
 export interface InMemoryPatient {
   id: string;
@@ -650,43 +651,42 @@ export async function storeFindAppointments(patientId: string, status?: string):
       include: { doctor: true, facility: true, department: true },
       orderBy: { appointmentDate: 'desc' },
     });
-    return dbAppts.map((a) => ({
-      id: a.id,
-      patientId: a.patientId,
-      doctorId: a.doctorId,
-      doctorName: a.doctor?.name ?? null,
-      doctorDepartment: a.doctor?.department ?? null,
-      facilityId: a.facilityId,
-      facilityName: a.facility?.name ?? null,
-      departmentId: a.departmentId,
-      departmentName: a.department?.name ?? null,
-      appointmentDate: a.appointmentDate.toISOString(),
-      timeSlot: a.timeSlot,
-      type: a.type,
-      status: a.status,
-      reason: a.reason,
-      notes: a.notes,
-      cancellationReason: a.cancellationReason,
-      location: a.department?.floor ? `${a.department.name} (${a.department.floor})` : 'AIIMS Main OPD Block',
-      createdAt: a.createdAt.toISOString(),
-      updatedAt: a.updatedAt.toISOString(),
-    }));
+    if (dbAppts && dbAppts.length > 0) {
+      return dbAppts.map((a) => ({
+        id: a.id,
+        patientId: a.patientId,
+        doctorId: a.doctorId,
+        doctorName: a.doctor?.name ?? null,
+        doctorDepartment: a.doctor?.department ?? null,
+        facilityId: a.facilityId,
+        facilityName: a.facility?.name ?? null,
+        departmentId: a.departmentId,
+        departmentName: a.department?.name ?? null,
+        appointmentDate: a.appointmentDate.toISOString(),
+        timeSlot: a.timeSlot,
+        type: a.type,
+        status: a.status,
+        reason: a.reason,
+        notes: a.notes,
+        cancellationReason: a.cancellationReason,
+        location: a.department?.floor ? `${a.department.name} (${a.department.floor})` : 'AIIMS Main OPD Block',
+        createdAt: a.createdAt.toISOString(),
+        updatedAt: a.updatedAt.toISOString(),
+      }));
+    }
   } catch {
     // Database offline fallback
   }
 
-  if (patientId === 'demo-patient-001') {
-    const result: AppointmentEntity[] = [];
-    for (const a of APPOINTMENTS_MAP.values()) {
-      if (a.patientId === patientId) {
-        if (!status || a.status === status) {
-          result.push(a);
-        }
+  const result: AppointmentEntity[] = [];
+  for (const a of APPOINTMENTS_MAP.values()) {
+    if (a.patientId === patientId) {
+      if (!status || a.status === status) {
+        result.push(a);
       }
     }
-    return result.sort((a, b) => new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime());
   }
-  return [];
+  return result.sort((a, b) => new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime());
 }
 
 export async function storeCreateAppointment(data: {
@@ -702,11 +702,80 @@ export async function storeCreateAppointment(data: {
   notes?: string | null;
 }): Promise<AppointmentEntity> {
   try {
+    // 1. Resolve Hospital Facility
+    const hosp = await prisma.hospital.findFirst();
+    const facilityId = hosp?.id ?? 'demo-hospital-001';
+
+    // 2. Resolve Doctor in Database
+    let validDoctorId: string | null = null;
+    if (data.doctorId) {
+      const doc = await prisma.doctor.findFirst({
+        where: {
+          OR: [
+            { id: data.doctorId },
+            { name: { contains: data.doctorName || '', mode: 'insensitive' } },
+          ],
+        },
+      });
+      if (doc) validDoctorId = doc.id;
+    }
+    if (!validDoctorId) {
+      const fallbackDoc = await prisma.doctor.findFirst({
+        where: data.departmentId ? { departmentId: data.departmentId } : { role: 'DOCTOR' },
+      });
+      validDoctorId = fallbackDoc?.id ?? null;
+    }
+
+    // 3. Resolve Department in Database
+    let validDeptId: string | null = null;
+    if (data.departmentId) {
+      const dept = await prisma.department.findFirst({
+        where: {
+          OR: [
+            { id: data.departmentId },
+            { code: data.departmentId.toUpperCase() },
+            { name: { contains: data.departmentName || '', mode: 'insensitive' } },
+          ],
+        },
+      });
+      if (dept) validDeptId = dept.id;
+    }
+    if (!validDeptId && validDoctorId) {
+      const docRecord = await prisma.doctor.findUnique({ where: { id: validDoctorId } });
+      if (docRecord?.departmentId) validDeptId = docRecord.departmentId;
+    }
+    if (!validDeptId) {
+      const fallbackDept = await prisma.department.findFirst();
+      validDeptId = fallbackDept?.id ?? null;
+    }
+
+    // 4. Ensure Patient exists in CockroachDB
+    let patient = await prisma.patient.findUnique({ where: { id: data.patientId } });
+    if (!patient) {
+      const inMem = PATIENTS_MAP.get(data.patientId);
+      patient = await prisma.patient.create({
+        data: {
+          id: data.patientId,
+          hospitalId: facilityId,
+          fullName: inMem?.fullName || 'Aarav Sharma',
+          phone: inMem?.phone || '9800000001',
+          age: 35,
+          gender: inMem?.gender || 'Male',
+          bloodGroup: inMem?.bloodGroup || 'B+',
+          abhaId: inMem?.abhaId || 'ABHA-91-9800-0001',
+          registrationSource: 'MANUAL',
+          isDemo: true,
+        },
+      });
+    }
+
+    // 5. Create Appointment in CockroachDB
     const created = await prisma.appointment.create({
       data: {
-        patientId: data.patientId,
-        doctorId: data.doctorId ?? null,
-        departmentId: data.departmentId ?? null,
+        patientId: patient.id,
+        doctorId: validDoctorId,
+        facilityId: facilityId,
+        departmentId: validDeptId,
         appointmentDate: data.appointmentDate,
         timeSlot: data.timeSlot,
         type: data.type,
@@ -716,82 +785,174 @@ export async function storeCreateAppointment(data: {
       },
       include: { doctor: true, facility: true, department: true },
     });
-    if (created) {
-      // Auto-create Billing Invoice in DB
-      try {
-        const invoiceNumber = `INV-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
-        await prisma.billingInvoice.create({
-          data: {
-            patientId: data.patientId,
-            appointmentId: created.id,
-            invoiceNumber,
-            description: `OPD Consultation Fee - ${created.department?.name ?? 'General Clinic'}`,
-            department: created.department?.name ?? 'General OPD',
-            totalAmount: 250.0,
-            discountAmount: 0.0,
-            netAmount: 250.0,
-            status: 'PENDING',
-            items: [
-              { description: 'OPD Specialist Consultation', quantity: 1, unitPrice: 250.0, amount: 250.0 },
-            ],
-          },
-        });
-      } catch (invErr) {
-        console.warn('[Billing] Could not persist invoice:', invErr);
-      }
 
-      // Auto-create Notification in DB
-      try {
-        await prisma.patientNotification.create({
-          data: {
-            patientId: data.patientId,
-            title: 'Appointment Confirmed',
-            message: `Your appointment with ${created.doctor?.name ?? 'Doctor'} for ${data.timeSlot} on ${data.appointmentDate.toISOString().split('T')[0]} has been confirmed.`,
-            type: 'APPOINTMENT_CONFIRMED',
-            actionUrl: '/appointments',
-          },
-        });
-      } catch (notifErr) {
-        console.warn('[Notification] Could not persist notification:', notifErr);
-      }
+    // 6. Create PatientSession in CockroachDB with ROUTED status
+    const session = await prisma.patientSession.create({
+      data: {
+        hospitalId: facilityId,
+        patientId: patient.id,
+        departmentId: validDeptId,
+        status: 'ROUTED',
+        mode: 'GENERAL',
+        identifiedVia: 'MANUAL',
+      },
+    });
 
-      return {
-        id: created.id,
-        patientId: created.patientId,
-        doctorId: created.doctorId,
-        doctorName: created.doctor?.name ?? null,
-        doctorDepartment: created.doctor?.department ?? null,
-        facilityId: created.facilityId,
-        facilityName: created.facility?.name ?? null,
-        departmentId: created.departmentId,
-        departmentName: created.department?.name ?? null,
-        appointmentDate: created.appointmentDate.toISOString(),
-        timeSlot: created.timeSlot,
-        type: created.type,
-        status: created.status,
-        reason: created.reason,
-        notes: created.notes,
-        cancellationReason: created.cancellationReason,
-        location: created.department?.floor ? `${created.department.name} (${created.department.floor})` : 'AIIMS Main OPD Block',
-        createdAt: created.createdAt.toISOString(),
-        updatedAt: created.updatedAt.toISOString(),
-      };
-    }
-  } catch {
-    // Database offline fallback
+    // 7. Create ClinicalHistory with chief complaint
+    await prisma.clinicalHistory.create({
+      data: {
+        sessionId: session.id,
+        patientId: patient.id,
+        mode: 'GENERAL',
+        chiefComplaint: data.reason,
+        completedAt: new Date(),
+      },
+    }).catch((err) => console.warn('[ClinicalHistory] Create warning:', err));
+
+    // 8. Generate token & create TriageQueue entry
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const countToday = await prisma.triageQueue.count({
+      where: {
+        hospitalId: facilityId,
+        queuedAt: { gte: today },
+      },
+    });
+
+    const prefix = created.department?.code ? created.department.code.slice(0, 4).toUpperCase() : 'OPD';
+    const tokenNumber = `${prefix}-${101 + countToday}`;
+    const priorityVal = data.type === 'EMERGENCY' ? 'EMERGENCY' : 'NORMAL';
+
+    const triageQueue = await prisma.triageQueue.create({
+      data: {
+        sessionId: session.id,
+        patientId: patient.id,
+        hospitalId: facilityId,
+        departmentId: validDeptId,
+        doctorId: validDoctorId,
+        tokenNumber,
+        priority: priorityVal as any,
+        status: 'WAITING',
+        estimatedWaitMins: priorityVal === 'EMERGENCY' ? 0 : 15,
+      },
+      include: {
+        patient: true,
+        doctor: true,
+        department: true,
+      },
+    });
+
+    // 9. Auto-create Billing Invoice in DB
+    const invoiceNumber = `INV-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+    await prisma.billingInvoice.create({
+      data: {
+        patientId: patient.id,
+        appointmentId: created.id,
+        invoiceNumber,
+        description: `OPD Consultation Fee - ${created.department?.name ?? 'General Clinic'}`,
+        department: created.department?.name ?? 'General OPD',
+        totalAmount: 250.0,
+        discountAmount: 0.0,
+        netAmount: 250.0,
+        status: 'PENDING',
+        items: [
+          { description: 'OPD Specialist Consultation', quantity: 1, unitPrice: 250.0, amount: 250.0 },
+        ],
+      },
+    }).catch((err) => console.warn('[Billing] Invoice create warning:', err));
+
+    // 10. Auto-create Patient Notification in DB
+    await prisma.patientNotification.create({
+      data: {
+        patientId: patient.id,
+        title: 'Appointment & OPD Token Confirmed',
+        message: `Token #${tokenNumber} issued. Your appointment with ${created.doctor?.name ?? 'Doctor'} for ${data.timeSlot} on ${data.appointmentDate.toISOString().split('T')[0]} has been confirmed.`,
+        type: 'APPOINTMENT_CONFIRMED',
+        actionUrl: '/appointments',
+      },
+    }).catch((err) => console.warn('[Notification] Notification create warning:', err));
+
+    // 11. Broadcast real-time WebSocket events across the platform
+    wsHub.broadcast({
+      type: 'SESSION_UPDATED',
+      payload: {
+        sessionId: session.id,
+        patientId: patient.id,
+        patientName: patient.fullName,
+        doctorId: validDoctorId,
+        doctorName: created.doctor?.name,
+        departmentId: validDeptId,
+        status: 'ROUTED',
+        tokenNumber,
+        timestamp: new Date().toISOString(),
+      } as any,
+    });
+
+    wsHub.broadcastToFacility(facilityId, {
+      type: 'PATIENT_QUEUE_ADDED',
+      payload: {
+        queueId: triageQueue.id,
+        sessionId: session.id,
+        tokenNumber,
+        hospitalId: facilityId,
+        patientId: patient.id,
+        patientName: patient.fullName,
+        doctorId: validDoctorId,
+        departmentId: validDeptId,
+        priority: priorityVal,
+        status: 'WAITING',
+        estimatedWaitMins: triageQueue.estimatedWaitMins,
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+    wsHub.broadcast({
+      type: 'PATIENT_NOTIFICATION',
+      payload: {
+        patientId: patient.id,
+        title: 'OPD Consultation Booked',
+        message: `Token #${tokenNumber} issued for ${created.doctor?.name ?? 'Doctor'} (${created.department?.name ?? 'OPD'}) at ${data.timeSlot}.`,
+        type: 'APPOINTMENT_CONFIRMED',
+        priority: 'high',
+      } as any,
+    });
+
+    return {
+      id: created.id,
+      patientId: created.patientId,
+      doctorId: created.doctorId,
+      doctorName: created.doctor?.name ?? null,
+      doctorDepartment: created.doctor?.department ?? null,
+      facilityId: created.facilityId,
+      facilityName: created.facility?.name ?? null,
+      departmentId: created.departmentId,
+      departmentName: created.department?.name ?? null,
+      appointmentDate: created.appointmentDate.toISOString(),
+      timeSlot: created.timeSlot,
+      type: created.type,
+      status: created.status,
+      reason: created.reason,
+      notes: created.notes,
+      cancellationReason: created.cancellationReason,
+      location: created.department?.floor ? `${created.department.name} (${created.department.floor})` : 'AIIMS Main OPD Block',
+      createdAt: created.createdAt.toISOString(),
+      updatedAt: created.updatedAt.toISOString(),
+    };
+  } catch (err) {
+    console.warn('[storeCreateAppointment] DB query failed, using in-memory fallback:', err);
   }
 
   const id = `appt-${Date.now()}`;
   const appt: AppointmentEntity = {
     id,
     patientId: data.patientId,
-    doctorId: data.doctorId ?? 'DOC-01',
+    doctorId: data.doctorId ?? 'demo-doctor-001',
     doctorName: data.doctorName ?? 'Dr. Rohan Mehta',
-    doctorDepartment: data.departmentName ?? 'General Medicine OPD',
-    facilityId: 'HOSP-DEL-AIIMS',
-    facilityName: 'AIIMS New Delhi Central Hospital',
-    departmentId: data.departmentId ?? 'dept-gen',
-    departmentName: data.departmentName ?? 'General Medicine OPD',
+    doctorDepartment: data.departmentName ?? 'Cardiology',
+    facilityId: 'demo-hospital-001',
+    facilityName: 'AIIMS New Delhi',
+    departmentId: data.departmentId ?? 'cmttvt3460003x7p71uqtpt59',
+    departmentName: data.departmentName ?? 'Cardiology',
     appointmentDate: data.appointmentDate.toISOString(),
     timeSlot: data.timeSlot,
     type: data.type,

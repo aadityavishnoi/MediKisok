@@ -63,9 +63,9 @@ class WsHub {
                 ws: socket,
                 sub: payload.sub,
                 role: payload.role,
-                // CENTRAL_ADMIN and ADMIN get null facilityId → receive all events
+                // CENTRAL_ADMIN, ADMIN, and PATIENT receive facility broadcasts or patient-targeted events
                 facilityId:
-                  payload.role === 'CENTRAL_ADMIN' || payload.role === 'ADMIN'
+                  payload.role === 'CENTRAL_ADMIN' || payload.role === 'ADMIN' || payload.role === 'PATIENT'
                     ? null
                     : payload.facilityId ?? null,
               };
@@ -98,7 +98,7 @@ class WsHub {
   /**
    * Sends an event to:
    * - All clients that belong to the specified facilityId
-   * - All CENTRAL_ADMIN clients (facilityId === null)
+   * - All CENTRAL_ADMIN and PATIENT clients (facilityId === null)
    *
    * Use this for all patient-flow events (RFID_SCANNED, SESSION_UPDATED, etc.)
    */
@@ -106,8 +106,21 @@ class WsHub {
     const payload = JSON.stringify(event);
     for (const client of this.clients) {
       if (client.ws.readyState !== client.ws.OPEN) continue;
-      // Deliver if: same facility, OR client is CENTRAL_ADMIN (facilityId === null)
+      // Deliver if: same facility, OR client has null facilityId (admin/patient)
       if (client.facilityId === null || client.facilityId === facilityId) {
+        client.ws.send(payload);
+      }
+    }
+  }
+
+  /**
+   * Sends an event to a specific patient by user sub/id.
+   */
+  sendToPatient(patientId: string, event: WsEvent) {
+    const payload = JSON.stringify(event);
+    for (const client of this.clients) {
+      if (client.ws.readyState !== client.ws.OPEN) continue;
+      if (client.sub === patientId || client.role === 'CENTRAL_ADMIN' || client.role === 'ADMIN') {
         client.ws.send(payload);
       }
     }
