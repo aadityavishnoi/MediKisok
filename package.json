@@ -9,6 +9,8 @@
   },
   "scripts": {
     "dev": "pnpm --parallel --filter=./apps/* run dev",
+    "app:dev": "pnpm --filter @medikiosk/patient-app run dev",
+    "app:build": "pnpm --filter @medikiosk/patient-app run build",
     "build": "pnpm --recursive --filter=./apps/* run build",
     "build:all": "node scripts/build-all.mjs",
     "test": "pnpm --recursive run test",

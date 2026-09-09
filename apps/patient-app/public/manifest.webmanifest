@@ -1,0 +1,30 @@
+{
+  "name": "MediKiosk Patient App",
+  "short_name": "MediKiosk",
+  "description": "Next-Gen AI Healthcare & Digital Patient Portal Mobile App",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0F172A",
+  "theme_color": "#059669",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Book Appointment",
+      "url": "./index.html?tab=appointments",
+      "description": "Book a new clinical slot"
+    },
+    {
+      "name": "Notifications",
+      "url": "./index.html?tab=notifications",
+      "description": "View medical alerts & prescriptions"
+    }
+  ]
+}

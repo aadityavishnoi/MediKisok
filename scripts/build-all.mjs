@@ -31,8 +31,8 @@ try {
   console.error('❌ Failed to bundle Serverless API:', err);
 }
 
-// Run pnpm build for all 6 frontend applications
-execSync('pnpm --filter=@medikiosk/patient-kiosk --filter=patient-kiosk --filter=@medikiosk/patient-portal --filter=patient-portal --filter=@medikiosk/doctor-dashboard --filter=doctor-dashboard --filter=@medikiosk/hospital-admin --filter=hospital-admin --filter=@medikiosk/rfid-portal --filter=rfid-portal --filter=@medikiosk/central-admin --filter=central-admin run build', {
+// Run pnpm build for all frontend applications
+execSync('pnpm --filter=@medikiosk/patient-kiosk --filter=patient-kiosk --filter=@medikiosk/patient-portal --filter=patient-portal --filter=@medikiosk/patient-app --filter=patient-app --filter=@medikiosk/doctor-dashboard --filter=doctor-dashboard --filter=@medikiosk/hospital-admin --filter=hospital-admin --filter=@medikiosk/rfid-portal --filter=rfid-portal --filter=@medikiosk/central-admin --filter=central-admin run build', {
   stdio: 'inherit',
   cwd: rootDir,
 });
@@ -47,6 +47,7 @@ fs.mkdirSync(distDir, { recursive: true });
 const apps = [
   { name: 'kiosk', src: path.join(rootDir, 'apps', 'patient-kiosk', 'dist') },
   { name: 'portal', src: path.join(rootDir, 'apps', 'patient-portal', 'dist') },
+  { name: 'app', src: path.join(rootDir, 'apps', 'patient-app', 'dist') },
   { name: 'doctor', src: path.join(rootDir, 'apps', 'doctor-dashboard', 'dist') },
   { name: 'hospital', src: path.join(rootDir, 'apps', 'hospital-admin', 'dist') },
   { name: 'rfid', src: path.join(rootDir, 'apps', 'rfid-portal', 'dist') },
@@ -340,6 +341,25 @@ const masterHtml = `<!DOCTYPE html>
           </div>
         </div>
         <a href="./portal/" class="btn btn-primary">Launch Patient Portal →</a>
+      </div>
+
+      <!-- Portal 2B: Patient Mobile App -->
+      <div class="portal-card" style="border-color: rgba(16, 185, 129, 0.4); box-shadow: 0 0 20px rgba(16, 185, 129, 0.1);">
+        <div class="card-top">
+          <div class="icon-badge" style="background: rgba(16, 185, 129, 0.15); color: #10B981;">📲</div>
+          <h3 class="portal-title">Patient Mobile App <span style="font-size: 0.65rem; background: #059669; color: white; padding: 2px 6px; border-radius: 9999px; margin-left: 6px; vertical-align: middle;">APP / PWA</span></h3>
+          <p class="portal-desc">
+            Dedicated mobile application with native push & sound notifications, mobile bottom-nav bar, real-time queue tokens, emergency SOS broadcast, and installable PWA / Android APK build.
+          </p>
+          <div class="tags">
+            <span class="tag" style="color: #10B981; border-color: rgba(16,185,129,0.3);">Native Notifications</span>
+            <span class="tag">Mobile Bottom Nav</span>
+            <span class="tag">Emergency SOS</span>
+            <span class="tag">Installable PWA</span>
+            <span class="tag">Android APK</span>
+          </div>
+        </div>
+        <a href="./app/" class="btn btn-primary" style="background: linear-gradient(135deg, #10B981, #047857);">Launch Mobile App 📲 →</a>
       </div>
 
       <!-- Portal 3: Doctor Dashboard -->
