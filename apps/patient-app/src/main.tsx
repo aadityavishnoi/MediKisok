@@ -4,13 +4,20 @@ import { configureApiClient } from '@medikiosk/api-client';
 import { App } from './App.js';
 import './index.css';
 
-// Configure API client baseUrl for mobile & web
 const isBrowser = typeof window !== 'undefined';
-const isProdWeb = isBrowser && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+const isNative = isBrowser && typeof (window as any).Capacitor !== 'undefined' && typeof (window as any).Capacitor.isNativePlatform === 'function' && (window as any).Capacitor.isNativePlatform();
+
+const defaultBaseUrl = isNative
+  ? 'https://medikiosk-xa4l.onrender.com/api'
+  : '/api';
+
+const defaultWsUrl = isNative
+  ? 'wss://medikiosk-xa4l.onrender.com/ws'
+  : (isBrowser ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws` : 'wss://medikiosk-xa4l.onrender.com/ws');
 
 configureApiClient({
-  baseUrl: (import.meta as any).env?.VITE_API_BASE_URL ?? (isProdWeb ? `${window.location.origin}/api` : 'https://medikiosk-xa4l.onrender.com/api'),
-  wsUrl: (import.meta as any).env?.VITE_WS_URL ?? (isProdWeb ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws` : 'wss://medikiosk-xa4l.onrender.com/ws'),
+  baseUrl: (import.meta as any).env?.VITE_API_BASE_URL || defaultBaseUrl,
+  wsUrl: (import.meta as any).env?.VITE_WS_URL || defaultWsUrl,
   getToken: () => localStorage.getItem('medikiosk_patient_token'),
 });
 
