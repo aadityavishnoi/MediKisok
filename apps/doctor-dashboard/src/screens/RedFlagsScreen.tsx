@@ -152,7 +152,7 @@ export function RedFlagsScreen({
       if (key === 'dashboard') onBack();
       else if (key === 'consultation') {
         const targetSession = redFlagSessions[0] ?? sessions?.[0];
-        onOpenConsultation(targetSession?.sessionId || 'demo_session_001');
+        onOpenConsultation(targetSession?.sessionId || '');
       } else if (key === 'records') {
         onOpenRecords();
       }

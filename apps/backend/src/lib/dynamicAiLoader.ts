@@ -2,8 +2,8 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import fs from 'node:fs';
 
-// Use dynamic Function constructor so TypeScript compiler does not inspect or try to compile external AI files
-const dynamicImport = new Function('specifier', 'return import(specifier);');
+// Use dynamic import so TypeScript compiler does not inspect or try to compile external AI files
+const dynamicImport = (url: string) => import(/* @vite-ignore */ url);
 
 export async function loadAiModule(subpath: string): Promise<any> {
   // Resolve base directory of the repository
@@ -28,7 +28,7 @@ export async function loadAiModule(subpath: string): Promise<any> {
         const fileUrl = pathToFileURL(candidate).href;
         const mod = await dynamicImport(fileUrl);
         if (mod) return mod;
-      } catch (err) {
+      } catch (err: any) {
         // continue
       }
     }

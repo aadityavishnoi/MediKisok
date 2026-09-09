@@ -125,10 +125,10 @@ export function DashboardScreen({
   const completedTodayCount =
     sessions?.filter((s) => s.status === 'COMPLETED' && new Date(s.updatedAt).toDateString() === new Date().toDateString()).length ?? 0;
 
-  const totalPatientsToday = (sessions?.length ?? 0) + 14;
-  const pendingRx = 3;
-  const labReportsReview = 7;
-  const followUpsCount = 4;
+  const totalPatientsToday = sessions?.length ?? 0;
+  const pendingRx = sessions?.filter((s) => s.status === 'IN_CONSULT' || s.status === 'SUMMARY_READY').length ?? 0;
+  const labReportsReview = 0;
+  const followUpsCount = 0;
   const emergencyAlertsCount = redFlagRows.length;
 
   const queueDonutData = useMemo(() => {
@@ -177,7 +177,7 @@ export function DashboardScreen({
           else setQueueFilter('RED_FLAGS');
         } else if (key === 'consultation') {
           if (onOpenConsultation) {
-            const sid = visibleSessions[0]?.sessionId ?? sessions?.[0]?.sessionId ?? 'demo_session_001';
+            const sid = visibleSessions[0]?.sessionId ?? sessions?.[0]?.sessionId ?? '';
             onOpenConsultation(sid);
           } else {
             setQueueFilter('IN_CONSULT');
@@ -206,6 +206,7 @@ export function DashboardScreen({
       <QuickActionModal
         type={quickAction}
         onClose={() => setQuickAction(null)}
+        sessions={sessions || []}
         onOpenSession={(id) => {
           if (quickAction === 'new_rx' && onOpenConsultation) {
             onOpenConsultation(id);
@@ -366,15 +367,15 @@ export function DashboardScreen({
         <StatCard
           label="Patients Today"
           value={totalPatientsToday}
-          delta="↑ 12% vs yesterday"
-          deltaType="positive"
+          delta={totalPatientsToday > 0 ? "Live OPD Queue" : "Zero Intake"}
+          deltaType={totalPatientsToday > 0 ? "positive" : "neutral"}
           icon={<Users size={20} />}
           iconBg="bg-blue-100 text-blue-700"
         />
         <StatCard
           label="Pending Rx"
           value={pendingRx}
-          delta="3 Urgents"
+          delta={pendingRx > 0 ? `${pendingRx} Awaiting Rx` : "Queue Clear"}
           deltaType="neutral"
           icon={<FileText size={20} />}
           iconBg="bg-amber-100 text-amber-700"
@@ -382,16 +383,16 @@ export function DashboardScreen({
         <StatCard
           label="Lab Reports"
           value={labReportsReview}
-          delta="↑ 4 verified"
-          deltaType="positive"
+          delta={labReportsReview > 0 ? `${labReportsReview} verified` : "None Pending"}
+          deltaType={labReportsReview > 0 ? "positive" : "neutral"}
           icon={<FlaskConical size={20} />}
           iconBg="bg-purple-100 text-purple-700"
         />
         <StatCard
           label="Follow-ups"
           value={followUpsCount}
-          delta="Scheduled"
-          deltaType="positive"
+          delta={followUpsCount > 0 ? `${followUpsCount} Scheduled` : "None"}
+          deltaType="neutral"
           icon={<UserCheck size={20} />}
           iconBg="bg-emerald-100 text-emerald-700"
         />
@@ -644,29 +645,32 @@ export function DashboardScreen({
               <h3 className="text-base font-bold text-slate-900">Today's Schedule</h3>
               <span className="text-xs font-medium text-slate-500">Cardiology Ward</span>
             </div>
-            <ul className="space-y-3">
-              {[
-                { time: '09:30 AM', name: 'Rajesh Kumar', status: 'Confirmed', badge: 'bg-emerald-50 text-emerald-700' },
-                { time: '10:15 AM', name: 'Ananya Sharma', status: 'In Progress', badge: 'bg-blue-50 text-blue-700' },
-                { time: '11:00 AM', name: 'Vikram Singh', status: 'Waiting', badge: 'bg-amber-50 text-amber-700' },
-                { time: '11:45 AM', name: 'Sunita Patel', status: 'Pending Lab', badge: 'bg-purple-50 text-purple-700' },
-              ].map((item, idx) => (
-                <li key={idx} className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 font-mono text-[11px] font-bold">
-                      <Clock size={14} />
+            {sessions && sessions.length > 0 ? (
+              <ul className="space-y-3">
+                {sessions.slice(0, 4).map((item, idx) => (
+                  <li
+                    key={idx}
+                    onClick={() => onOpenSession(item.sessionId)}
+                    className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 font-mono text-[11px] font-bold">
+                        <Clock size={14} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-900">{item.patient.fullName}</p>
+                        <p className="text-[11px] text-slate-400">{item.chiefComplaint || 'OPD Intake'}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-900">{item.name}</p>
-                      <p className="text-[11px] text-slate-400">{item.time}</p>
-                    </div>
-                  </div>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${item.badge}`}>
-                    {item.status}
-                  </span>
-                </li>
-              ))}
-            </ul>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${item.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}`}>
+                      {item.status}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-slate-400 py-6 text-center">No scheduled appointments for today. Patient kiosk check-ins will appear here.</p>
+            )}
           </div>
 
           {/* Notifications Feed */}
@@ -676,18 +680,20 @@ export function DashboardScreen({
                 <Bell size={16} className="text-blue-600" />
                 <h3 className="text-base font-bold text-slate-900">Notifications</h3>
               </div>
-              <span className="h-2 w-2 rounded-full bg-red-600" />
+              {redFlagRows.length > 0 && <span className="h-2 w-2 rounded-full bg-red-600" />}
             </div>
-            <div className="space-y-3 text-xs">
-              <div className="p-3 rounded-xl bg-red-50 border border-red-100 text-red-900">
-                <p className="font-bold">Critical Lab Result</p>
-                <p className="text-[11px] text-red-700 mt-0.5">Patient #1042 Troponin-I: 4.2 ng/mL (High Alert)</p>
+            {redFlagRows.length > 0 ? (
+              <div className="space-y-3 text-xs">
+                {redFlagRows.slice(0, 3).map((alert, idx) => (
+                  <div key={idx} className="p-3 rounded-xl bg-red-50 border border-red-100 text-red-900 cursor-pointer" onClick={() => onOpenSession(alert.sessionId)}>
+                    <p className="font-bold">Critical Triage Alert ({alert.highestAlertSeverity})</p>
+                    <p className="text-[11px] text-red-700 mt-0.5">{alert.patient.fullName} — {alert.chiefComplaint || 'Immediate attention required'}</p>
+                  </div>
+                ))}
               </div>
-              <div className="p-3 rounded-xl bg-blue-50 border border-blue-100 text-blue-900">
-                <p className="font-bold">AI Intake Summary Ready</p>
-                <p className="text-[11px] text-blue-700 mt-0.5">Synthesized intake for Rajesh Kumar with verified OCR records.</p>
-              </div>
-            </div>
+            ) : (
+              <p className="text-xs text-slate-400 py-4 text-center">No urgent notifications. System status normal.</p>
+            )}
           </div>
         </div>
       </div>

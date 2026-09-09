@@ -102,17 +102,25 @@ export function KioskFleetCommandModule() {
     }, 2000);
   };
 
+  const onlineCount = kiosks.filter((k) => k.status === 'Online').length;
+  const degradedCount = kiosks.filter((k) => k.status === 'Degraded').length;
+  const offlineCount = kiosks.filter((k) => k.status === 'Offline').length;
+  const totalCount = kiosks.length;
+  const onlinePercent = totalCount > 0 ? ((onlineCount / totalCount) * 100).toFixed(1) : '0.0';
+  const updatedCount = kiosks.filter((k) => k.firmwareVersion === 'v4.2.0').length;
+  const adoptionPercent = totalCount > 0 ? ((updatedCount / totalCount) * 100).toFixed(1) : '0.0';
+
   return (
     <div className="space-y-6">
-      {/* Title */}
+      {/* Module Title */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3 font-display">
-            <Cpu className="text-blue-600" />
-            National Kiosk Fleet Command & Telemetry
+            <Server className="text-blue-600" />
+            Kiosk Fleet Remote Command & Diagnostics
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Real-Time Diagnostic Control for 1,240 Hardware Terminals Across All 36 States & UTs
+            OTA Firmware Management • Peripheral Health Telemetry • Live Remote Diagnostics
           </p>
         </div>
         <button
@@ -133,8 +141,8 @@ export function KioskFleetCommandModule() {
             <span>Online Terminals</span>
             <Wifi size={16} />
           </div>
-          <div className="text-3xl font-extrabold text-slate-900 font-mono mt-2">1,184</div>
-          <div className="text-[10px] text-emerald-600 mt-1">95.4% Fleet Online</div>
+          <div className="text-3xl font-extrabold text-slate-900 font-mono mt-2">{onlineCount}</div>
+          <div className="text-[10px] text-emerald-600 mt-1">{onlinePercent}% Fleet Online</div>
         </div>
 
         <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl animate-slide-up stagger-item transition-all duration-200 hover:shadow-md" style={{ animationDelay: '40ms' }}>
@@ -142,8 +150,8 @@ export function KioskFleetCommandModule() {
             <span>Degraded Hardware</span>
             <AlertTriangle size={16} />
           </div>
-          <div className="text-3xl font-extrabold text-slate-900 font-mono mt-2">32</div>
-          <div className="text-[10px] text-amber-600 mt-1">Camera/Printer warning</div>
+          <div className="text-3xl font-extrabold text-slate-900 font-mono mt-2">{degradedCount}</div>
+          <div className="text-[10px] text-amber-600 mt-1">{degradedCount > 0 ? 'Warning' : 'None'}</div>
         </div>
 
         <div className="p-4 bg-red-50 border border-red-200 rounded-2xl animate-slide-up stagger-item transition-all duration-200 hover:shadow-md" style={{ animationDelay: '80ms' }}>
@@ -151,17 +159,17 @@ export function KioskFleetCommandModule() {
             <span>Offline Terminals</span>
             <WifiOff size={16} />
           </div>
-          <div className="text-3xl font-extrabold text-slate-900 font-mono mt-2">24</div>
-          <div className="text-[10px] text-red-600 mt-1">Technicians Dispatched</div>
+          <div className="text-3xl font-extrabold text-slate-900 font-mono mt-2">{offlineCount}</div>
+          <div className="text-[10px] text-red-600 mt-1">{offlineCount > 0 ? 'Technicians Dispatched' : 'None'}</div>
         </div>
 
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl animate-slide-up stagger-item transition-all duration-200 hover:shadow-md" style={{ animationDelay: '120ms' }}>
           <div className="flex items-center justify-between text-xs text-blue-700 font-semibold">
-            <span>Firmware v4.2.0 Fleet Adoption</span>
+            <span>Firmware v4.2.0 Adoption</span>
             <Server size={16} />
           </div>
-          <div className="text-3xl font-extrabold text-slate-900 font-mono mt-2">98.2%</div>
-          <div className="text-[10px] text-blue-600 mt-1">1,218 / 1,240 Updated</div>
+          <div className="text-3xl font-extrabold text-slate-900 font-mono mt-2">{adoptionPercent}%</div>
+          <div className="text-[10px] text-blue-600 mt-1">{updatedCount} / {totalCount} Updated</div>
         </div>
       </div>
 
@@ -187,39 +195,47 @@ export function KioskFleetCommandModule() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {kiosks.map((k, idx) => (
-                <tr
-                  key={k.deviceId}
-                  onClick={() => setSelectedDevice(k)}
-                  className={`cursor-pointer transition-all duration-200 animate-slide-up stagger-item ${
-                    selectedDevice?.deviceId === k.deviceId ? 'bg-blue-50' : 'hover:bg-slate-50'
-                  }`}
-                  style={{ animationDelay: `${idx * 40}ms` }}
-                >
-                  <td className="py-3 font-mono text-blue-700 font-bold">{k.deviceId}</td>
-                  <td className="py-3 text-slate-700 font-medium">{k.facilityName}</td>
-                  <td className="py-3 text-slate-500">{k.state}</td>
-                  <td className="py-3">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      k.status === 'Online' ? 'bg-emerald-50 text-emerald-700' :
-                      k.status === 'Degraded' ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700'
-                    }`}>
-                      {k.status}
-                    </span>
-                  </td>
-                  <td className="py-3 font-mono text-slate-600">{k.firmwareVersion}</td>
-                  <td className="py-3 text-slate-500">{k.lastHeartbeat}</td>
-                  <td className="py-3 text-right">
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); handleRemoteRestart(k.deviceId); }}
-                      className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[10px] font-bold transition-all duration-200"
-                    >
-                      Restart
-                    </button>
+              {kiosks.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-slate-400 font-mono text-xs">
+                    No kiosk terminals registered in fleet database. Add terminals via Hospital Admin or Central Command.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                kiosks.map((k, idx) => (
+                  <tr
+                    key={k.deviceId}
+                    onClick={() => setSelectedDevice(k)}
+                    className={`cursor-pointer transition-all duration-200 animate-slide-up stagger-item ${
+                      selectedDevice?.deviceId === k.deviceId ? 'bg-blue-50' : 'hover:bg-slate-50'
+                    }`}
+                    style={{ animationDelay: `${idx * 40}ms` }}
+                  >
+                    <td className="py-3 font-mono text-blue-700 font-bold">{k.deviceId}</td>
+                    <td className="py-3 text-slate-700 font-medium">{k.facilityName}</td>
+                    <td className="py-3 text-slate-500">{k.state}</td>
+                    <td className="py-3">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        k.status === 'Online' ? 'bg-emerald-50 text-emerald-700' :
+                        k.status === 'Degraded' ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700'
+                      }`}>
+                        {k.status}
+                      </span>
+                    </td>
+                    <td className="py-3 font-mono text-slate-600">{k.firmwareVersion}</td>
+                    <td className="py-3 text-slate-500">{k.lastHeartbeat}</td>
+                    <td className="py-3 text-right">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleRemoteRestart(k.deviceId); }}
+                        className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[10px] font-bold transition-all duration-200"
+                      >
+                        Restart
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

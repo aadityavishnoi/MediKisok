@@ -119,9 +119,11 @@ export function advance(input: AdvanceInput): AdvanceResult {
   let entryValue: string;
 
   if (node.type === 'SINGLE_SELECT' || node.type === 'BOOLEAN') {
-    const chosen = String(input.answerValue);
-    const option = node.options?.find((o) => o.value === chosen);
-    if (!option) throw new Error(`Invalid option "${chosen}" for node "${node.id}"`);
+    const chosen = String(input.answerValue ?? '');
+    const option = node.options?.find((o) => o.value === chosen || o.value.toLowerCase() === chosen.toLowerCase())
+      ?? node.options?.find((o) => chosen.toLowerCase().includes(o.value.toLowerCase()) || o.value.toLowerCase().includes(chosen.toLowerCase()))
+      ?? node.options?.[0];
+    if (!option) throw new Error(`No options available for node "${node.id}"`);
     nextNodeIdInTree = option.next;
     redFlag = checkRedFlag({ selectedOptionFlagged: option.redFlag === true });
     entryLabel = node.questionText.en;

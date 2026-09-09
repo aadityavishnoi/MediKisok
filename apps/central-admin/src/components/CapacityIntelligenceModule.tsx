@@ -23,15 +23,17 @@ export function CapacityIntelligenceModule() {
           const data = await res.json();
           if (mounted && Array.isArray(data.regionalDistribution) && data.regionalDistribution.length > 0) {
             const mapped: StateCapacity[] = data.regionalDistribution.map((r: any) => {
-              const facs = r.facilities || 1;
+              const facs = r.facilities || 0;
               const sessions = r.sessionsToday || 0;
-              const kiosks = facs * 4; // average kiosk deployment per district hospital
-              const utilization = Math.min(Math.round(45 + (sessions * 5) % 45), 98);
+              const kiosks = facs * 2;
+              const utilization = sessions === 0 ? 0 : Math.min(Math.round(45 + (sessions * 5) % 45), 98);
               let rec = 'Optimal capacity distribution';
               if (utilization > 80) {
-                rec = `High load: Deploy +${Math.max(facs * 2, 10)} additional kiosks to tier-2 district facilities`;
+                rec = `High load: Deploy additional kiosks to tier-2 district facilities`;
               } else if (utilization > 65) {
                 rec = 'Balanced OPD throughput; maintain current equipment allocation';
+              } else if (utilization === 0) {
+                rec = 'Facility standby: Zero active intake sessions queued';
               }
               return {
                 state: r.state || 'General Region',

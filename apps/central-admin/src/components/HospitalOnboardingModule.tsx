@@ -284,17 +284,22 @@ export function HospitalOnboardingModule() {
           </div>
 
           <div className="space-y-3 overflow-y-auto max-h-[520px] pr-1">
-            {filteredFacilities.map((fac, idx) => (
-              <div
-                key={fac.id}
-                onClick={() => setSelectedFacility(fac)}
-                className={`p-4 rounded-xl border cursor-pointer animate-slide-up stagger-item transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
-                  selectedFacility?.id === fac.id
-                    ? 'bg-blue-50 border-blue-300 shadow-sm'
-                    : 'bg-slate-50 border-slate-200 hover:bg-white'
-                }`}
-                style={{ animationDelay: `${idx * 30}ms` }}
-              >
+            {filteredFacilities.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 font-mono text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                No public hospitals onboarded yet. Click "Register New Facility" to onboard the first hospital into the national registry.
+              </div>
+            ) : (
+              filteredFacilities.map((fac, idx) => (
+                <div
+                  key={fac.id}
+                  onClick={() => setSelectedFacility(fac)}
+                  className={`p-4 rounded-xl border cursor-pointer animate-slide-up stagger-item transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+                    selectedFacility?.id === fac.id
+                      ? 'bg-blue-50 border-blue-300 shadow-sm'
+                      : 'bg-slate-50 border-slate-200 hover:bg-white'
+                  }`}
+                  style={{ animationDelay: `${idx * 30}ms` }}
+                >
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="flex items-center gap-2">
@@ -315,7 +320,7 @@ export function HospitalOnboardingModule() {
                   <span>ABDM HFR: <strong className={fac.abdmStatus === 'Connected' ? 'text-emerald-600' : 'text-amber-600'}>{fac.abdmStatus}</strong></span>
                 </div>
               </div>
-            ))}
+            )))}
           </div>
         </div>
 

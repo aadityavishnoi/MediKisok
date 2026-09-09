@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Video, VideoOff, Mic, MicOff, PhoneOff, Search, User, Calendar, PlusCircle, Check, CheckCircle2 } from 'lucide-react';
+import { X, VideoOff, Mic, MicOff, PhoneOff, Search, User, CheckCircle2 } from 'lucide-react';
 
 export type QuickActionType = 'teleconsult' | 'find_patient' | 'schedule_intake' | 'new_rx' | null;
 
@@ -7,15 +7,21 @@ export interface QuickActionModalProps {
   type: QuickActionType;
   onClose: () => void;
   onOpenSession?: (sessionId: string) => void;
+  sessions?: any[];
 }
 
-export function QuickActionModal({ type, onClose, onOpenSession }: QuickActionModalProps) {
+export function QuickActionModal({ type, onClose, onOpenSession, sessions = [] }: QuickActionModalProps) {
   const [videoMuted, setVideoMuted] = useState(false);
   const [audioMuted, setAudioMuted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [scheduled, setScheduled] = useState(false);
 
   if (!type) return null;
+
+  const currentPatient = sessions[0]?.patient;
+  const currentAge = currentPatient?.dateOfBirth
+    ? `${Math.max(1, new Date().getFullYear() - new Date(currentPatient.dateOfBirth).getFullYear())}y`
+    : '';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-fade-in">
@@ -52,8 +58,12 @@ export function QuickActionModal({ type, onClose, onOpenSession }: QuickActionMo
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-600/30 text-blue-400 border border-blue-400/50">
                   <User size={32} />
                 </div>
-                <p className="font-extrabold text-sm">Rajesh Kumar (52y)</p>
-                <p className="text-xs text-slate-400">Remote Patient Kiosk #01</p>
+                <p className="font-extrabold text-sm">
+                  {currentPatient ? `${currentPatient.fullName} ${currentAge ? `(${currentAge})` : ''}` : 'No Active Patient Queued'}
+                </p>
+                <p className="text-xs text-slate-400">
+                  {currentPatient ? 'Remote Patient Kiosk #01' : 'Waiting for kiosk caller connection…'}
+                </p>
               </div>
 
               {/* Floating Self-view Camera preview */}
@@ -75,7 +85,7 @@ export function QuickActionModal({ type, onClose, onOpenSession }: QuickActionMo
                   onClick={() => setVideoMuted(!videoMuted)}
                   className={`rounded-full p-2.5 text-white transition-colors ${videoMuted ? 'bg-red-600' : 'bg-slate-800 hover:bg-slate-700'}`}
                 >
-                  {videoMuted ? <VideoOff size={18} /> : <Video size={18} />}
+                  {videoMuted ? <VideoOff size={18} /> : <VideoOff size={18} />}
                 </button>
                 <button
                   type="button"
@@ -101,34 +111,35 @@ export function QuickActionModal({ type, onClose, onOpenSession }: QuickActionMo
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by Patient Name, Phone, or ABHA ID…"
+                placeholder="Search by Patient Name or Complaint…"
                 className="w-full rounded-xl border border-slate-200 py-2.5 pl-9 pr-3 text-xs text-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
             </div>
 
             <div className="max-h-60 overflow-y-auto space-y-2">
-              {[
-                { name: 'Rajesh Kumar', abha: '91-4920-4920-1123', age: '52y', phone: '+91 98765 43210', id: 's1' },
-                { name: 'Ananya Sharma', abha: '91-3019-8821-4412', age: '34y', phone: '+91 98123 45678', id: 's2' },
-                { name: 'Vikram Singh', abha: '91-8841-2291-7711', age: '61y', phone: '+91 99234 56789', id: 's3' },
-              ]
-                .filter((p) => !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.phone.includes(searchQuery))
-                .map((patient) => (
+              {sessions
+                .filter(
+                  (s) =>
+                    !searchQuery ||
+                    s.patient?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    (s.chiefComplaint ?? '').toLowerCase().includes(searchQuery.toLowerCase()),
+                )
+                .map((s) => (
                   <div
-                    key={patient.id}
+                    key={s.sessionId}
                     onClick={() => {
                       onClose();
-                      onOpenSession?.(patient.id);
+                      onOpenSession?.(s.sessionId);
                     }}
                     className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:bg-blue-50/50 hover:border-blue-200 cursor-pointer transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-blue-700 font-bold text-xs">
-                        {patient.name[0]}
+                        {s.patient?.fullName?.[0] || 'P'}
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-slate-900">{patient.name}</p>
-                        <p className="text-[10px] text-slate-400">ABHA: {patient.abha} · {patient.age}</p>
+                        <p className="text-xs font-bold text-slate-900">{s.patient?.fullName}</p>
+                        <p className="text-[10px] text-slate-400">{s.chiefComplaint || 'Routine OPD'}</p>
                       </div>
                     </div>
                     <button
@@ -139,6 +150,11 @@ export function QuickActionModal({ type, onClose, onOpenSession }: QuickActionMo
                     </button>
                   </div>
                 ))}
+              {sessions.length === 0 && (
+                <div className="py-8 text-center text-slate-400 font-mono text-xs">
+                  No registered patients in queue. Patient check-ins from kiosks will appear here.
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -154,7 +170,7 @@ export function QuickActionModal({ type, onClose, onOpenSession }: QuickActionMo
                 <button
                   type="button"
                   onClick={onClose}
-                  className="mt-3 rounded-xl bg-blue-600 px-4 py-2 font-bold text-white"
+                  className="mt-3 rounded-xl bg-blue-600 px-4 py-2 font-bold text-white cursor-pointer"
                 >
                   Done
                 </button>
@@ -165,7 +181,7 @@ export function QuickActionModal({ type, onClose, onOpenSession }: QuickActionMo
                   <label className="block font-bold text-slate-600 mb-1">Patient Name</label>
                   <input
                     type="text"
-                    defaultValue="Rajesh Kumar"
+                    placeholder="Enter patient full name..."
                     className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-800"
                   />
                 </div>
@@ -181,14 +197,14 @@ export function QuickActionModal({ type, onClose, onOpenSession }: QuickActionMo
                   <label className="block font-bold text-slate-600 mb-1">Preferred Time Slot</label>
                   <input
                     type="datetime-local"
-                    defaultValue="2026-09-08T10:00"
+                    defaultValue={new Date().toISOString().slice(0, 16)}
                     className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-800"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={() => setScheduled(true)}
-                  className="w-full rounded-xl bg-blue-600 py-2.5 font-bold text-white hover:bg-blue-700 transition-colors mt-2"
+                  className="w-full rounded-xl bg-blue-600 py-2.5 font-bold text-white hover:bg-blue-700 transition-colors mt-2 cursor-pointer"
                 >
                   Confirm Intake Booking
                 </button>
@@ -204,27 +220,29 @@ export function QuickActionModal({ type, onClose, onOpenSession }: QuickActionMo
               Select a queued patient to start an active electronic prescription session:
             </p>
             <div className="space-y-2">
-              {[
-                { name: 'Rajesh Kumar', complaint: 'Chest pain (2 hrs)', id: 's1' },
-                { name: 'Ananya Sharma', complaint: 'Hypertension follow-up', id: 's2' },
-              ].map((p) => (
+              {sessions.map((s) => (
                 <div
-                  key={p.id}
+                  key={s.sessionId}
                   onClick={() => {
                     onClose();
-                    onOpenSession?.(p.id);
+                    onOpenSession?.(s.sessionId);
                   }}
                   className="flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:bg-blue-50 cursor-pointer"
                 >
                   <div>
-                    <p className="font-bold text-slate-900">{p.name}</p>
-                    <p className="text-[11px] text-slate-400">{p.complaint}</p>
+                    <p className="font-bold text-slate-900">{s.patient.fullName}</p>
+                    <p className="text-[11px] text-slate-400">{s.chiefComplaint || 'Active OPD Encounter'}</p>
                   </div>
                   <span className="rounded-lg bg-blue-600 px-3 py-1 font-bold text-white text-[11px]">
                     Prescribe
                   </span>
                 </div>
               ))}
+              {sessions.length === 0 && (
+                <div className="py-8 text-center text-slate-400 font-mono text-xs">
+                  No active patients waiting in OPD queue. Check-in patients at the kiosk to begin prescriptions.
+                </div>
+              )}
             </div>
           </div>
         )}

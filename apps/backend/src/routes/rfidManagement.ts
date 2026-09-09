@@ -606,9 +606,9 @@ rfidManagementRouter.get(
       return {
         batchId: `BATCH-2026-NHA-${String(i + 1).padStart(3, '0')}`,
         manufacturedDate: '2026-08-01',
-        totalCards: Math.max(cardCount, 1),
+        totalCards: cardCount,
         assignedState: h.state || 'National Facility',
-        status: 'Active' as const,
+        status: (cardCount > 0 ? 'Active' : 'Available') as const,
         clonedAlerts: 0,
         securityHash: `sha256:batch-${h.id.slice(0, 8)}`,
       };

@@ -22,6 +22,7 @@
     "db:verify": "pnpm --filter backend db:verify",
     "db:reset": "pnpm --filter backend db:reset",
     "db:clean": "pnpm --filter backend db:clean",
+    "db:reset:zero": "pnpm --filter backend db:reset:zero",
     "rfid:test": "pnpm --filter backend rfid:bridge",
     "test:api": "pnpm --filter backend exec tsx ../../api-endpoints/test-all-endpoints.ts"
   },

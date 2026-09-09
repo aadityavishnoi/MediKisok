@@ -13,6 +13,7 @@ import {
   ShieldAlert,
   TrendingUp,
   Info,
+  Stethoscope,
 } from 'lucide-react';
 import {
   ApiClientError,
@@ -72,8 +73,7 @@ export function ConsultationScreen({
         }
       })
       .catch(() => {
-        // Fallback default
-        if (!activeSessionId) setActiveSessionId('demo_session_001');
+        // No demo_session_001 fallback
       });
   }, [activeSessionId]);
 
@@ -87,9 +87,13 @@ export function ConsultationScreen({
   }, [activeSessionId]);
 
 
-  const targetId = activeSessionId || initialSessionId || 'demo_session_001';
+  const targetId = activeSessionId || initialSessionId || '';
 
   const refresh = useCallback(async () => {
+    if (!targetId) {
+      setDetail(null);
+      return;
+    }
     try {
       const result = await getSessionDetail(targetId);
       setDetail(result);
@@ -207,6 +211,23 @@ export function ConsultationScreen({
           <ArrowLeft size={16} /> Back to OPD Queue
         </button>
         <div role="alert" className="rounded-2xl bg-red-50 p-4 text-sm text-red-800 border border-red-200">{error}</div>
+      </DashboardShell>
+    );
+  }
+
+  if (!targetId || (!detail && allSessions.length === 0)) {
+    return (
+      <DashboardShell {...shellProps}>
+        <div className="bg-white rounded-3xl p-12 border border-slate-200 text-center max-w-xl mx-auto my-12 shadow-xs">
+          <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-blue-100">
+            <Stethoscope size={32} />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">No Active Consultations</h2>
+          <p className="text-sm text-slate-500 mb-6">There are currently no patients waiting in the OPD queue or in active consultation. As patients check in via the Kiosk or RFID, their clinical records will stream here in real time.</p>
+          <button type="button" onClick={onBack} className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer">
+            <ArrowLeft size={16} /> Back to OPD Queue
+          </button>
+        </div>
       </DashboardShell>
     );
   }

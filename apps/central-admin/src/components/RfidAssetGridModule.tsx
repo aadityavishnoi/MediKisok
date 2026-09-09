@@ -59,28 +59,22 @@ export function RfidAssetGridModule() {
 
         if (invRes.ok) {
           const invData = await invRes.json();
-          stockBalance = invData.stock?.totalInStock || invData.batches?.length * 500 || 0;
+          stockBalance = invData.stock?.totalInStock || invData.byStatus?.AVAILABLE || 0;
           if (invData.stock?.issued) {
-            cardsIssued = Math.max(cardsIssued, invData.stock.issued);
+            cardsIssued = invData.stock.issued;
+          } else if (invData.total) {
+            cardsIssued = invData.total;
           }
         }
 
         if (mounted) {
           setStats({
-            totalAntennas: Math.max(totalAntennas, 12),
-            cardsIssued: Math.max(cardsIssued, 45),
-            stockBalance: Math.max(stockBalance, 1000),
-            latency: '16ms',
+            totalAntennas: totalAntennas,
+            cardsIssued: cardsIssued,
+            stockBalance: stockBalance,
+            latency: totalAntennas > 0 ? '16ms' : '0ms',
           });
-          if (zonalData.length > 0) {
-            setZones(zonalData);
-          } else {
-            setZones([
-              { zone: 'Northern Zone (HQ & NCR)', kiosks: 4, activeReaders: 4, cardsIssued: '1,200', otaVer: 'v4.2.0-prod', status: '100% Operational' },
-              { zone: 'Western Zone (Civil & DH)', kiosks: 4, activeReaders: 4, cardsIssued: '980', otaVer: 'v4.2.0-prod', status: '100% Operational' },
-              { zone: 'Southern Zone (Tertiary Care)', kiosks: 4, activeReaders: 4, cardsIssued: '850', otaVer: 'v4.2.0-prod', status: '100% Operational' },
-            ]);
-          }
+          setZones(zonalData);
         }
       } catch (err) {
         console.warn('Failed to load RFID telemetry:', err);
@@ -194,20 +188,28 @@ export function RfidAssetGridModule() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {zones.map((z, idx) => (
-                <tr key={z.zone} className="hover:bg-slate-50 transition-all duration-200 animate-slide-up stagger-item" style={{ animationDelay: `${idx * 40}ms` }}>
-                  <td className="py-3.5 font-bold text-slate-900">{z.zone}</td>
-                  <td className="py-3.5 text-slate-500 font-mono">{z.kiosks}</td>
-                  <td className="py-3.5 text-blue-600 font-mono font-bold">{z.activeReaders}</td>
-                  <td className="py-3.5 text-slate-600 font-mono">{z.cardsIssued}</td>
-                  <td className="py-3.5 font-mono text-xs text-slate-600">{z.otaVer}</td>
-                  <td className="py-3.5">
-                    <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      {z.status}
-                    </span>
+              {zones.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-slate-400 font-mono text-xs">
+                    No regional RFID hardware zones recorded. Onboard hospitals to view reader telemetry.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                zones.map((z, idx) => (
+                  <tr key={z.zone} className="hover:bg-slate-50 transition-all duration-200 animate-slide-up stagger-item" style={{ animationDelay: `${idx * 40}ms` }}>
+                    <td className="py-3.5 font-bold text-slate-900">{z.zone}</td>
+                    <td className="py-3.5 text-slate-500 font-mono">{z.kiosks}</td>
+                    <td className="py-3.5 text-blue-600 font-mono font-bold">{z.activeReaders}</td>
+                    <td className="py-3.5 text-slate-600 font-mono">{z.cardsIssued}</td>
+                    <td className="py-3.5 font-mono text-xs text-slate-600">{z.otaVer}</td>
+                    <td className="py-3.5">
+                      <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        {z.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

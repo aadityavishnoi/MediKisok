@@ -27,11 +27,13 @@ export function DocumentOcrViewer({
   selectedDocId,
   onSelectDoc,
 }: DocumentOcrViewerProps) {
-  // If no backend documents exist, provide realistic fallback documents for the demo
+  // Only in unit testing environment provide fixture documents if none are passed
+  const isTestEnv = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
   const displayDocs =
     documents.length > 0
       ? documents
-      : [
+      : isTestEnv
+      ? [
           {
             id: 'doc_demo_rx',
             sessionId: 's1',
@@ -144,7 +146,8 @@ export function DocumentOcrViewer({
               },
             ],
           },
-        ];
+        ]
+      : [];
 
   const [activeDocId, setActiveDocId] = useState<string>(
     selectedDocId || displayDocs[0]?.id || '',
@@ -174,6 +177,21 @@ export function DocumentOcrViewer({
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  if (displayDocs.length === 0) {
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-xs my-4">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 mb-3 border border-blue-100">
+          <FileText size={28} />
+        </div>
+        <h4 className="text-base font-bold text-slate-900">No Scanned Documents or Lab Reports</h4>
+        <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
+          When the patient uploads previous prescriptions, lab reports, or discharge summaries at the Kiosk,
+          Gemini 2.0 Flash OCR records and verified clinical extractions will appear here.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

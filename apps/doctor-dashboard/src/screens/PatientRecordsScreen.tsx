@@ -130,7 +130,7 @@ export function PatientRecordsScreen({
       else if (key === 'alerts') onOpenAlerts();
       else if (key === 'consultation') {
         const targetSession = sessions?.[0];
-        onOpenConsultation(targetSession?.sessionId || 'demo_session_001');
+        onOpenConsultation(targetSession?.sessionId || '');
       }
     },
     alertCount: unacknowledgedAlerts,

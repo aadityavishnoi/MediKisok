@@ -44,7 +44,7 @@ export function App() {
       <ConsultationScreen
         sessionId={view.sessionId}
         onBack={() => setView({ name: 'DASHBOARD' })}
-        onOpenPatient360={(sid) => setView({ name: 'SESSION_DETAIL', sessionId: sid || view.sessionId || 'demo_session_001' })}
+        onOpenPatient360={(sid) => setView({ name: 'SESSION_DETAIL', sessionId: sid || view.sessionId || '' })}
         onOpenAlerts={() => setView({ name: 'RED_FLAGS' })}
         onOpenRecords={() => setView({ name: 'PATIENT_RECORDS' })}
         onLoggedOut={() => {

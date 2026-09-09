@@ -16,7 +16,8 @@
     "prisma:seed": "tsx prisma/seed.ts",
     "db:verify": "tsx src/scripts/verify_database.ts",
     "db:reset": "tsx src/scripts/reset_db.ts",
-    "db:clean": "tsx src/scripts/clean_100_percent.ts"
+    "db:clean": "tsx src/scripts/clean_100_percent.ts",
+    "db:reset:zero": "tsx src/scripts/clean_database_to_zero.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

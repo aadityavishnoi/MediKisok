@@ -33,10 +33,10 @@ export function NationalOverviewModule({ searchQuery }: NationalOverviewModulePr
     ? metrics.regionalDistribution.map((match: any) => ({
         state: match.state || 'National Facility',
         facilities: match.facilities,
-        kiosks: Math.max(match.facilities, 1),
+        kiosks: match.facilities,
         volume: `${match.sessionsToday || 0} Sessions`,
-        wait: '10-15 min',
-        occupancy: 'Normal',
+        wait: (match.sessionsToday || 0) > 0 ? '10-15 min' : '0 min',
+        occupancy: (match.sessionsToday || 0) > 0 ? 'Normal' : 'Standby',
         trend: '↑ Live Sync',
         color: 'text-emerald-600',
       }))
@@ -141,20 +141,28 @@ export function NationalOverviewModule({ searchQuery }: NationalOverviewModulePr
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filtered.map((r: any, i: number) => (
-                  <tr key={r.state} className="hover:bg-slate-50 transition-colors animate-slide-up stagger-item" style={{ animationDelay: `${i * 30}ms` }}>
-                    <td className="py-3.5 font-bold text-slate-900 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-blue-500" />
-                      {r.state}
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-slate-400 font-mono text-xs">
+                      No state telemetry records found. Onboard hospitals to activate live telemetry grid.
                     </td>
-                    <td className="py-3.5 text-slate-500 font-mono">{r.facilities}</td>
-                    <td className="py-3.5 text-slate-500 font-mono">{r.kiosks}</td>
-                    <td className="py-3.5 font-mono font-bold text-blue-600">{r.volume}</td>
-                    <td className="py-3.5 text-slate-600">{r.wait}</td>
-                    <td className="py-3.5 font-mono text-slate-600">{r.occupancy}</td>
-                    <td className={`py-3.5 font-mono font-bold ${r.color}`}>{r.trend}</td>
                   </tr>
-                ))}
+                ) : (
+                  filtered.map((r: any, i: number) => (
+                    <tr key={r.state} className="hover:bg-slate-50 transition-colors animate-slide-up stagger-item" style={{ animationDelay: `${i * 30}ms` }}>
+                      <td className="py-3.5 font-bold text-slate-900 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-blue-500" />
+                        {r.state}
+                      </td>
+                      <td className="py-3.5 text-slate-500 font-mono">{r.facilities}</td>
+                      <td className="py-3.5 text-slate-500 font-mono">{r.kiosks}</td>
+                      <td className="py-3.5 font-mono font-bold text-blue-600">{r.volume}</td>
+                      <td className="py-3.5 text-slate-600">{r.wait}</td>
+                      <td className="py-3.5 font-mono text-slate-600">{r.occupancy}</td>
+                      <td className={`py-3.5 font-mono font-bold ${r.color}`}>{r.trend}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

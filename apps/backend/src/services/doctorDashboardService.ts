@@ -24,40 +24,7 @@ function highestSeverity(alerts: { severity: AlertSeverity }[]): AlertSeverity |
   );
 }
 
-const DEMO_SESSIONS_FALLBACK: DoctorDashboardSessionRow[] = [
-  {
-    sessionId: 'demo_session_001',
-    patient: { id: 'demo_patient_001', fullName: 'Rajesh Kumar', dateOfBirth: '1974-05-12T00:00:00.000Z', gender: 'Male' },
-    status: 'ROUTED',
-    chiefComplaint: 'Acute chest tightness & shortness of breath (2 hrs)',
-    highestAlertSeverity: 'HIGH',
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    sessionId: 'demo_session_002',
-    patient: { id: 'demo_patient_002', fullName: 'Ananya Sharma', dateOfBirth: '1990-11-20T00:00:00.000Z', gender: 'Female' },
-    status: 'SUMMARY_READY',
-    chiefComplaint: 'Hypertension follow-up & severe headache',
-    highestAlertSeverity: 'MEDIUM',
-    updatedAt: new Date(Date.now() - 15 * 60000).toISOString(),
-  },
-  {
-    sessionId: 'demo_session_003',
-    patient: { id: 'demo_patient_003', fullName: 'Vikram Singh', dateOfBirth: '1963-02-14T00:00:00.000Z', gender: 'Male' },
-    status: 'IN_CONSULT',
-    chiefComplaint: 'Post-CABG routine cardiac evaluation',
-    highestAlertSeverity: 'LOW',
-    updatedAt: new Date(Date.now() - 35 * 60000).toISOString(),
-  },
-  {
-    sessionId: 'demo_session_004',
-    patient: { id: 'demo_patient_004', fullName: 'Sunita Patel', dateOfBirth: '1982-08-05T00:00:00.000Z', gender: 'Female' },
-    status: 'COMPLETED',
-    chiefComplaint: 'Palpitations & lipid profile review',
-    highestAlertSeverity: null,
-    updatedAt: new Date(Date.now() - 60 * 60000).toISOString(),
-  },
-];
+
 
 export async function getDoctorDashboard(): Promise<DoctorDashboardResponse> {
   try {
@@ -336,89 +303,7 @@ export async function getSessionDetail(sessionId: string): Promise<SessionDetail
     console.warn('[doctorDashboardService] DB query error in getSessionDetail:', err);
   }
 
-  // Fallback demo patient session ONLY if exact match on known demo session ID
-  const matchedDemo = DEMO_SESSIONS_FALLBACK.find((s) => s.sessionId === sessionId);
-  if (!matchedDemo) {
-    return null;
-  }
-
-  return {
-    sessionId: matchedDemo.sessionId,
-    status: matchedDemo.status,
-    mode: 'GENERAL',
-    language: 'EN',
-    isDemo: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    patient: {
-      id: matchedDemo.patient.id,
-      fullName: matchedDemo.patient.fullName,
-      dateOfBirth: matchedDemo.patient.dateOfBirth,
-      gender: matchedDemo.patient.gender,
-      phone: '+91 98765 43210',
-    },
-    consent: { status: 'GRANTED', language: 'EN', grantedAt: new Date().toISOString() },
-    history: {
-      id: 'h_demo_fallback',
-      sessionId: matchedDemo.sessionId,
-      patientId: matchedDemo.patient.id,
-      mode: 'GENERAL',
-      chiefComplaint: matchedDemo.chiefComplaint,
-      hpi: [
-        { label: 'Onset', value: 'Started 2 hours ago during morning brisk walk' },
-        { label: 'Radiation', value: 'Radiates to left shoulder and jaw' },
-        { label: 'Severity', value: '7/10 dull crushing pressure' },
-        { label: 'Associated Symptoms', value: 'Diaphoresis (profuse sweating) and mild nausea' },
-      ],
-      pastMedicalHistory: [
-        { label: 'Hypertension', value: 'Diagnosed 2021, on Tab. Metoprolol 50mg' },
-        { label: 'Hyperlipidemia', value: 'Diagnosed 2023, on Tab. Atorvastatin 20mg' },
-      ],
-      pastSurgicalHistory: [{ label: 'Appendectomy', value: '2012 (Uncomplicated)' }],
-      currentMedications: [
-        { label: 'Metoprolol Succinate', value: '50mg OD Morning' },
-        { label: 'Atorvastatin', value: '20mg HS Bedtime' },
-      ],
-      drugAllergies: [{ label: 'Penicillin', value: 'Urticaria & facial swelling' }],
-      familyHistory: [{ label: 'Paternal CAD', value: 'Father had MI at age 58' }],
-      personalHistory: [{ label: 'Habits', value: 'Non-smoker, sedentary desk worker' }],
-      reviewOfSystems: [{ label: 'Cardiovascular', value: 'Chest tightness, no peripheral edema' }],
-      previousInvestigations: [{ label: 'Lipid Profile', value: 'Total Chol 218 mg/dL (14-Aug-2026)' }],
-      ayushFields: null,
-      completedAt: new Date().toISOString(),
-      answers: [],
-    },
-    alerts: [
-      {
-        id: 'alert_demo_1',
-        sessionId: matchedDemo.sessionId,
-        patientId: matchedDemo.patient.id,
-        severity: (matchedDemo.highestAlertSeverity || 'HIGH') as AlertSeverity,
-        triggerType: 'RED_FLAG',
-        message: 'Red Flag: Chest pain radiating to left shoulder with diaphoresis.',
-        triggeredByAnswerId: null,
-        acknowledged: false,
-        acknowledgedByDoctorId: null,
-        acknowledgedAt: null,
-        createdAt: new Date().toISOString(),
-      },
-    ],
-    documents: [],
-    timelineEvents: [],
-    consultation: null,
-    summary: {
-      id: 'sum_demo_fallback',
-      sessionId: matchedDemo.sessionId,
-      patientId: matchedDemo.patient.id,
-      content: `Patient ${matchedDemo.patient.fullName} presented with: ${matchedDemo.chiefComplaint}. Kiosk intake completed. Previous prescription OCR indicates ongoing antihypertensive therapy. Digital intake verified with zero hallucinations.`,
-      generatorType: 'LLM',
-      status: 'DRAFT',
-      editedContent: null,
-      confirmedByDoctorId: null,
-      confirmedAt: null,
-      createdAt: new Date().toISOString(),
-    },
-  };
+  return null;
 }
 
 
