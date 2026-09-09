@@ -3,10 +3,19 @@ import { getDictionary, SUPPORTED_LANGUAGES, type Dictionary } from '@medikiosk/
 import type { WsConnectionState } from '@medikiosk/api-client';
 import { ShieldCheck, HelpCircle, PhoneCall, Wifi } from 'lucide-react';
 
-const STEP_ORDER = ['IDENTIFY', 'LANGUAGE', 'CONSENT', 'CHIEF_COMPLAINT', 'HISTORY', 'SCAN', 'DONE'] as const;
+const STEP_ORDER = ['IDENTIFY', 'LANGUAGE', 'CONSENT', 'CHIEF_COMPLAINT', 'HISTORY', 'VITALS', 'SCAN', 'DONE'] as const;
 export type KioskStepId = (typeof STEP_ORDER)[number];
 
 function stepLabel(t: Dictionary, id: KioskStepId, lang?: string | null): string {
+  if (id === 'VITALS') {
+    if (lang === 'HI') return 'स्वास्थ्य जांच';
+    if (lang === 'BN') return 'স্বাস্থ্য পরীক্ষা';
+    if (lang === 'MR') return 'आरोग्य चाचणी';
+    if (lang === 'TA') return 'சுகாதார பரிசோதனை';
+    if (lang === 'TE') return 'ఆరోగ్య పరీక్ష';
+    if (lang === 'GU') return 'આરોગ્ય તપાસ';
+    return 'Health Test';
+  }
   if (id === 'SCAN') {
     if (lang === 'HI') return 'दस्तावेज़ स्कैन';
     if (lang === 'BN') return 'নথি স্ক্যান';

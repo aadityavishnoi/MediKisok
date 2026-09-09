@@ -15,7 +15,7 @@ export class GeminiVisionOcrService implements DocumentOcrService {
 
   constructor(config?: GeminiVisionConfig) {
     this.apiKey = config?.apiKey || (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : undefined);
-    this.model = config?.model || 'gemini-3.6-flash';
+    this.model = config?.model || 'gemini-1.5-flash';
     this.fallbackService = new FallbackOcrService();
   }
 
@@ -63,12 +63,12 @@ Instructions:
   ]
 }`;
 
-      // Use active, operational Gemini models (verified against Google Generative Language API)
+      // Use active, valid Gemini models supported by Google API
       const modelsToTry = [
         this.model,
-        'gemini-3.6-flash',
-        'gemini-3.5-flash',
-        'gemini-3.5-flash-lite',
+        'gemini-1.5-flash',
+        'gemini-2.0-flash',
+        'gemini-1.5-pro',
       ].filter((m, idx, arr) => arr.indexOf(m) === idx);
 
       let lastError = '';

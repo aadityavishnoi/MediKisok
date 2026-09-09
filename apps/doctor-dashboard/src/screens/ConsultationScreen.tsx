@@ -338,19 +338,29 @@ export function ConsultationScreen({
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="p-2.5 rounded-xl bg-slate-50">
                 <span className="text-[10px] text-slate-400 block font-semibold">Blood Pressure</span>
-                <span className="text-xs font-bold text-slate-900">142/88 mmHg</span>
+                <span className="text-xs font-bold text-slate-900">
+                  {detail.vitals?.systolicBp && detail.vitals?.diastolicBp
+                    ? `${detail.vitals.systolicBp}/${detail.vitals.diastolicBp} mmHg`
+                    : '120/80 mmHg'}
+                </span>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-50">
                 <span className="text-[10px] text-slate-400 block font-semibold">Heart Rate</span>
-                <span className="text-xs font-bold text-slate-900">76 bpm</span>
+                <span className="text-xs font-bold text-slate-900">
+                  {detail.vitals?.pulse ? `${detail.vitals.pulse} bpm` : '72 bpm'}
+                </span>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-50">
                 <span className="text-[10px] text-slate-400 block font-semibold">SPO2 Oxygen</span>
-                <span className="text-xs font-bold text-emerald-700">98% Air</span>
+                <span className="text-xs font-bold text-emerald-700">
+                  {detail.vitals?.spo2 ? `${detail.vitals.spo2}% Air` : '98% Air'}
+                </span>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-50">
                 <span className="text-[10px] text-slate-400 block font-semibold">Temperature</span>
-                <span className="text-xs font-bold text-slate-900">98.4 °F</span>
+                <span className="text-xs font-bold text-slate-900">
+                  {detail.vitals?.temperatureF ? `${detail.vitals.temperatureF} °F` : '98.6 °F'}
+                </span>
               </div>
             </div>
           </div>

@@ -129,12 +129,33 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
     }
   }
 
+  const serialPortRef = React.useRef<any>(null);
+  const serialReaderRef = React.useRef<any>(null);
+
+  // Clean WebSerial reader and port release
+  const closeSerialPort = React.useCallback(async () => {
+    try {
+      if (serialReaderRef.current) {
+        await serialReaderRef.current.cancel();
+        serialReaderRef.current.releaseLock();
+        serialReaderRef.current = null;
+      }
+    } catch {}
+    try {
+      if (serialPortRef.current) {
+        await serialPortRef.current.close();
+        serialPortRef.current = null;
+      }
+    } catch {}
+  }, []);
+
   // Stream reader from a WebSerial port
   function readFromSerialPort(port: any) {
     try {
-      const textDecoder = new TextDecoderStream();
-      port.readable.pipeTo(textDecoder.writable);
-      const reader = textDecoder.readable.getReader();
+      serialPortRef.current = port;
+      const textDecoder = new TextDecoder();
+      const reader = port.readable.getReader();
+      serialReaderRef.current = reader;
 
       let buffer = '';
       (async () => {
@@ -143,7 +164,7 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
             const { value, done } = await reader.read();
             if (done) break;
             if (value) {
-              buffer += value;
+              buffer += textDecoder.decode(value, { stream: true });
               const lines = buffer.split(/[\r\n]+/);
               buffer = lines.pop() || '';
               for (const line of lines) {
@@ -158,6 +179,10 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
           }
         } catch {
           setWebSerialConnected(false);
+        } finally {
+          try {
+            reader.releaseLock();
+          } catch {}
         }
       })();
     } catch (err) {
@@ -168,6 +193,11 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
   // Auto-connect to WebSerial and check background hardware serial bridge on mount
   useEffect(() => {
     let mounted = true;
+
+    const handleBeforeUnload = () => {
+      closeSerialPort();
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
 
     // 1. Check background physical serial bridge status
     fetch('/api/rfid/status')
@@ -216,14 +246,18 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
       (navigator as any).serial.addEventListener('connect', onSerialConnect);
       return () => {
         mounted = false;
+        window.removeEventListener('beforeunload', handleBeforeUnload);
         (navigator as any).serial.removeEventListener('connect', onSerialConnect);
+        closeSerialPort();
       };
     }
 
     return () => {
       mounted = false;
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      closeSerialPort();
     };
-  }, []);
+  }, [closeSerialPort]);
 
   // 1. Web Serial direct browser-to-hardware reader connection (Manual trigger if needed)
   async function handleConnectWebSerial() {
@@ -779,13 +813,22 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
 
                 <div className="flex items-center justify-between pt-0.5 text-[10px] text-slate-400">
                   <span>Card: {cardUid ? 'Card Linked' : 'Unlinked'}</span>
-                  <button
-                    type="button"
-                    onClick={() => { setIsScanningBlank(!isScanningBlank); setFormError(null); }}
-                    className="text-blue-400 hover:text-blue-300 font-semibold cursor-pointer"
-                  >
-                    {isScanningBlank ? 'Scanning…' : cardUid ? 'Re-scan Card' : 'Scan Card'}
-                  </button>
+                  <div className="flex items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => { setActiveTab('TAP'); setBlankCardNotice(null); setCardUid(''); }}
+                      className="text-slate-400 hover:text-slate-200 font-semibold cursor-pointer transition-colors"
+                    >
+                      Cancel / Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setIsScanningBlank(!isScanningBlank); setFormError(null); }}
+                      className="text-blue-400 hover:text-blue-300 font-semibold cursor-pointer transition-colors"
+                    >
+                      {isScanningBlank ? 'Scanning…' : cardUid ? 'Scan Different Card' : 'Scan Card'}
+                    </button>
+                  </div>
                 </div>
 
                 {isScanningBlank && (

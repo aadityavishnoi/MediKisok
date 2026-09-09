@@ -41,11 +41,11 @@ constexpr uint8_t RST_PIN = 9;
 // Initialize MFRC522 instance
 MFRC522 mfrc522(SS_PIN, RST_PIN);
 
-// Tracking state to prevent duplicate continuous scans
-bool cardPresent = false;
-byte lastUidBytes[10];
-byte lastUidLength = 0;
-uint8_t cardAbsentCount = 0;
+// Tracking state to prevent duplicate continuous scans of the same card
+String lastUidString = "";
+unsigned long lastScanTime = 0;
+constexpr unsigned long SAME_CARD_DEBOUNCE_MS = 1500; // 1.5s cooldown for identical card
+constexpr unsigned long DIFFERENT_CARD_DEBOUNCE_MS = 400; // Fast scan for different card
 
 void setup() {
   // Initialize Serial interface at 9600 baud
@@ -59,81 +59,26 @@ void setup() {
 
   // Initialize MFRC522 RFID Reader
   mfrc522.PCD_Init();
-
-  // Optional: Set antenna gain to maximum for reliable card coupling
   mfrc522.PCD_SetAntennaGain(mfrc522.RxGain_max);
 
   // Short stabilization delay
   delay(100);
-
-  // Diagnostics check (optional, self-test verification)
-  // Firmware is ready for continuous scanning
-}
-
-/**
- * Checks if the previously scanned card is still physically present on the reader antenna.
- * Sends a WUPA (Wake-Up Type A) request. If the card is still on the reader, it acknowledges.
- */
-bool isCardStillOnReader() {
-  byte bufferATQA[2];
-  byte bufferSize = sizeof(bufferATQA);
-
-  // Reset baud rates / transceivers before polling
-  mfrc522.PCD_WriteRegister(mfrc522.TxModeReg, 0x00);
-  mfrc522.PCD_WriteRegister(mfrc522.RxModeReg, 0x00);
-  mfrc522.PCD_WriteRegister(mfrc522.ModWidthReg, 0x26);
-
-  MFRC522::StatusCode result = mfrc522.PICC_WakeupA(bufferATQA, &bufferSize);
-  return (result == MFRC522::STATUS_OK);
-}
-
-/**
- * Compares current UID with the last registered UID.
- */
-bool isSameAsLastUid(const MFRC522::Uid &currentUid) {
-  if (currentUid.size != lastUidLength) {
-    return false;
-  }
-  for (byte i = 0; i < currentUid.size; i++) {
-    if (currentUid.uidByte[i] != lastUidBytes[i]) {
-      return false;
-    }
-  }
-  return true;
 }
 
 void loop() {
-  // 1. If we currently have a card recorded as present, check if it was removed
-  if (cardPresent) {
-    if (!isCardStillOnReader()) {
-      cardAbsentCount++;
-      // Require 2 consecutive misses (~100ms) to filter radio noise/flutter
-      if (cardAbsentCount >= 2) {
-        cardPresent = false;
-        lastUidLength = 0;
-        cardAbsentCount = 0;
-      }
-    } else {
-      // Card is still held on the reader
-      cardAbsentCount = 0;
-    }
-    delay(50);
-    return;
-  }
-
-  // 2. Look for new cards on the antenna
+  // 1. Look for cards on the antenna
   if (!mfrc522.PICC_IsNewCardPresent()) {
-    delay(50);
+    delay(40);
     return;
   }
 
-  // 3. Select and read card serial UID
+  // 2. Select and read card serial UID
   if (!mfrc522.PICC_ReadCardSerial()) {
-    delay(50);
+    delay(40);
     return;
   }
 
-  // 4. Format UID into uppercase colon-separated hex format
+  // 3. Format UID into uppercase colon-separated hex format
   // Example: 73:4A:91:2C or 04:A7:89:BC:D1:2E:3F
   String uidString = "";
   for (byte i = 0; i < mfrc522.uid.size; i++) {
@@ -147,21 +92,28 @@ void loop() {
   }
   uidString.toUpperCase();
 
-  // 5. Send exact protocol message over Serial: RFID_SCAN:UID
-  Serial.print("RFID_SCAN:");
-  Serial.println(uidString);
+  unsigned long currentMillis = millis();
+  bool isSameCard = (uidString == lastUidString);
+  unsigned long cooldown = isSameCard ? SAME_CARD_DEBOUNCE_MS : DIFFERENT_CARD_DEBOUNCE_MS;
 
-  // 6. Record state to prevent continuous duplicate triggers
-  cardPresent = true;
-  lastUidLength = mfrc522.uid.size;
-  for (byte i = 0; i < mfrc522.uid.size; i++) {
-    lastUidBytes[i] = mfrc522.uid.uidByte[i];
+  // 4. If cooldown has elapsed (or if it is a different card), emit scan
+  if (currentMillis - lastScanTime > cooldown || lastScanTime == 0) {
+    // Send exact protocol message over Serial: RFID_SCAN:UID
+    Serial.print("RFID_SCAN:");
+    Serial.println(uidString);
+
+    lastUidString = uidString;
+    lastScanTime = currentMillis;
   }
-  cardAbsentCount = 0;
 
-  // 7. Halt PICC and stop encryption to complete the transaction cleanly
+  // 5. Halt PICC and stop crypto cleanly
   mfrc522.PICC_HaltA();
   mfrc522.PCD_StopCrypto1();
 
-  delay(100);
+  // 6. Safe re-arm of antenna to ensure SPI state machine never hangs
+  mfrc522.PCD_Init();
+  mfrc522.PCD_SetAntennaGain(mfrc522.RxGain_max);
+
+  delay(60);
 }
+

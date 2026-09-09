@@ -9,6 +9,7 @@ import { LanguageScreen } from './LanguageScreen.js';
 import { ConsentScreen } from './ConsentScreen.js';
 import { ChiefComplaintScreen } from './ChiefComplaintScreen.js';
 import { HistoryScreen } from './HistoryScreen.js';
+import { VitalsScreen } from './VitalsScreen.js';
 import { DocumentUploadScreen } from './DocumentUploadScreen.js';
 import { toUserMessage } from '../lib/errors.js';
 
@@ -18,6 +19,7 @@ type FlowStage =
   | { name: 'DECLINED' }
   | { name: 'CHIEF_COMPLAINT' }
   | { name: 'HISTORY'; question: HistoryQuestion; redFlagActive: boolean }
+  | { name: 'VITALS' }
   | { name: 'SCAN' }
   | { name: 'DONE' };
 
@@ -27,6 +29,7 @@ const STEP_BY_STAGE: Record<FlowStage['name'], KioskStepId> = {
   DECLINED: 'CONSENT',
   CHIEF_COMPLAINT: 'CHIEF_COMPLAINT',
   HISTORY: 'HISTORY',
+  VITALS: 'VITALS',
   SCAN: 'SCAN',
   DONE: 'DONE',
 };
@@ -160,11 +163,21 @@ export function PatientFlow({ sessionId, patientId, wsState }: PatientFlowProps)
         onAnswered={(result) => {
           const redFlagActive = stage.redFlagActive || result.redFlag !== null;
           if (result.historyComplete || !result.nextQuestion) {
-            setStage({ name: 'SCAN' });
+            setStage({ name: 'VITALS' });
           } else {
             setStage({ name: 'HISTORY', question: result.nextQuestion, redFlagActive });
           }
         }}
+      />
+    );
+  } else if (stage.name === 'VITALS') {
+    content = (
+      <VitalsScreen
+        sessionId={sessionId}
+        patientId={patientId || undefined}
+        language={language}
+        onComplete={() => setStage({ name: 'SCAN' })}
+        onSkip={() => setStage({ name: 'SCAN' })}
       />
     );
   } else if (stage.name === 'SCAN') {
@@ -238,6 +251,7 @@ export function PatientFlow({ sessionId, patientId, wsState }: PatientFlowProps)
         onLanguageChange={(lang) => setLanguage(lang as Language)}
         onStepClick={(stepId) => {
           if (stepId === 'SCAN') setStage({ name: 'SCAN' });
+          else if (stepId === 'VITALS') setStage({ name: 'VITALS' });
           else if (stepId === 'CHIEF_COMPLAINT') setStage({ name: 'CHIEF_COMPLAINT' });
           else if (stepId === 'LANGUAGE') setStage({ name: 'LANGUAGE' });
           else if (stepId === 'CONSENT') setStage({ name: 'CONSENT' });

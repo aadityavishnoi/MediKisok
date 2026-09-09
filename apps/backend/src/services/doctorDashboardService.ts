@@ -12,6 +12,7 @@ import type {
 import { prisma } from '../lib/prisma.js';
 import { Errors } from '../lib/errors.js';
 import { wsHub } from '../ws/hub.js';
+import { generateAndSaveAiSummary } from './historyService.js';
 
 const SEVERITY_RANK: Record<AlertSeverity, number> = { LOW: 0, MEDIUM: 1, HIGH: 2, CRITICAL: 3 };
 
@@ -117,6 +118,7 @@ export async function getSessionDetail(sessionId: string): Promise<SessionDetail
         documents: { include: { extractedData: true } },
         aiSummary: true,
         consultation: true,
+        vitals: true,
       },
     });
 
@@ -206,6 +208,16 @@ export async function getSessionDetail(sessionId: string): Promise<SessionDetail
           }
         : null;
 
+      let effectiveAiSummary = session.aiSummary;
+      if (!effectiveAiSummary && session.patient) {
+        try {
+          await generateAndSaveAiSummary(session.id, session.patient.id);
+          effectiveAiSummary = await prisma.aISummary.findUnique({ where: { sessionId: session.id } });
+        } catch (err) {
+          console.warn('[getSessionDetail] Auto-generating AI summary failed:', err);
+        }
+      }
+
       return {
         sessionId: session.id,
         status: session.status,
@@ -287,18 +299,35 @@ export async function getSessionDetail(sessionId: string): Promise<SessionDetail
               completedAt: session.consultation.completedAt?.toISOString() ?? null,
             }
           : null,
-        summary: session.aiSummary
+        vitals: session.vitals
           ? {
-              id: session.aiSummary.id,
-              sessionId: session.aiSummary.sessionId,
-              patientId: session.aiSummary.patientId,
-              content: session.aiSummary.content,
-              generatorType: session.aiSummary.generatorType as any,
-              status: session.aiSummary.status,
-              editedContent: session.aiSummary.editedContent,
-              confirmedByDoctorId: session.aiSummary.confirmedByDoctorId,
-              confirmedAt: session.aiSummary.confirmedAt?.toISOString() ?? null,
-              createdAt: session.aiSummary.createdAt.toISOString(),
+              id: session.vitals.id,
+              sessionId: session.vitals.sessionId,
+              patientId: session.vitals.patientId,
+              systolicBp: session.vitals.systolicBp,
+              diastolicBp: session.vitals.diastolicBp,
+              pulse: session.vitals.pulse,
+              spo2: session.vitals.spo2,
+              temperatureF: session.vitals.temperatureF,
+              heightCm: session.vitals.heightCm,
+              weightKg: session.vitals.weightKg,
+              bmi: session.vitals.bmi,
+              source: session.vitals.source,
+              recordedAt: session.vitals.recordedAt.toISOString(),
+            }
+          : null,
+        summary: effectiveAiSummary
+          ? {
+              id: effectiveAiSummary.id,
+              sessionId: effectiveAiSummary.sessionId,
+              patientId: effectiveAiSummary.patientId,
+              content: effectiveAiSummary.content,
+              generatorType: effectiveAiSummary.generatorType as any,
+              status: effectiveAiSummary.status,
+              editedContent: effectiveAiSummary.editedContent,
+              confirmedByDoctorId: effectiveAiSummary.confirmedByDoctorId,
+              confirmedAt: effectiveAiSummary.confirmedAt?.toISOString() ?? null,
+              createdAt: effectiveAiSummary.createdAt.toISOString(),
             }
           : null,
       };

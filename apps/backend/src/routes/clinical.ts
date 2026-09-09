@@ -313,3 +313,108 @@ clinicalRouter.post('/clinical/protocols', allowDemoOrAdmin, async (req, res, ne
     next(err);
   }
 });
+
+/**
+ * POST /api/vitals
+ * Records or updates clinical vitals captured at the Kiosk health test station or via IoT sensors
+ */
+const recordVitalsSchema = z.object({
+  sessionId: z.string(),
+  patientId: z.string().optional(),
+  systolicBp: z.number().int().optional().nullable(),
+  diastolicBp: z.number().int().optional().nullable(),
+  pulse: z.number().int().optional().nullable(),
+  spo2: z.number().int().optional().nullable(),
+  temperatureF: z.number().optional().nullable(),
+  heightCm: z.number().optional().nullable(),
+  weightKg: z.number().optional().nullable(),
+  bmi: z.number().optional().nullable(),
+  source: z.string().optional().default('KIOSK_IOT'),
+});
+
+clinicalRouter.post('/vitals', async (req, res, next) => {
+  try {
+    const input = recordVitalsSchema.parse(req.body);
+
+    // Resolve patientId if not supplied
+    let effectivePatientId = input.patientId;
+    if (!effectivePatientId) {
+      const session = await prisma.patientSession.findUnique({
+        where: { id: input.sessionId },
+        select: { patientId: true },
+      });
+      if (session?.patientId) {
+        effectivePatientId = session.patientId;
+      }
+    }
+
+    if (!effectivePatientId) {
+      res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'Session does not have a linked patient' } });
+      return;
+    }
+
+    // Auto-calculate BMI if height and weight are provided but bmi was not
+    let calculatedBmi = input.bmi;
+    if (!calculatedBmi && input.heightCm && input.weightKg) {
+      const hM = input.heightCm / 100;
+      if (hM > 0) {
+        calculatedBmi = Math.round((input.weightKg / (hM * hM)) * 10) / 10;
+      }
+    }
+
+    const vitals = await prisma.patientVitals.upsert({
+      where: { sessionId: input.sessionId },
+      update: {
+        systolicBp: input.systolicBp,
+        diastolicBp: input.diastolicBp,
+        pulse: input.pulse,
+        spo2: input.spo2,
+        temperatureF: input.temperatureF,
+        heightCm: input.heightCm,
+        weightKg: input.weightKg,
+        bmi: calculatedBmi,
+        source: input.source,
+        recordedAt: new Date(),
+      },
+      create: {
+        sessionId: input.sessionId,
+        patientId: effectivePatientId,
+        systolicBp: input.systolicBp,
+        diastolicBp: input.diastolicBp,
+        pulse: input.pulse,
+        spo2: input.spo2,
+        temperatureF: input.temperatureF,
+        heightCm: input.heightCm,
+        weightKg: input.weightKg,
+        bmi: calculatedBmi,
+        source: input.source,
+        recordedAt: new Date(),
+      },
+    });
+
+    res.status(200).json({ success: true, vitals });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * GET /api/vitals/:sessionId
+ * Retrieves recorded vitals for a kiosk session
+ */
+clinicalRouter.get('/vitals/:sessionId', async (req, res, next) => {
+  try {
+    const { sessionId } = req.params;
+    const vitals = await prisma.patientVitals.findUnique({
+      where: { sessionId },
+    });
+    if (!vitals) {
+      res.status(404).json({ error: { code: 'NOT_FOUND', message: 'No vitals recorded for this session' } });
+      return;
+    }
+    res.status(200).json({ success: true, vitals });
+  } catch (err) {
+    next(err);
+  }
+});
+

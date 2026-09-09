@@ -265,6 +265,21 @@ export interface SessionDetailResponse {
   timelineEvents?: MedicalTimelineEvent[];
   consultation?: Consultation | null;
   alerts: Alert[];
+  vitals?: {
+    id: string;
+    sessionId: string;
+    patientId: string;
+    systolicBp?: number | null;
+    diastolicBp?: number | null;
+    pulse?: number | null;
+    spo2?: number | null;
+    temperatureF?: number | null;
+    heightCm?: number | null;
+    weightKg?: number | null;
+    bmi?: number | null;
+    source?: string | null;
+    recordedAt: string;
+  } | null;
 }
 
 export interface PrescriptionItem {

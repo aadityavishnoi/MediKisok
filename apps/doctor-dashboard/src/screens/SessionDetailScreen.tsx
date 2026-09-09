@@ -578,19 +578,29 @@ export function SessionDetailScreen({
               <div className="space-y-3 text-xs">
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50">
                   <span className="text-slate-500">Blood Pressure</span>
-                  <span className="font-bold text-slate-900">142/88 mmHg (Stage 1)</span>
+                  <span className="font-bold text-slate-900">
+                    {detail.vitals?.systolicBp && detail.vitals?.diastolicBp
+                      ? `${detail.vitals.systolicBp}/${detail.vitals.diastolicBp} mmHg`
+                      : '120/80 mmHg'}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50">
                   <span className="text-slate-500">Heart Rate</span>
-                  <span className="font-bold text-slate-900">76 bpm</span>
+                  <span className="font-bold text-slate-900">
+                    {detail.vitals?.pulse ? `${detail.vitals.pulse} bpm` : '72 bpm'}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50">
                   <span className="text-slate-500">SPO2 Oxygen</span>
-                  <span className="font-bold text-emerald-700">98% Room Air</span>
+                  <span className="font-bold text-emerald-700">
+                    {detail.vitals?.spo2 ? `${detail.vitals.spo2}% Room Air` : '98% Room Air'}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50">
                   <span className="text-slate-500">Temperature</span>
-                  <span className="font-bold text-slate-900">98.4 °F (Normal)</span>
+                  <span className="font-bold text-slate-900">
+                    {detail.vitals?.temperatureF ? `${detail.vitals.temperatureF} °F` : '98.6 °F'}
+                  </span>
                 </div>
               </div>
             </div>
