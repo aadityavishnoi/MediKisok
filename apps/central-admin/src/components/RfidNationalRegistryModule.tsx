@@ -11,16 +11,9 @@ interface RfidTokenBatch {
   securityHash: string;
 }
 
-const INITIAL_BATCHES: RfidTokenBatch[] = [
-  { batchId: 'BATCH-2026-NHA-001', manufacturedDate: '2026-07-15', totalCards: 25000, assignedState: 'Maharashtra', status: 'Active', clonedAlerts: 0, securityHash: 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855' },
-  { batchId: 'BATCH-2026-NHA-002', manufacturedDate: '2026-07-20', totalCards: 30000, assignedState: 'Uttar Pradesh', status: 'Active', clonedAlerts: 1, securityHash: 'sha256:8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4' },
-  { batchId: 'BATCH-2026-NHA-003', manufacturedDate: '2026-08-01', totalCards: 15000, assignedState: 'Karnataka', status: 'Assigned', clonedAlerts: 0, securityHash: 'sha256:a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e' },
-  { batchId: 'BATCH-2026-NHA-004', manufacturedDate: '2026-08-12', totalCards: 20000, assignedState: 'Delhi NCR', status: 'Available', clonedAlerts: 0, securityHash: 'sha256:3b5d5c3712955042212316173ccf37be8a07c3e479c25d5127d697a668b07456' },
-  { batchId: 'BATCH-2026-NHA-005', manufacturedDate: '2026-08-25', totalCards: 10000, assignedState: 'Tamil Nadu', status: 'Suspended', clonedAlerts: 4, securityHash: 'sha256:d41d8cd98f00b204e9800998ecf8427e' },
-];
-
 export function RfidNationalRegistryModule() {
-  const [batches, setBatches] = useState<RfidTokenBatch[]>(INITIAL_BATCHES);
+  const [batches, setBatches] = useState<RfidTokenBatch[]>([]);
+  const [loading, setLoading] = useState(false);
   const [scanUid, setScanUid] = useState('');
   const [scanResult, setScanResult] = useState<string | null>(null);
   const [revokedTokens, setRevokedTokens] = useState<Record<string, string>>({});

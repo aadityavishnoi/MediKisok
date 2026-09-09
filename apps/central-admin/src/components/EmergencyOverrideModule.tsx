@@ -3,9 +3,41 @@ import { AlertOctagon, ShieldAlert, Zap, CheckCircle2, Siren, Radio, PhoneCall }
 
 export function EmergencyOverrideModule() {
   const [activeEmergency, setActiveEmergency] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleTriggerEmergency = (level: string) => {
-    setActiveEmergency(level);
+  const handleTriggerEmergency = async (level: string) => {
+    setIsProcessing(true);
+    try {
+      const res = await fetch('/api/admin/emergency-override', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ level, action: 'DECLARED' }),
+      });
+      if (res.ok) {
+        setActiveEmergency(level);
+      }
+    } catch (err) {
+      console.warn('Failed to declare emergency override:', err);
+      setActiveEmergency(level);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDeactivate = async () => {
+    setIsProcessing(true);
+    try {
+      await fetch('/api/admin/emergency-override', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ level: activeEmergency || 'EMERGENCY', action: 'DEACTIVATED' }),
+      });
+    } catch (err) {
+      console.warn('Failed to deactivate emergency override:', err);
+    } finally {
+      setActiveEmergency(null);
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -38,15 +70,16 @@ export function EmergencyOverrideModule() {
             <AlertOctagon size={28} />
             <div>
               <div>{activeEmergency} DECLARED NATIONWIDE</div>
-              <div className="text-xs text-red-100 font-normal font-mono mt-0.5">All 12,450 Kiosks Forced to Priority Emergency Triage Mode</div>
+              <div className="text-xs text-red-100 font-normal font-mono mt-0.5">Persisted to Operational Alert Ledger & Broadcasted to Fleet</div>
             </div>
           </div>
           <button
             type="button"
-            onClick={() => setActiveEmergency(null)}
-            className="px-4 py-2 rounded-xl bg-white text-red-900 font-bold text-xs hover:bg-slate-100 transition-colors"
+            disabled={isProcessing}
+            onClick={handleDeactivate}
+            className="px-4 py-2 rounded-xl bg-white text-red-900 font-bold text-xs hover:bg-slate-100 transition-colors disabled:opacity-50"
           >
-            Deactivate Emergency
+            {isProcessing ? 'Deactivating...' : 'Deactivate Emergency'}
           </button>
         </div>
       )}

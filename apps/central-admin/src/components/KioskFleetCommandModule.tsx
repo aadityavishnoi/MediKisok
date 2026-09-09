@@ -16,17 +16,9 @@ interface KioskDevice {
   printerStatus: 'Healthy' | 'Paper Out' | 'Faulty';
 }
 
-const INITIAL_KIOSKS: KioskDevice[] = [
-  { deviceId: 'MK-DEL-00421', facilityName: 'AIIMS New Delhi — OPD Gate 2', state: 'Delhi NCR', status: 'Online', firmwareVersion: 'v4.2.0', lastHeartbeat: '2 sec ago', cpuLoad: 24, ramUsage: 48, rfidReaderStatus: 'Healthy', ocrCameraStatus: 'Healthy', audioMicStatus: 'Healthy', printerStatus: 'Healthy' },
-  { deviceId: 'MK-MH-00188', facilityName: 'KEM Hospital Mumbai — Emergency', state: 'Maharashtra', status: 'Online', firmwareVersion: 'v4.2.0', lastHeartbeat: '5 sec ago', cpuLoad: 31, ramUsage: 55, rfidReaderStatus: 'Healthy', ocrCameraStatus: 'Healthy', audioMicStatus: 'Healthy', printerStatus: 'Healthy' },
-  { deviceId: 'MK-KA-00912', facilityName: 'Bowring Hospital Bengaluru', state: 'Karnataka', status: 'Degraded', firmwareVersion: 'v4.1.9', lastHeartbeat: '18 sec ago', cpuLoad: 88, ramUsage: 92, rfidReaderStatus: 'Healthy', ocrCameraStatus: 'Degraded', audioMicStatus: 'Healthy', printerStatus: 'Paper Out' },
-  { deviceId: 'MK-UP-00310', facilityName: 'Varanasi Civil Hospital', state: 'Uttar Pradesh', status: 'Offline', firmwareVersion: 'v4.1.8', lastHeartbeat: '14 min ago', cpuLoad: 0, ramUsage: 0, rfidReaderStatus: 'Faulty', ocrCameraStatus: 'Faulty', audioMicStatus: 'Faulty', printerStatus: 'Faulty' },
-  { deviceId: 'MK-TN-00554', facilityName: 'Rajaji Hospital Madurai', state: 'Tamil Nadu', status: 'Online', firmwareVersion: 'v4.2.0', lastHeartbeat: '3 sec ago', cpuLoad: 19, ramUsage: 42, rfidReaderStatus: 'Healthy', ocrCameraStatus: 'Healthy', audioMicStatus: 'Healthy', printerStatus: 'Healthy' },
-];
-
 export function KioskFleetCommandModule() {
-  const [kiosks, setKiosks] = useState<KioskDevice[]>(INITIAL_KIOSKS);
-  const [selectedDevice, setSelectedDevice] = useState<KioskDevice | null>(kiosks[0]);
+  const [kiosks, setKiosks] = useState<KioskDevice[]>([]);
+  const [selectedDevice, setSelectedDevice] = useState<KioskDevice | null>(null);
   const [firmwareRollingOut, setFirmwareRollingOut] = useState(false);
   const [isLive, setIsLive] = useState(false);
 

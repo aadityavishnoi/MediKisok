@@ -5,18 +5,6 @@ export interface NationalOverviewModuleProps {
   searchQuery: string;
 }
 
-const DEFAULT_STATE_DATA = [
-  { state: 'Maharashtra', facilities: 142, kiosks: 1240, volume: '118,420', wait: '11 min', occupancy: '84%', trend: '↑ 4.2%', color: 'text-emerald-600' },
-  { state: 'Uttar Pradesh', facilities: 186, kiosks: 1680, volume: '142,100', wait: '16 min', occupancy: '91%', trend: '↑ 8.1%', color: 'text-amber-600' },
-  { state: 'Tamil Nadu', facilities: 118, kiosks: 980, volume: '94,600', wait: '10 min', occupancy: '76%', trend: '↓ 1.4%', color: 'text-emerald-600' },
-  { state: 'Karnataka', facilities: 104, kiosks: 890, volume: '88,240', wait: '9 min', occupancy: '72%', trend: '↑ 2.8%', color: 'text-emerald-600' },
-  { state: 'Rajasthan', facilities: 112, kiosks: 940, volume: '79,150', wait: '14 min', occupancy: '82%', trend: '↑ 5.6%', color: 'text-amber-600' },
-  { state: 'Delhi NCR', facilities: 86, kiosks: 740, volume: '84,900', wait: '13 min', occupancy: '89%', trend: '↑ 9.3%', color: 'text-red-600' },
-  { state: 'Gujarat', facilities: 98, kiosks: 820, volume: '72,400', wait: '12 min', occupancy: '74%', trend: '↓ 0.8%', color: 'text-emerald-600' },
-  { state: 'West Bengal', facilities: 110, kiosks: 910, volume: '81,300', wait: '15 min', occupancy: '85%', trend: '↑ 3.1%', color: 'text-emerald-600' },
-  { state: 'Kerala', facilities: 72, kiosks: 610, volume: '48,600', wait: '8 min', occupancy: '68%', trend: '↓ 2.1%', color: 'text-emerald-600' },
-];
-
 export function NationalOverviewModule({ searchQuery }: NationalOverviewModuleProps) {
   const [metrics, setMetrics] = useState<any>(null);
   const [isLive, setIsLive] = useState(false);
@@ -52,7 +40,7 @@ export function NationalOverviewModule({ searchQuery }: NationalOverviewModulePr
         trend: '↑ Live Sync',
         color: 'text-emerald-600',
       }))
-    : DEFAULT_STATE_DATA;
+    : [];
 
   const filtered = stateData.filter((s: any) => s.state.toLowerCase().includes(searchQuery.toLowerCase()));
 

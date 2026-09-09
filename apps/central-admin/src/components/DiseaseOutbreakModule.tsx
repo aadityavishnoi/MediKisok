@@ -15,50 +15,22 @@ interface OutbreakItem {
   bayesRate?: string;
 }
 
-const DEFAULT_OUTBREAKS: OutbreakItem[] = [
-  {
-    id: 'OUT-2026-08',
-    region: 'Jaipur & Jodhpur Districts (Rajasthan)',
-    disease: 'Dengue Hemorrhagic Fever Spike',
-    severity: 'CRITICAL',
-    cases: '1,420 Flagged (24h)',
-    symptomPattern: 'High Fever + Severe Retro-orbital Headache + Low Platelet Trigger',
-    aiConfidence: '98.6%',
-    status: 'Active Alert',
-    forecast7d: 1840,
-    forecast14d: 2150,
-    bayesRate: '16.7% (Laplace Beta-Binomial)',
-  },
-  {
-    id: 'OUT-2026-09',
-    region: 'Delhi NCR & Western UP',
-    disease: 'Acute Respiratory Distress Cluster',
-    severity: 'HIGH',
-    cases: '2,890 Flagged (24h)',
-    symptomPattern: 'Shortness of Breath + Persistent Cough + Low SpO2 Trigger',
-    aiConfidence: '96.2%',
-    status: 'Active Alert',
-    forecast7d: 3120,
-    forecast14d: 3450,
-    bayesRate: '12.4% (Laplace Beta-Binomial)',
-  },
-  {
-    id: 'OUT-2026-10',
-    region: 'Pune & Thane Districts (Maharashtra)',
-    disease: 'Viral Gastroenteritis Spike',
-    severity: 'MODERATE',
-    cases: '840 Flagged (24h)',
-    symptomPattern: 'Acute Abdominal Pain + Dehydration Warning',
-    aiConfidence: '94.1%',
-    status: 'Monitoring',
-    forecast7d: 890,
-    forecast14d: 910,
-    bayesRate: '8.1% (Laplace Beta-Binomial)',
-  },
-];
+interface OutbreakItem {
+  id: string;
+  region: string;
+  disease: string;
+  severity: 'CRITICAL' | 'HIGH' | 'MODERATE' | 'LOW';
+  cases: string;
+  symptomPattern: string;
+  aiConfidence: string;
+  status: string;
+  forecast7d?: number;
+  forecast14d?: number;
+  bayesRate?: string;
+}
 
 export function DiseaseOutbreakModule() {
-  const [outbreaks, setOutbreaks] = useState<OutbreakItem[]>(DEFAULT_OUTBREAKS);
+  const [outbreaks, setOutbreaks] = useState<OutbreakItem[]>([]);
   const [dispatchedAlert, setDispatchedAlert] = useState<string | null>(null);
   const [isLive, setIsLive] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -175,12 +147,23 @@ export function DiseaseOutbreakModule() {
 
       {/* Active Outbreak Cluster Cards */}
       <div className="space-y-4">
-        {outbreaks.map((ob, idx) => (
-          <div
-            key={ob.id}
-            className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 hover:border-red-300 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md animate-slide-up stagger-item"
-            style={{ animationDelay: `${idx * 60}ms` }}
-          >
+        {loading && outbreaks.length === 0 ? (
+          <div className="p-8 text-center text-slate-400 font-mono text-sm bg-white rounded-2xl border border-dashed border-slate-200">
+            Scanning national clinical intake data for epidemiological signals...
+          </div>
+        ) : outbreaks.length === 0 ? (
+          <div className="p-8 text-center text-slate-500 font-mono text-sm bg-white rounded-2xl border border-slate-200 flex flex-col items-center justify-center gap-2">
+            <CheckCircle2 size={24} className="text-emerald-500" />
+            <span className="font-bold text-slate-700">No Active Epidemiological Outbreak Clusters Detected</span>
+            <span className="text-xs text-slate-400">All regional syndromic signals are currently within standard baseline thresholds.</span>
+          </div>
+        ) : (
+          outbreaks.map((ob, idx) => (
+            <div
+              key={ob.id}
+              className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 hover:border-red-300 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md animate-slide-up stagger-item"
+              style={{ animationDelay: `${idx * 60}ms` }}
+            >
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-200 pb-4">
               <div className="flex items-center gap-3">
                 <span className={`px-3 py-1 rounded-full text-xs font-mono font-extrabold ${
@@ -228,7 +211,7 @@ export function DiseaseOutbreakModule() {
               </div>
             </div>
           </div>
-        ))}
+        )))}
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Server, ShieldCheck, CheckCircle2, RefreshCw, AlertCircle, FileCode2, Database, Layers, ArrowUpRight, Activity } from 'lucide-react';
 
 interface GatewayStatus {
@@ -10,17 +10,33 @@ interface GatewayStatus {
   transactionsToday: number;
 }
 
-const GATEWAYS: GatewayStatus[] = [
-  { service: 'ABDM Health Facility Registry (HFR)', endpoint: 'https://hfr.abdm.gov.in/api/v1', status: 'Healthy', latency: 45, uptime: '99.98%', transactionsToday: 18420 },
-  { service: 'ABHA Address Resolution Gateway', endpoint: 'https://healthid.abdm.gov.in/api/v2', status: 'Healthy', latency: 62, uptime: '99.95%', transactionsToday: 14200 },
-  { service: 'FHIR R4 Clinical Record Adapter', endpoint: 'https://fhir.nhcx.gov.in/r4', status: 'Healthy', latency: 88, uptime: '99.90%', transactionsToday: 24500 },
-  { service: 'ABDM Consent Management Service', endpoint: 'https://consent.abdm.gov.in/api/v1', status: 'Healthy', latency: 54, uptime: '100.0%', transactionsToday: 12800 },
-  { service: 'Ayush EHR Interoperability Hub', endpoint: 'https://ayush.abdm.gov.in/fhir', status: 'Healthy', latency: 95, uptime: '99.85%', transactionsToday: 4100 },
-];
-
 export function AbdmFhirCommandModule() {
-  const [gateways] = useState<GatewayStatus[]>(GATEWAYS);
+  const [telemetry, setTelemetry] = useState<any>(null);
+  const [gateways, setGateways] = useState<GatewayStatus[]>([]);
   const [retryQueueCount, setRetryQueueCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  const loadTelemetry = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/interoperability/telemetry');
+      if (res.ok) {
+        const data = await res.json();
+        setTelemetry(data);
+        if (Array.isArray(data.gateways) && data.gateways.length > 0) {
+          setGateways(data.gateways);
+        }
+      }
+    } catch (err) {
+      console.warn('Live ABDM telemetry fetch failed:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTelemetry();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -36,6 +52,14 @@ export function AbdmFhirCommandModule() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={loadTelemetry}
+            className="p-2 border rounded-xl hover:bg-slate-50 text-slate-600 transition-colors"
+            title="Refresh Live ABDM Telemetry"
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          </button>
           <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold font-mono flex items-center gap-1.5">
             <ShieldCheck size={14} /> ABDM Milestone 3 Certified
           </span>
@@ -46,28 +70,37 @@ export function AbdmFhirCommandModule() {
       <div className="grid grid-cols-4 gap-4">
         <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl animate-slide-up stagger-item transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md" style={{ animationDelay: '0ms' }}>
           <span className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider block">ABDM Connectivity</span>
-          <div className="text-2xl font-extrabold text-slate-900 font-mono mt-1">HEALTHY</div>
-          <span className="text-[10px] text-emerald-700">99.98% Gateway Uptime</span>
+          <div className="text-2xl font-extrabold text-slate-900 font-mono mt-1">{telemetry?.connectivity || 'HEALTHY'}</div>
+          <span className="text-[10px] text-emerald-700">{telemetry?.gatewayUptime || '99.98%'} Gateway Uptime</span>
         </div>
 
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl animate-slide-up stagger-item transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md" style={{ animationDelay: '40ms' }}>
           <span className="text-[11px] font-semibold text-blue-700 uppercase tracking-wider block">FHIR R4 Bundles Sent</span>
-          <div className="text-2xl font-extrabold text-slate-900 font-mono mt-1">74,020</div>
+          <div className="text-2xl font-extrabold text-slate-900 font-mono mt-1">
+            {telemetry ? telemetry.fhirBundlesSent.toLocaleString() : '—'}
+          </div>
           <span className="text-[10px] text-blue-700">0 Schema Validation Errors</span>
         </div>
 
         <div className="p-4 bg-cyan-50 border border-cyan-200 rounded-2xl animate-slide-up stagger-item transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md" style={{ animationDelay: '80ms' }}>
           <span className="text-[11px] font-semibold text-cyan-700 uppercase tracking-wider block">Consent Transactions</span>
-          <div className="text-2xl font-extrabold text-slate-900 font-mono mt-1">12,800</div>
+          <div className="text-2xl font-extrabold text-slate-900 font-mono mt-1">
+            {telemetry ? telemetry.consentTransactions.toLocaleString() : '—'}
+          </div>
           <span className="text-[10px] text-cyan-700">Patient Consent Granted</span>
         </div>
 
         <div className="p-4 bg-purple-50 border border-purple-200 rounded-2xl animate-slide-up stagger-item transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md" style={{ animationDelay: '120ms' }}>
           <span className="text-[11px] font-semibold text-purple-700 uppercase tracking-wider block">Facility Integrations</span>
-          <div className="text-2xl font-extrabold text-slate-900 font-mono mt-1">94%</div>
-          <span className="text-[10px] text-purple-700">45 / 48 Hospitals Linked</span>
+          <div className="text-2xl font-extrabold text-slate-900 font-mono mt-1">
+            {telemetry ? `${telemetry.abdmIntegrationPercent}%` : '—'}
+          </div>
+          <span className="text-[10px] text-purple-700">
+            {telemetry ? `${telemetry.hospitalsLinked} / ${telemetry.totalHospitals} Hospitals Linked` : 'Syncing...'}
+          </span>
         </div>
       </div>
+
 
       {/* ABDM Gateways Grid */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">

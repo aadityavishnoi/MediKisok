@@ -12,25 +12,17 @@ interface Protocol {
   lastUpdated: string;
 }
 
-const DEFAULT_PROTOCOLS: Protocol[] = [
-  { id: 'PROT-01', name: 'Chest Pain Intake Protocol', version: 'v1.4', status: 'ACTIVE', jurisdiction: 'National Default', mandatoryQuestions: 6, redFlagTriggers: ['Radiation to Left Arm', 'Diaphoresis', 'SPO2 < 92%'], lastUpdated: '2026-08-01' },
-  { id: 'PROT-02', name: 'Acute Respiratory & Dyspnea', version: 'v1.2', status: 'ACTIVE', jurisdiction: 'National Default', mandatoryQuestions: 5, redFlagTriggers: ['Stridor', 'SPO2 < 90%', 'Cyanosis'], lastUpdated: '2026-08-10' },
-  { id: 'PROT-03', name: 'Febrile Illness & Outbreak Screening', version: 'v2.1', status: 'ACTIVE', jurisdiction: 'National Default', mandatoryQuestions: 7, redFlagTriggers: ['Fever > 103°F', 'Petechiae', 'Altered Sensorium'], lastUpdated: '2026-08-20' },
-  { id: 'PROT-04', name: 'AYUSH Prakriti & Clinical Assessment', version: 'v1.0', status: 'ACTIVE', jurisdiction: 'National Default', mandatoryQuestions: 8, redFlagTriggers: ['Severe Agni Imbalance', 'Acute Dhatu Depletion'], lastUpdated: '2026-08-25' },
-  { id: 'PROT-05', name: 'Pediatric General OPD Intake', version: 'v1.1', status: 'DRAFT', jurisdiction: 'Delhi NCR & Maharashtra Pilot', mandatoryQuestions: 6, redFlagTriggers: ['Grunting', 'Severe Chest Indrawing'], lastUpdated: '2026-09-01' },
-];
-
 export function ClinicalProtocolsModule() {
-  const [protocols, setProtocols] = useState<Protocol[]>(DEFAULT_PROTOCOLS);
-  const [selectedProtocol, setSelectedProtocol] = useState<Protocol>(DEFAULT_PROTOCOLS[0]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [protocols, setProtocols] = useState<Protocol[]>([]);
+  const [selectedProtocol, setSelectedProtocol] = useState<Protocol | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
 
   // Modal Form State
   const [formData, setFormData] = useState({
-    id: `PROT-0${DEFAULT_PROTOCOLS.length + 1}`,
+    id: 'PROT-01',
     name: '',
     version: 'v1.0',
     jurisdiction: 'National Default',
@@ -43,14 +35,13 @@ export function ClinicalProtocolsModule() {
     try {
       const res = await fetch('/api/clinical/protocols');
       const data = await res.json();
-      if (data.protocols && Array.isArray(data.protocols)) {
+      if (data.protocols && Array.isArray(data.protocols) && data.protocols.length > 0) {
         setProtocols(data.protocols);
-        if (!data.protocols.some((p: Protocol) => p.id === selectedProtocol?.id)) {
-          setSelectedProtocol(data.protocols[0]);
-        }
+        setSelectedProtocol((prev) => (prev ? (data.protocols.find((p: any) => p.id === prev.id) || data.protocols[0]) : data.protocols[0]));
+        setFormData((prev) => ({ ...prev, id: `PROT-0${data.protocols.length + 1}` }));
       }
     } catch {
-      // Fall back gracefully to existing in-memory state
+      // Fall back gracefully to existing state
     } finally {
       setIsLoading(false);
     }

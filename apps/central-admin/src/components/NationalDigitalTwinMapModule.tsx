@@ -125,8 +125,8 @@ export function NationalDigitalTwinMapModule() {
           const hospData = await hospRes.json();
           const devData = await devRes.json();
 
-          const hospitals = hospData.hospitals || [];
-          const devices = devData.devices || [];
+          const hospitals = hospData.hospitals || hospData.facilities || (Array.isArray(hospData) ? hospData : []);
+          const devices = devData.devices || (Array.isArray(devData) ? devData : []);
 
           if (mounted && hospitals.length > 0) {
             // Group by state
