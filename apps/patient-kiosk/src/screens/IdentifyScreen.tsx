@@ -132,18 +132,27 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
   const serialPortRef = React.useRef<any>(null);
   const serialReaderRef = React.useRef<any>(null);
 
+  // Handle card UID detected from WebSocket via useKioskSession
+  useEffect(() => {
+    if (detectedCardUid) {
+      handleTapCard(detectedCardUid);
+    }
+  }, [detectedCardUid]);
+
   // Clean WebSerial reader and port release
   const closeSerialPort = React.useCallback(async () => {
     try {
       if (serialReaderRef.current) {
-        await serialReaderRef.current.cancel();
-        serialReaderRef.current.releaseLock();
+        await serialReaderRef.current.cancel().catch(() => {});
+        try {
+          serialReaderRef.current.releaseLock();
+        } catch {}
         serialReaderRef.current = null;
       }
     } catch {}
     try {
-      if (serialPortRef.current) {
-        await serialPortRef.current.close();
+      if (serialPortRef.current && serialPortRef.current.readable) {
+        await serialPortRef.current.close().catch(() => {});
         serialPortRef.current = null;
       }
     } catch {}
@@ -152,6 +161,11 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
   // Stream reader from a WebSerial port
   function readFromSerialPort(port: any) {
     try {
+      if (serialReaderRef.current) {
+        try {
+          serialReaderRef.current.releaseLock();
+        } catch {}
+      }
       serialPortRef.current = port;
       const textDecoder = new TextDecoder();
       const reader = port.readable.getReader();
@@ -209,26 +223,30 @@ export function IdentifyScreen({ wsState, error, onError, detectedCardUid, onIde
       })
       .catch(() => {});
 
-    // 2. Auto-connect WebSerial if permission was previously granted
+    // 2. Auto-connect WebSerial with refresh resilience (retries once if previous page handle is closing)
     if (typeof navigator !== 'undefined' && 'serial' in navigator) {
-      (navigator as any).serial
-        .getPorts()
-        .then(async (ports: any[]) => {
-          if (!mounted || ports.length === 0) return;
-          try {
-            const port = ports[0];
-            if (!port.readable) {
-              await port.open({ baudRate: 9600 });
-            }
-            if (mounted) {
-              setWebSerialConnected(true);
-              readFromSerialPort(port);
-            }
-          } catch {
-            // Port might be in use by background bridge, which is fine
+      const tryOpenSerial = async (retryCount = 0) => {
+        if (!mounted) return;
+        try {
+          const ports = await (navigator as any).serial.getPorts();
+          if (ports.length === 0 || !mounted) return;
+          const port = ports[0];
+          if (!port.readable) {
+            await port.open({ baudRate: 9600 });
           }
-        })
-        .catch(() => {});
+          if (mounted && port.readable) {
+            setWebSerialConnected(true);
+            readFromSerialPort(port);
+          }
+        } catch (err) {
+          // If port was locked by the page prior to refresh, wait 450ms and retry
+          if (retryCount < 2 && mounted) {
+            setTimeout(() => tryOpenSerial(retryCount + 1), 450);
+          }
+        }
+      };
+
+      tryOpenSerial();
 
       const onSerialConnect = async (e: any) => {
         try {

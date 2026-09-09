@@ -5,6 +5,7 @@ import { env } from '../lib/env.js';
 import { Errors } from '../lib/errors.js';
 import { recordAudit } from '../lib/audit.js';
 import { wsHub } from '../ws/hub.js';
+import { recordLatestScan } from '../routes/rfid.js';
 
 import { demoStore } from '../lib/demoStore.js';
 
@@ -214,6 +215,14 @@ export async function handleRfidScan(input: RfidScanInput): Promise<RfidScanResp
       },
     });
 
+    recordLatestScan({
+      sessionId: '',
+      patientId: null,
+      isNewPatient: true,
+      uid: effectiveUid,
+      status: 'NEW_PATIENT',
+    });
+
     return {
       sessionId: '',
       patientId: null,
@@ -272,6 +281,14 @@ export async function handleRfidScan(input: RfidScanInput): Promise<RfidScanResp
     ledColor: 'GREEN',
     buzz: true,
   };
+
+  recordLatestScan({
+    sessionId,
+    patientId: card.patientId,
+    isNewPatient: false,
+    uid: normalizedUid,
+    status: 'IDENTIFIED',
+  });
 
   wsHub.broadcast({
     type: 'RFID_SCANNED',

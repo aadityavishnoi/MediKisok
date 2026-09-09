@@ -235,8 +235,9 @@ export function App() {
 
     const cleanupWs = connectWs({
       onEvent: (event) => {
-        if (event.type === 'PATIENT_NOTIFICATION') {
-          const payload = event.payload as any;
+        const ev = event as any;
+        if (ev.type === 'PATIENT_NOTIFICATION') {
+          const payload = ev.payload as any;
           if (!payload?.patientId || payload.patientId === profile?.id) {
             triggerNotification({
               title: payload?.title || 'Hospital Notification',
@@ -246,7 +247,7 @@ export function App() {
             });
             loadPortalData();
           }
-        } else if (event.type === 'RFID_SCANNED') {
+        } else if (ev.type === 'RFID_SCANNED') {
           notificationService.playChime('urgent');
           triggerNotification({
             title: 'RFID Smart Card Scanned',
@@ -255,7 +256,7 @@ export function App() {
             priority: 'urgent',
           });
           loadPortalData();
-        } else if (event.type === 'SESSION_UPDATED') {
+        } else if (ev.type === 'SESSION_UPDATED') {
           loadPortalData();
         }
       },
@@ -323,9 +324,10 @@ export function App() {
     try {
       const res = await patientSendOtp(cleanPhone);
       setOtpSent(true);
-      if (res.devOtp) {
-        setDevOtpHint(res.devOtp);
-        setKioskOtp(res.devOtp);
+      const otpCode = (res as any).devOtp || (res as any).otp;
+      if (otpCode) {
+        setDevOtpHint(otpCode);
+        setKioskOtp(otpCode);
       }
       showToast(res.message || 'Verification OTP sent successfully!');
       notificationService.playChime('info');

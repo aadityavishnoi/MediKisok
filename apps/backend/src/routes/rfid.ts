@@ -62,6 +62,19 @@ interface LatestScanRecord {
 
 let latestScanRecord: LatestScanRecord | null = null;
 
+export function recordLatestScan(scan: {
+  sessionId: string;
+  patientId: string | null;
+  isNewPatient: boolean;
+  uid: string;
+  status: string;
+}) {
+  latestScanRecord = {
+    ...scan,
+    timestamp: Date.now(),
+  };
+}
+
 /**
  * GET /api/rfid/latest-scan
  * Polling endpoint for Kiosks running in serverless cloud where WebSockets are unavailable.
