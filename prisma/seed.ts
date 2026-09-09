@@ -22,6 +22,30 @@
  *
  * Fully idempotent — safe to run repeatedly.
  */
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+try {
+  const envPath = path.resolve(__dirname, '../apps/backend/.env');
+  if (fs.existsSync(envPath)) {
+    const lines = fs.readFileSync(envPath, 'utf8').split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const idx = trimmed.indexOf('=');
+      if (idx > 0) {
+        const k = trimmed.slice(0, idx).trim();
+        const v = trimmed.slice(idx + 1).trim().replace(/^['"]|['"]$/g, '');
+        if (!process.env[k]) process.env[k] = v;
+      }
+    }
+  }
+} catch {}
+
 import { PrismaClient, IdentifierType, RFIDEventType, DeviceEventType, OperationalAlertType, QuestionType, NoteType, AIAssistanceType, DeploymentEnvironment, DeploymentStatus, NotificationType, InteropTransactionType, ScopeLevel } from '@prisma/client';
 
 const prisma = new PrismaClient();
