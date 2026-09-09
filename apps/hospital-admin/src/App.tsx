@@ -23,7 +23,11 @@ import {
   Check,
   X,
   AlertOctagon,
-  ChevronRight
+  ChevronRight,
+  Package,
+  Send,
+  Boxes,
+  ArrowDownToLine
 } from 'lucide-react';
 
 interface Hospital {
@@ -128,6 +132,26 @@ export default function App() {
   const [showAddKioskModal, setShowAddKioskModal] = useState(false);
   const [kioskForm, setKioskForm] = useState({ deviceCode: '', location: 'Main OPD Lobby', kioskType: 'SELF_SERVICE', firmwareVersion: 'v4.2.0' });
 
+  // RFID Stock Inventory states
+  const [rfidInventory, setRfidInventory] = useState<{
+    totalAllocated: number;
+    availableStock: number;
+    issuedToPatients: number;
+    damagedReturned: number;
+    recentBatches: Array<{ id: string; action: string; timestamp: string; metadata?: any }>;
+  }>({
+    totalAllocated: 0,
+    availableStock: 0,
+    issuedToPatients: 0,
+    damagedReturned: 0,
+    recentBatches: [],
+  });
+  const [showAddStockModal, setShowAddStockModal] = useState(false);
+  const [stockForm, setStockForm] = useState({ quantity: 100, batchNumber: '', cardType: 'STANDARD_MIFARE' });
+  const [submittingStock, setSubmittingStock] = useState(false);
+  const [showReplenishModal, setShowReplenishModal] = useState(false);
+  const [replenishForm, setReplenishForm] = useState({ requestedQuantity: 200, urgency: 'NORMAL', notes: '' });
+
   const isLight = theme === 'light';
 
   const showToast = (msg: string) => {
@@ -160,12 +184,13 @@ export default function App() {
     if (!selectedHospitalId) return;
     setLoading(true);
     try {
-      const [deptRes, docRes, kioskRes, queueRes, overviewRes] = await Promise.all([
+      const [deptRes, docRes, kioskRes, queueRes, overviewRes, rfidRes] = await Promise.all([
         fetch(`/api/hospitals/${selectedHospitalId}/departments`),
         fetch(`/api/hospitals/${selectedHospitalId}/doctors`),
         fetch(`/api/hospitals/${selectedHospitalId}/kiosks`),
         fetch(`/api/queues?hospitalId=${selectedHospitalId}&limit=50`),
         fetch(`/api/hospitals/${selectedHospitalId}/overview`),
+        fetch(`/api/hospital/rfid-inventory?hospitalId=${selectedHospitalId}`),
       ]);
 
       if (deptRes.ok) {
@@ -188,6 +213,10 @@ export default function App() {
         const o = await overviewRes.json();
         setOverviewMetrics(o);
       }
+      if (rfidRes.ok) {
+        const rfidData = await rfidRes.json();
+        setRfidInventory(rfidData);
+      }
     } catch (err) {
       console.error('Error fetching hospital operations:', err);
     } finally {
@@ -200,6 +229,68 @@ export default function App() {
     const interval = setInterval(loadHospitalData, 10000);
     return () => clearInterval(interval);
   }, [loadHospitalData]);
+
+  // Actions: Add RFID Stock & Replenish
+  const handleAddStock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedHospitalId) return;
+    setSubmittingStock(true);
+    try {
+      const res = await fetch('/api/hospital/rfid-inventory/add-stock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          hospitalId: selectedHospitalId,
+          quantity: Number(stockForm.quantity) || 50,
+          batchNumber: stockForm.batchNumber.trim() || undefined,
+          cardType: stockForm.cardType,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        showToast(data.message || `Added ${stockForm.quantity} blank RFID cards to local stock`);
+        setShowAddStockModal(false);
+        setStockForm({ quantity: 100, batchNumber: '', cardType: 'STANDARD_MIFARE' });
+        loadHospitalData();
+      } else {
+        const err = await res.json();
+        showToast(`Error: ${err.error?.message || 'Failed to add stock'}`);
+      }
+    } catch {
+      showToast('Network error adding RFID card stock');
+    } finally {
+      setSubmittingStock(false);
+    }
+  };
+
+  const handleRequestReplenish = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedHospitalId) return;
+    try {
+      const res = await fetch('/api/hospital/rfid-inventory/request-replenishment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          hospitalId: selectedHospitalId,
+          requestedQuantity: Number(replenishForm.requestedQuantity) || 200,
+          urgency: replenishForm.urgency,
+          notes: replenishForm.notes.trim() || undefined,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        showToast(data.message || 'Replenishment order submitted to Central Admin');
+        setShowReplenishModal(false);
+        setReplenishForm({ requestedQuantity: 200, urgency: 'NORMAL', notes: '' });
+        loadHospitalData();
+      } else {
+        const err = await res.json();
+        showToast(`Error: ${err.error?.message || 'Failed to submit request'}`);
+      }
+    } catch {
+      showToast('Network error submitting replenishment request');
+    }
+  };
 
   // Actions: Hospital Facility Create
   const handleCreateHospital = async (e: React.FormEvent) => {
@@ -1133,19 +1224,175 @@ export default function App() {
           {/* TAB 6: RFID INVENTORY */}
           {activeNav === 'rfid_inventory' && (
             <div className="space-y-6">
-              <h2 className={`text-xl font-extrabold font-heading ${isLight ? 'text-slate-900' : 'text-white'}`}>Local Hospital RFID Card Stock</h2>
-              <div className="grid grid-cols-4 gap-4 text-xs">
+              {/* Header & Quick Actions */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className={`text-xl font-extrabold font-heading flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                    <CreditCard className="text-blue-500" size={22} />
+                    Local Hospital RFID Card Stock & Inventory
+                  </h2>
+                  <p className={`text-xs mt-0.5 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                    Realtime CockroachDB Stock Pool for {selectedHospital?.name || 'Facility'} • Blank Mifare Smart Cards
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => loadHospitalData()}
+                    className={`p-2 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                      isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+                    }`}
+                    title="Refresh Stock Counts"
+                  >
+                    <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+                    <span>Refresh</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowReplenishModal(true)}
+                    className={`px-3 py-2 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                      isLight ? 'bg-amber-50 border-amber-200 text-amber-900 hover:bg-amber-100' : 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/20'
+                    }`}
+                  >
+                    <Send size={14} />
+                    <span>Request Replenishment</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowAddStockModal(true)}
+                    className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md transition-all"
+                  >
+                    <Plus size={14} />
+                    <span>+ Ingest Inbound Stock</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Low Stock Warning Banner */}
+              {rfidInventory.availableStock < 25 && (
+                <div className={`p-4 rounded-2xl border flex items-center justify-between text-xs animate-fade-in ${
+                  isLight ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle size={20} className="text-amber-600 shrink-0" />
+                    <div>
+                      <strong className="block font-semibold">Low Blank RFID Stock Alert</strong>
+                      <span>
+                        Only <strong>{rfidInventory.availableStock}</strong> blank card{rfidInventory.availableStock === 1 ? '' : 's'} available in facility inventory. Request a replenishment batch to prevent registration halts.
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowReplenishModal(true)}
+                    className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs shrink-0 shadow-xs"
+                  >
+                    Reorder Now
+                  </button>
+                </div>
+              )}
+
+              {/* Dynamic Live Stat Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
                 {[
-                  { label: 'Total Allocated', val: '2,500', lightColor: 'bg-white border-blue-200 text-blue-900', darkColor: 'bg-blue-500/10 border-blue-500/20' },
-                  { label: 'Issued & Active', val: '1,840', lightColor: 'bg-white border-emerald-200 text-emerald-900', darkColor: 'bg-emerald-500/10 border-emerald-500/20' },
-                  { label: 'Blank in Stock', val: '610', lightColor: 'bg-white border-cyan-200 text-cyan-900', darkColor: 'bg-cyan-500/10 border-cyan-500/20' },
-                  { label: 'Damaged / Replaced', val: '50', lightColor: 'bg-white border-amber-200 text-amber-900', darkColor: 'bg-amber-500/10 border-amber-500/20' },
+                  {
+                    label: 'Total Facility Pool',
+                    val: rfidInventory.totalAllocated.toLocaleString(),
+                    desc: 'Total cards ever allocated',
+                    lightColor: 'bg-white border-blue-200 text-blue-900',
+                    darkColor: 'bg-blue-500/10 border-blue-500/20 text-blue-300',
+                  },
+                  {
+                    label: 'Blank in Stock',
+                    val: rfidInventory.availableStock.toLocaleString(),
+                    desc: 'Ready to issue to patients',
+                    lightColor: 'bg-white border-cyan-200 text-cyan-900',
+                    darkColor: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-300',
+                  },
+                  {
+                    label: 'Issued & Active',
+                    val: rfidInventory.issuedToPatients.toLocaleString(),
+                    desc: 'Programmed for patients',
+                    lightColor: 'bg-white border-emerald-200 text-emerald-900',
+                    darkColor: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300',
+                  },
+                  {
+                    label: 'Damaged / Retired',
+                    val: rfidInventory.damagedReturned.toLocaleString(),
+                    desc: 'Decommissioned or lost',
+                    lightColor: 'bg-white border-rose-200 text-rose-900',
+                    darkColor: 'bg-rose-500/10 border-rose-500/20 text-rose-300',
+                  },
                 ].map((item, idx) => (
-                  <div key={idx} className={`p-4 border rounded-2xl ${isLight ? `${item.lightColor} shadow-xs` : `${item.darkColor}`}`}>
-                    <span className={`block text-[10px] uppercase font-bold ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>{item.label}</span>
-                    <span className="text-3xl font-extrabold mt-1 block">{item.val}</span>
+                  <div key={idx} className={`p-4 border rounded-2xl transition-all hover:scale-[1.01] ${isLight ? `${item.lightColor} shadow-xs` : `${item.darkColor}`}`}>
+                    <span className={`block text-[10px] uppercase font-bold tracking-wider ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>{item.label}</span>
+                    <span className="text-3xl font-extrabold mt-1 block font-mono">{item.val}</span>
+                    <span className={`block text-[10px] mt-1 ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</span>
                   </div>
                 ))}
+              </div>
+
+              {/* Inbound Stock Movement & Batches Table */}
+              <div className={`p-5 border rounded-2xl space-y-4 ${
+                isLight ? 'bg-white border-slate-200 shadow-xs' : 'bg-white/5 border-white/10'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Boxes size={18} className="text-blue-500" />
+                    <h3 className={`text-sm font-bold font-heading ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                      Recent Stock Ingestion & Movement History
+                    </h3>
+                  </div>
+                  <span className={`text-[10px] font-mono ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                    CockroachDB Audit Log
+                  </span>
+                </div>
+
+                {rfidInventory.recentBatches && rfidInventory.recentBatches.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs text-left">
+                      <thead>
+                        <tr className={`border-b text-[10px] uppercase font-bold ${
+                          isLight ? 'border-slate-100 text-slate-400' : 'border-white/10 text-slate-500'
+                        }`}>
+                          <th className="pb-2">Movement Action</th>
+                          <th className="pb-2">Batch / Reference</th>
+                          <th className="pb-2">Quantity</th>
+                          <th className="pb-2">Card Type</th>
+                          <th className="pb-2">Recorded At</th>
+                          <th className="pb-2">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-white/5 font-mono text-[11px]">
+                        {rfidInventory.recentBatches.map((b) => (
+                          <tr key={b.id} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02]">
+                            <td className="py-2.5 font-sans font-bold flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                              {b.action === 'STOCK_BATCH_ADDED' ? 'Local Box Ingested' : b.action === 'STOCK_DISPATCHED' ? 'Central Dispatch' : b.action}
+                            </td>
+                            <td className="py-2.5 text-blue-600 font-bold">{b.metadata?.batchNumber || 'STANDARD-BATCH'}</td>
+                            <td className="py-2.5 font-bold text-emerald-600">+{b.metadata?.quantity || 50} Cards</td>
+                            <td className="py-2.5 text-slate-500">{b.metadata?.cardType || 'STANDARD_MIFARE'}</td>
+                            <td className="py-2.5 text-slate-400 font-sans">{new Date(b.timestamp).toLocaleString()}</td>
+                            <td className="py-2.5">
+                              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold">
+                                Received
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className={`p-8 text-center rounded-xl border border-dashed ${
+                    isLight ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-white/[0.02] border-white/10 text-slate-400'
+                  }`}>
+                    <CreditCard size={32} className="mx-auto mb-2 text-slate-400 opacity-60" />
+                    <p className="text-xs font-semibold">No stock batches ingested yet for this hospital facility.</p>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Click <strong>"+ Ingest Inbound Stock"</strong> above to register a physical shipment of blank RFID cards, or dispatch a batch from Central Admin.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1521,6 +1768,169 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* MODAL 5: INGEST INBOUND RFID CARD STOCK */}
+      {showAddStockModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className={`w-full max-w-md rounded-2xl border p-6 space-y-4 shadow-2xl animate-scale-in ${
+            isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-white/10 text-white'
+          }`}>
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center gap-2">
+                <Boxes size={18} className="text-blue-500" />
+                <h3 className="font-bold text-sm font-heading">Ingest Inbound RFID Card Stock</h3>
+              </div>
+              <button onClick={() => setShowAddStockModal(false)} className="text-slate-400 hover:text-slate-600"><X size={16} /></button>
+            </div>
+
+            <div className={`p-3 rounded-xl border text-[11px] ${
+              isLight ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-blue-500/10 border-blue-500/30 text-blue-300'
+            }`}>
+              Target Facility: <strong>{selectedHospital?.name || 'Selected Hospital'}</strong> ({selectedHospital?.code || 'HOSP'})
+            </div>
+
+            <form onSubmit={handleAddStock} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-[11px] font-semibold mb-1">Batch / Box Shipment Reference *</label>
+                <input
+                  required
+                  placeholder="e.g. BATCH-2026-NHA-042"
+                  value={stockForm.batchNumber}
+                  onChange={e => setStockForm({ ...stockForm, batchNumber: e.target.value.toUpperCase() })}
+                  className={`w-full border rounded-xl px-3 py-2 font-mono ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'}`}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold mb-1">Quantity of Blank Cards *</label>
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    max={500}
+                    value={stockForm.quantity}
+                    onChange={e => setStockForm({ ...stockForm, quantity: Number(e.target.value) })}
+                    className={`w-full border rounded-xl px-3 py-2 font-mono ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'}`}
+                  />
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">Max 500 cards/batch</span>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold mb-1">Chip Technology *</label>
+                  <select
+                    value={stockForm.cardType}
+                    onChange={e => setStockForm({ ...stockForm, cardType: e.target.value })}
+                    className={`w-full border rounded-xl px-3 py-2 ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-800 border-white/10 text-white'}`}
+                  >
+                    <option value="STANDARD_MIFARE">Mifare Classic 1K</option>
+                    <option value="MIFARE_DESFIRE">Mifare DESFire EV2 (AES)</option>
+                    <option value="NTAG215">NTAG215 (NFC Forum)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t">
+                <button
+                  type="button"
+                  onClick={() => setShowAddStockModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingStock}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-md flex items-center gap-1.5"
+                >
+                  <Boxes size={14} />
+                  <span>{submittingStock ? 'Ingesting...' : 'Ingest into CockroachDB'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 6: REQUEST CENTRAL STOCK REPLENISHMENT */}
+      {showReplenishModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className={`w-full max-w-md rounded-2xl border p-6 space-y-4 shadow-2xl animate-scale-in ${
+            isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-white/10 text-white'
+          }`}>
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center gap-2">
+                <Send size={18} className="text-amber-500" />
+                <h3 className="font-bold text-sm font-heading">Request Central Stock Replenishment</h3>
+              </div>
+              <button onClick={() => setShowReplenishModal(false)} className="text-slate-400 hover:text-slate-600"><X size={16} /></button>
+            </div>
+
+            <div className={`p-3 rounded-xl border text-[11px] ${
+              isLight ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+            }`}>
+              Sends a formal procurement order to <strong>Central Admin / NHA Logistics</strong> for card batch dispatch.
+            </div>
+
+            <form onSubmit={handleRequestReplenish} className="space-y-3 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold mb-1">Requested Quantity *</label>
+                  <input
+                    type="number"
+                    required
+                    min={50}
+                    step={50}
+                    value={replenishForm.requestedQuantity}
+                    onChange={e => setReplenishForm({ ...replenishForm, requestedQuantity: Number(e.target.value) })}
+                    className={`w-full border rounded-xl px-3 py-2 font-mono ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'}`}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold mb-1">Urgency Level *</label>
+                  <select
+                    value={replenishForm.urgency}
+                    onChange={e => setReplenishForm({ ...replenishForm, urgency: e.target.value })}
+                    className={`w-full border rounded-xl px-3 py-2 ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-800 border-white/10 text-white'}`}
+                  >
+                    <option value="NORMAL">Normal (Within 5 days)</option>
+                    <option value="HIGH">High (Within 48 hours)</option>
+                    <option value="CRITICAL">Critical (Immediate Dispatch)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold mb-1">Notes / Reason for Replenishment</label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Current blank cards exhausted due to high OPD surge."
+                  value={replenishForm.notes}
+                  onChange={e => setReplenishForm({ ...replenishForm, notes: e.target.value })}
+                  className={`w-full border rounded-xl px-3 py-2 ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'}`}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t">
+                <button
+                  type="button"
+                  onClick={() => setShowReplenishModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs shadow-md flex items-center gap-1.5"
+                >
+                  <Send size={14} />
+                  <span>Submit Order to Central</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

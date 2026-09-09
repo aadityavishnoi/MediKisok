@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Cpu, ShieldAlert, CheckCircle2, Lock, AlertTriangle, RefreshCw, Layers, Key, ShieldCheck, Search, Filter } from 'lucide-react';
+import { Cpu, ShieldAlert, CheckCircle2, Lock, AlertTriangle, RefreshCw, Layers, Key, ShieldCheck, Search, Filter, Plus, X, Send, Truck, Building2 } from 'lucide-react';
 
 interface RfidTokenBatch {
   batchId: string;
@@ -18,6 +18,38 @@ export function RfidNationalRegistryModule() {
   const [scanResult, setScanResult] = useState<string | null>(null);
   const [revokedTokens, setRevokedTokens] = useState<Record<string, string>>({});
   const [registryToast, setRegistryToast] = useState<string | null>(null);
+
+  // Dispatch Stock State
+  const [showDispatchModal, setShowDispatchModal] = useState(false);
+  const [hospitals, setHospitals] = useState<Array<{ id: string; name: string; code: string; state: string }>>([]);
+  const [dispatchForm, setDispatchForm] = useState({
+    targetHospitalId: '',
+    quantity: 250,
+    batchNumber: '',
+    cardType: 'STANDARD_MIFARE',
+    notes: '',
+  });
+  const [dispatching, setDispatching] = useState(false);
+
+  // Fetch Hospitals for Dispatch
+  useEffect(() => {
+    async function loadHospitals() {
+      try {
+        const res = await fetch('/api/hospitals?limit=50');
+        if (res.ok) {
+          const data = await res.json();
+          const list = data.facilities || data.hospitals || [];
+          setHospitals(list);
+          if (list.length > 0) {
+            setDispatchForm((prev) => ({ ...prev, targetHospitalId: prev.targetHospitalId || list[0].id }));
+          }
+        }
+      } catch (err) {
+        console.warn('Could not load hospitals for dispatch:', err);
+      }
+    }
+    loadHospitals();
+  }, []);
 
   const showRegistryToast = (msg: string) => {
     setRegistryToast(msg);
@@ -55,27 +87,63 @@ export function RfidNationalRegistryModule() {
 
   const [byStatus, setByStatus] = useState<Record<string, number>>({});
 
-  useEffect(() => {
-    let mounted = true;
-    async function loadInventory() {
-      try {
-        const res = await fetch('/api/rfid/inventory');
-        if (res.ok) {
-          const data = await res.json();
-          if (mounted) {
-            if (data.byStatus) setByStatus(data.byStatus);
-            if (Array.isArray(data.batches)) setBatches(data.batches);
-          }
-        }
-      } catch (err) {
-        console.warn('Live RFID inventory fetch notice:', err);
+  const loadInventory = useCallback(async () => {
+    try {
+      const res = await fetch('/api/rfid/inventory');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.byStatus) setByStatus(data.byStatus);
+        if (Array.isArray(data.batches)) setBatches(data.batches);
       }
+    } catch (err) {
+      console.warn('Live RFID inventory fetch notice:', err);
     }
-    loadInventory();
-    return () => {
-      mounted = false;
-    };
   }, []);
+
+  useEffect(() => {
+    loadInventory();
+  }, [loadInventory]);
+
+  const handleDispatchStock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!dispatchForm.targetHospitalId) {
+      showRegistryToast('Please select a target destination hospital');
+      return;
+    }
+    setDispatching(true);
+    try {
+      const res = await fetch('/api/rfid/stock/dispatch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetHospitalId: dispatchForm.targetHospitalId,
+          quantity: Number(dispatchForm.quantity) || 100,
+          batchNumber: dispatchForm.batchNumber.trim() || undefined,
+          cardType: dispatchForm.cardType,
+          notes: dispatchForm.notes.trim() || undefined,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        showRegistryToast(data.message || `Dispatched ${dispatchForm.quantity} cards successfully!`);
+        setShowDispatchModal(false);
+        setDispatchForm((prev) => ({
+          ...prev,
+          quantity: 250,
+          batchNumber: '',
+          notes: '',
+        }));
+        loadInventory();
+      } else {
+        const err = await res.json();
+        showRegistryToast(`Error: ${err.error?.message || 'Dispatch failed'}`);
+      }
+    } catch {
+      showRegistryToast('Network error dispatching stock batch');
+    } finally {
+      setDispatching(false);
+    }
+  };
 
   const totalCardsInCirculation = batches.reduce((sum, b) => sum + b.totalCards, 0);
   const availableStock = byStatus['AVAILABLE'] || 0;
@@ -185,6 +253,13 @@ export function RfidNationalRegistryModule() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowDispatchModal(true)}
+            className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition-all"
+          >
+            <Truck size={14} />
+            <span>+ Dispatch Stock to Hospital</span>
+          </button>
           <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold font-mono">
             Total Cards: {totalCardsInCirculation.toLocaleString()}
           </span>
@@ -351,6 +426,111 @@ export function RfidNationalRegistryModule() {
         <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700 animate-fade-in text-xs font-semibold">
           <ShieldAlert size={16} className="text-amber-400" />
           <span>{registryToast}</span>
+        </div>
+      )}
+
+      {/* MODAL: DISPATCH STOCK TO HOSPITAL */}
+      {showDispatchModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 text-slate-900 p-6 space-y-4 shadow-2xl animate-scale-in">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center gap-2">
+                <Truck size={18} className="text-blue-600" />
+                <h3 className="font-bold text-sm font-heading">National Stock Dispatch to Hospital</h3>
+              </div>
+              <button onClick={() => setShowDispatchModal(false)} className="text-slate-400 hover:text-slate-600"><X size={16} /></button>
+            </div>
+
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-[11px] text-blue-900">
+              Allocates and transfers blank RFID smart cards from National Central Pool to a specific healthcare facility.
+            </div>
+
+            <form onSubmit={handleDispatchStock} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-[11px] font-semibold mb-1">Destination Hospital Facility *</label>
+                <select
+                  required
+                  value={dispatchForm.targetHospitalId}
+                  onChange={e => setDispatchForm({ ...dispatchForm, targetHospitalId: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 text-slate-900 focus:outline-none"
+                >
+                  <option value="" disabled>Select Target Hospital</option>
+                  {hospitals.map(h => (
+                    <option key={h.id} value={h.id}>
+                      {h.name} ({h.code || 'FACILITY'}) - {h.state}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold mb-1">Quantity of Cards *</label>
+                  <input
+                    type="number"
+                    required
+                    min={10}
+                    max={1000}
+                    step={10}
+                    value={dispatchForm.quantity}
+                    onChange={e => setDispatchForm({ ...dispatchForm, quantity: Number(e.target.value) })}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 font-mono bg-slate-50"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">Max 1,000 cards/dispatch</span>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold mb-1">Chip Technology *</label>
+                  <select
+                    value={dispatchForm.cardType}
+                    onChange={e => setDispatchForm({ ...dispatchForm, cardType: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 bg-slate-50"
+                  >
+                    <option value="STANDARD_MIFARE">Mifare Classic 1K</option>
+                    <option value="MIFARE_DESFIRE">Mifare DESFire EV2</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold mb-1">Batch Shipment Identifier</label>
+                <input
+                  placeholder="Auto-generated if left blank (e.g. DISP-AIIMS-001)"
+                  value={dispatchForm.batchNumber}
+                  onChange={e => setDispatchForm({ ...dispatchForm, batchNumber: e.target.value.toUpperCase() })}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 font-mono bg-slate-50 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold mb-1">Dispatch Notes / Procurement Order</label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Dispatched via NHA Express Courier. AWB-99214."
+                  value={dispatchForm.notes}
+                  onChange={e => setDispatchForm({ ...dispatchForm, notes: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 text-xs"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t">
+                <button
+                  type="button"
+                  onClick={() => setShowDispatchModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={dispatching}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-md flex items-center gap-1.5"
+                >
+                  <Truck size={14} />
+                  <span>{dispatching ? 'Dispatching...' : 'Confirm Dispatch'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

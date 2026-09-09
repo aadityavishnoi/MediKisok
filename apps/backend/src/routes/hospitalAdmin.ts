@@ -528,14 +528,190 @@ hospitalAdminRouter.patch('/kiosks/:code/mode', async (req, res) => {
   });
 });
 
-hospitalAdminRouter.get('/rfid-inventory', async (_req, res) => {
-  res.json({
-    totalAllocated: 2500,
-    availableStock: 1840,
-    issuedToPatients: 610,
-    damagedReturned: 50,
-  });
+hospitalAdminRouter.get('/rfid-inventory', async (req, res, next) => {
+  try {
+    const user = (req as any).user;
+    const requestedHospitalId = (req.query.hospitalId as string) || user?.facilityId;
+
+    let targetHospitalId = requestedHospitalId;
+    if (!targetHospitalId) {
+      const firstHosp = await prisma.hospital.findFirst({ select: { id: true } });
+      targetHospitalId = firstHosp?.id;
+    }
+
+    const whereScope: any = targetHospitalId ? { hospitalId: targetHospitalId } : {};
+
+    const [totalAllocated, availableStock, activeCards, assignedCards, blockedCards, lostCards, retiredCards] = await Promise.all([
+      prisma.rFIDCard.count({ where: whereScope }),
+      prisma.rFIDCard.count({ where: { ...whereScope, cardStatus: 'AVAILABLE' } }),
+      prisma.rFIDCard.count({ where: { ...whereScope, cardStatus: 'ACTIVE' } }),
+      prisma.rFIDCard.count({ where: { ...whereScope, cardStatus: 'ASSIGNED' } }),
+      prisma.rFIDCard.count({ where: { ...whereScope, cardStatus: 'BLOCKED' } }),
+      prisma.rFIDCard.count({ where: { ...whereScope, cardStatus: { in: ['LOST', 'STOLEN'] } } }),
+      prisma.rFIDCard.count({ where: { ...whereScope, cardStatus: 'RETIRED' } }),
+    ]);
+
+    const issuedToPatients = activeCards + assignedCards;
+    const damagedReturned = blockedCards + lostCards + retiredCards;
+
+    // Fetch recent stock transactions / inbound batches
+    const recentStockAudit = await prisma.auditLog.findMany({
+      where: {
+        action: { in: ['STOCK_BATCH_ADDED', 'STOCK_DISPATCHED', 'RFID_CARD_REGISTERED'] },
+        ...(targetHospitalId ? { facilityId: targetHospitalId } : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    });
+
+    res.json({
+      hospitalId: targetHospitalId || 'ALL',
+      totalAllocated,
+      availableStock,
+      issuedToPatients,
+      damagedReturned,
+      recentBatches: recentStockAudit.map((a) => ({
+        id: a.id,
+        action: a.action,
+        timestamp: a.createdAt,
+        metadata: a.metadata,
+      })),
+    });
+  } catch (err) {
+    next(err);
+  }
 });
+
+/**
+ * POST /api/hospital/rfid-inventory/add-stock
+ * Allows Hospital Admin to ingest a new box or batch of physical blank RFID cards into stock.
+ */
+hospitalAdminRouter.post('/rfid-inventory/add-stock', async (req, res, next) => {
+  try {
+    const { quantity = 50, batchNumber, cardType = 'STANDARD_MIFARE', hospitalId } = req.body || {};
+    const count = Math.min(Math.max(Number(quantity) || 1, 1), 500);
+
+    let targetHospitalId = hospitalId;
+    if (!targetHospitalId) {
+      const firstHosp = await prisma.hospital.findFirst({ select: { id: true, code: true } });
+      targetHospitalId = firstHosp?.id;
+    }
+
+    const batchTag = batchNumber || `BATCH-${Date.now().toString(36).toUpperCase()}`;
+
+    // Bulk generate unique Mifare hex UIDs
+    const cardsToCreate = [];
+    const now = new Date();
+    for (let i = 0; i < count; i++) {
+      const randomHex = Math.random().toString(16).substring(2, 10).toUpperCase();
+      cardsToCreate.push({
+        uid: `CARD-${randomHex}`,
+        hospitalId: targetHospitalId,
+        cardType,
+        cardStatus: 'AVAILABLE' as const,
+        active: false,
+        issuedAt: now,
+        cardStatusChangedAt: now,
+      });
+    }
+
+    await prisma.rFIDCard.createMany({
+      data: cardsToCreate,
+      skipDuplicates: true,
+    });
+
+    await recordAudit({
+      actorType: ActorType.ADMIN,
+      actorId: 'hospital-admin-stock-manager',
+      facilityId: targetHospitalId,
+      action: 'STOCK_BATCH_ADDED',
+      entityType: 'RFIDCard',
+      metadata: {
+        batchNumber: batchTag,
+        quantity: count,
+        cardType,
+        addedAt: now.toISOString(),
+      },
+    });
+
+    // Notify all connected admin dashboards via WebSocket
+    wsHub.broadcast({
+      type: 'RFID_STOCK_UPDATED',
+      payload: {
+        hospitalId: targetHospitalId,
+        addedQuantity: count,
+        batchNumber: batchTag,
+        timestamp: now.toISOString(),
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      message: `Successfully added ${count} blank RFID cards to local hospital stock.`,
+      batchNumber: batchTag,
+      cardsAdded: count,
+      hospitalId: targetHospitalId,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /api/hospital/rfid-inventory/request-replenishment
+ * Sends a stock replenishment order to Central Admin.
+ */
+hospitalAdminRouter.post('/rfid-inventory/request-replenishment', async (req, res, next) => {
+  try {
+    const { requestedQuantity = 200, urgency = 'NORMAL', notes, hospitalId } = req.body || {};
+
+    let targetHospitalId = hospitalId;
+    if (!targetHospitalId) {
+      const firstHosp = await prisma.hospital.findFirst({ select: { id: true, name: true } });
+      targetHospitalId = firstHosp?.id;
+    }
+
+    const requestId = `REQ-${Date.now().toString(36).toUpperCase()}`;
+
+    await recordAudit({
+      actorType: ActorType.ADMIN,
+      actorId: 'hospital-admin-inventory',
+      facilityId: targetHospitalId,
+      action: 'STOCK_REPLENISHMENT_REQUESTED',
+      entityType: 'Hospital',
+      entityId: targetHospitalId,
+      metadata: {
+        requestId,
+        requestedQuantity,
+        urgency,
+        notes,
+        requestedAt: new Date().toISOString(),
+      },
+    });
+
+    wsHub.broadcast({
+      type: 'STOCK_REPLENISHMENT_REQUESTED',
+      payload: {
+        requestId,
+        hospitalId: targetHospitalId,
+        requestedQuantity,
+        urgency,
+        notes,
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      requestId,
+      message: `Replenishment request for ${requestedQuantity} RFID cards submitted to Central Procurement.`,
+      urgency,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 
 hospitalAdminRouter.get('/his-integration', async (_req, res) => {
   res.json({

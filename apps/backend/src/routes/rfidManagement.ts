@@ -766,3 +766,111 @@ rfidManagementRouter.post(
   }),
 );
 
+/**
+ * POST /api/rfid/stock/dispatch
+ * Central Admin dispatches an RFID card inventory batch to a destination hospital.
+ */
+rfidManagementRouter.post(
+  '/rfid/stock/dispatch',
+  ...RFID_ROLES,
+  asyncHandler(async (req, res) => {
+    const { targetHospitalId, quantity = 100, batchNumber, cardType = 'STANDARD_MIFARE', notes } = req.body || {};
+    const count = Math.min(Math.max(Number(quantity) || 1, 1), 1000);
+
+    if (!targetHospitalId) {
+      throw Errors.badRequest('targetHospitalId is required for stock dispatch');
+    }
+
+    const hospital = await prisma.hospital.findUnique({
+      where: { id: targetHospitalId },
+      select: { id: true, name: true, code: true, state: true },
+    });
+
+    if (!hospital) {
+      throw Errors.notFound(`Hospital ${targetHospitalId} not found`);
+    }
+
+    const batchTag = batchNumber || `DISP-${hospital.code || 'HOSP'}-${Date.now().toString(36).toUpperCase()}`;
+    const now = new Date();
+
+    // Check if there are MANUFACTURED cards unassigned in central pool
+    const unallocatedCards = await prisma.rFIDCard.findMany({
+      where: { cardStatus: 'MANUFACTURED', hospitalId: null },
+      take: count,
+      select: { id: true },
+    });
+
+    let assignedCount = 0;
+    if (unallocatedCards.length > 0) {
+      const idsToTransfer = unallocatedCards.map((c) => c.id);
+      await prisma.rFIDCard.updateMany({
+        where: { id: { in: idsToTransfer } },
+        data: {
+          hospitalId: targetHospitalId,
+          cardStatus: 'AVAILABLE',
+          cardStatusChangedAt: now,
+        },
+      });
+      assignedCount = idsToTransfer.length;
+    }
+
+    // If remaining needed, generate fresh cards for the batch
+    const remainingToCreate = count - assignedCount;
+    if (remainingToCreate > 0) {
+      const freshCards = [];
+      for (let i = 0; i < remainingToCreate; i++) {
+        const randomHex = Math.random().toString(16).substring(2, 10).toUpperCase();
+        freshCards.push({
+          uid: `CARD-${hospital.code || 'DISP'}-${randomHex}`,
+          hospitalId: targetHospitalId,
+          cardType,
+          cardStatus: 'AVAILABLE' as const,
+          active: false,
+          issuedAt: now,
+          cardStatusChangedAt: now,
+        });
+      }
+      await prisma.rFIDCard.createMany({
+        data: freshCards,
+        skipDuplicates: true,
+      });
+    }
+
+    await recordAudit({
+      actorType: ActorType.ADMIN,
+      actorId: (req as any).user?.sub || 'central-procurement-admin',
+      facilityId: targetHospitalId,
+      action: 'STOCK_DISPATCHED',
+      entityType: 'Hospital',
+      entityId: targetHospitalId,
+      metadata: {
+        batchNumber: batchTag,
+        quantity: count,
+        hospitalName: hospital.name,
+        notes,
+        dispatchedAt: now.toISOString(),
+      },
+    });
+
+    wsHub.broadcast({
+      type: 'RFID_STOCK_UPDATED',
+      payload: {
+        hospitalId: targetHospitalId,
+        addedQuantity: count,
+        batchNumber: batchTag,
+        dispatchedBy: 'CENTRAL_ADMIN',
+        timestamp: now.toISOString(),
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully dispatched ${count} RFID cards to ${hospital.name}.`,
+      batchNumber: batchTag,
+      dispatchedCount: count,
+      hospital: { id: hospital.id, name: hospital.name, code: hospital.code },
+    });
+  }),
+);
+
+
