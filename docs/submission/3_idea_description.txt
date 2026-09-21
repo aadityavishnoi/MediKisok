@@ -33,7 +33,7 @@ Module C - Structured history summary.
 - Physician-facing content is in English/Hindi; patient-facing prompts are spoken in the patient's chosen language.
 Module D - Consent, privacy and ABDM readiness.
 - Consent is recorded before any clinical data collection; history and document routes are blocked until consent exists. Consent decisions and key actions are written to an audit log.
-- RFID cards hold no personal or health data, so a lost card exposes nothing. Doctor and admin access is role-based with token authentication. The kiosk has an idle timeout to protect privacy at a shared device.
+- RFID cards hold no personal or health data, so a lost card exposes nothing. Doctor login uses role-based token authentication; login for the admin portals is on the roadmap. The kiosk has an idle timeout to protect privacy at a shared device.
 - A FHIR R4 interoperability layer maps patient and encounter data to ABDM/NRCeS-style resource profiles. It currently runs in demo mode and is designed to be switched to live ABDM gateway calls once facility registration and credentials are available.
 
 5. ACCESSIBILITY
@@ -62,7 +62,7 @@ Architecture in short: Kiosk and mobile apps -> REST API and WebSocket hub -> cl
 - Human in the loop: every AI-extracted or AI-drafted item is a suggestion for the doctor to verify; OCR items are stored as "needs verification".
 - The system never claims an uncatalogued drug pair is safe; it asks for review.
 - Population-level surveillance signals are labelled as decision support and are never used to diagnose an individual.
-- Full audit trail and role-based access.
+- Audit trail for key actions and role-based doctor login.
 
 10. INNOVATION AND UNIQUENESS
 - First-mile, patient-driven clinical history capture (not just administrative check-in) with document digitisation in a single flow.
@@ -97,6 +97,6 @@ Phase D: vitals pod (BP, SpO2, temperature) on the kiosk, sign-language avatar, 
 15. RISKS AND MITIGATIONS
 - Speech accuracy in noisy wards: touch is always available; noise-robust Indian-language models are planned.
 - OCR errors on handwriting: confidence scores, "needs verification" status and original image shown to the doctor.
-- Data protection: consent-first flow aligned with DPDP Act 2023 principles, minimal data on devices, role-based access, audit logs, and no health data on RFID cards.
+- Data protection: consent-first flow aligned with DPDP Act 2023 principles, minimal data on devices, role-based doctor login (admin-portal login planned), audit logs, and no health data on RFID cards.
 - Clinical correctness: question trees to be reviewed by clinicians; the doctor confirms every summary.
 - Adoption: minimal staff involvement, fits beside existing registration, works on commodity hardware.
