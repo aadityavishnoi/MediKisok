@@ -1,0 +1,102 @@
+MEDIKIOSK - AI-POWERED PRE-CONSULTATION CLINICAL HISTORY AND DOCUMENT DIGITISATION PLATFORM
+Problem Statement: Patient Case-Taking Software (SIH26047), Ministry of Ayush / All India Institute of Ayurveda. Theme: MedTech / BioTech / HealthTech. Category: Software.
+
+1. THE PROBLEM
+1.1 History-taking bottleneck. A well-conducted history yields the correct diagnosis in a large majority of cases (70-80% as per the problem statement). In India's public OPDs, tertiary hospitals register 4,000-10,000 patients a day and consultations often last 2-5 minutes. Within that window the physician must elicit history, examine, read old records, diagnose, counsel and prescribe. The result is under-elicited history, missed comorbidities, repeated questioning at every visit and diagnostic error.
+1.2 AYUSH complexity. Ayurvedic history (Trividha, Ashtavidha and Dashavidha Pariksha - Prakriti, Vikriti, Agni, Koshtha, Ahara-Vihara, Nidana, Samprapti) is far more extensive than allopathic intake and is usually abbreviated for lack of time.
+1.3 Fragmented records. Patients carry paper prescriptions, lab reports and discharge summaries from multiple providers, often handwritten, in different languages and in no order. Nothing digitises, structures and time-orders them before the patient reaches the doctor.
+1.4 ABDM first-mile gap. ABHA IDs and FHIR standards exist, but no patient-facing platform captures structured history and documents before the encounter.
+1.5 Why existing solutions fall short. Registration systems capture only demographics. Mobile apps and chatbots need smartphone literacy and prior enrolment, excluding elderly, rural and first-visit patients. Nurse-led history desks are staff-limited and do not scale to 5,000+ patients a day. Generic scanners store images but do not extract or organise clinical content.
+
+2. PROPOSED SOLUTION
+MediKiosk is a software platform, deployed as a touch-and-voice kiosk plus web and mobile applications, that lets any patient record a comprehensive medical history and digitise existing documents before the consultation, with minimal staff assistance. It produces a structured, editable, physician-ready summary and flags emergencies for immediate triage. The physician remains the sole decision-maker: the system is assistive and never diagnoses or prescribes autonomously.
+
+3. END-TO-END PATIENT JOURNEY (mapped to the problem statement)
+Step 1 - Identify. The patient taps an RFID card (the card stores only a random UID and no health data) or registers with a mobile number and OTP; an ABHA ID can be entered. The patient selects a language and grants consent, with a text-to-speech read-out for low-literacy users.
+Step 2 - Converse. An adaptive interview captures chief complaint, history of present illness, past medical and surgical history, drug and allergy history, family and personal history and review of systems. Every question can be answered by speaking or tapping. Red flags trigger an immediate priority alert.
+Step 3 - Scan. The patient photographs prior prescriptions, lab reports or discharge summaries. OCR extracts medicines with doses, lab values, diagnoses and instructions, which are stored as "needs verification" and added to the patient's medical timeline.
+Step 4 - Summarise and route. A structured summary is generated from the interview and documents and appears on the doctor's screen in real time via WebSockets. A FHIR R4 adapter maps patient and encounter data to ABDM-style resources.
+Step 5 - Consult. The doctor reviews the history in seconds, edits, accepts or rejects the draft, checks prescription safety alerts and spends the consultation on examination, reasoning and counselling.
+
+4. MODULES
+Module A - Conversational multimodal history engine.
+- Clinical question trees are authored as data (JSON) following the structure a physician follows, e.g. for chest pain: onset, location, character, severity, radiation, associated symptoms (SOCRATES-style elicitation). The trees branch on the chief complaint and earlier answers, then continue into common history sections (past history, drugs and allergies, family, personal, review of systems).
+- Dual-mode input: each question offers large touch options and a speak-your-answer button using speech recognition, with text-to-speech prompts. If speech recognition is unavailable in the browser the flow falls back to touch, so the kiosk never blocks.
+- AYUSH mode: an extended tree captures Prakriti, Vikriti, Sara, Samhanana, Pramana, Satmya, Sattva, Ahara Shakti, Vyayama Shakti and Vaya.
+- Red-flag detection: deterministic rules flag options the clinician-author marked urgent (for example severe pain, breathlessness, dizziness) and emergency phrases in free text (for example crushing chest pain, unable to breathe, slurred speech, fainted, heavy bleeding). A critical flag broadcasts a real-time alert to the staff queue. No language model sits in this safety path, so behaviour is predictable and testable.
+Module B - Medical document digitisation.
+- Capture from the kiosk camera or a connected phone camera; a vision-language OCR service extracts the full text and structured entities (medications with dose, frequency and duration; lab tests with values and units; diagnoses; instructions). The service is behind an interface with a fallback path so the kiosk degrades safely if the OCR service is unavailable.
+- Extracted fields carry a confidence score and a verification status; extracted medications are merged into the patient's medication history for the doctor, and a timeline event is created.
+- The original image is stored with the record so the doctor can always check the source.
+Module C - Structured history summary.
+- The summary follows the standard clinical order: chief complaint, HPI, past medical/surgical history, drug and allergy history, family, personal, review of systems, prior investigations. It is a draft that the doctor can edit, accept or reject, and the original draft is preserved for audit.
+- Physician-facing content is in English/Hindi; patient-facing prompts are spoken in the patient's chosen language.
+Module D - Consent, privacy and ABDM readiness.
+- Consent is recorded before any clinical data collection; history and document routes are blocked until consent exists. Consent decisions and key actions are written to an audit log.
+- RFID cards hold no personal or health data, so a lost card exposes nothing. Doctor and admin access is role-based with token authentication. The kiosk has an idle timeout to protect privacy at a shared device.
+- A FHIR R4 interoperability layer maps patient and encounter data to ABDM/NRCeS-style resource profiles. It currently runs in demo mode and is designed to be switched to live ABDM gateway calls once facility registration and credentials are available.
+
+5. ACCESSIBILITY
+Large touch targets, icon-and-picture-led complaint selection, native-script language buttons for 13 Indian languages (English, Hindi, Bengali, Marathi, Telugu, Tamil, Gujarati, Kannada, Malayalam, Punjabi, Odia, Assamese, Urdu with right-to-left support), audio prompts and read-aloud consent, dual voice/touch input, and a zero-training flow. The user interface, consent and prompts are localised in 13 languages; the clinical question bank is authored in English and Hindi and is structured so additional language banks can be added without code changes. Sign-language avatar support is a stretch goal on the roadmap.
+
+6. PATIENT DASHBOARD
+As required, patients get a personal login (mobile number with OTP) on a web portal and an Android app to view their history, reports, prescriptions, appointments, follow-ups and notifications, so their records are stored digitally and reusable at the next visit.
+
+7. HOSPITAL AND SYSTEM PORTALS
+- Doctor dashboard: live priority queue with risk badges, Patient 360 view, document viewer, summary review, prescription writer.
+- Prescription safety: a deterministic engine normalises Indian brand names to generic ingredients and screens for drug-drug interactions, duplicate therapy and allergy cross-reactivity against the NLEM 2022 list, and suggests Jan Aushadhi generic alternatives. Unknown drugs return "review required" instead of "safe".
+- RFID portal: card issue, patient mapping and status management (active, lost, stolen, suspended).
+- Hospital admin: queue load by department, doctor availability, kiosk and reader health.
+- Central admin and regional surveillance: aggregate, population-level outbreak signals to support planning. These never diagnose individuals.
+
+8. TECHNOLOGY STACK AND ARCHITECTURE
+- Frontend: React 18, Vite, TypeScript, Tailwind CSS; Capacitor for the Android patient app.
+- Backend: Node.js, Express, Socket.IO (real-time alerts and queue updates), Prisma ORM, distributed SQL database (CockroachDB, PostgreSQL-compatible), Zod input validation.
+- AI and data: rule-based clinical engine and red-flag registry; pluggable interfaces for speech-to-text, text-to-speech and OCR so engines can be swapped (browser speech today, Bhashini/AI4Bharat models planned); vision-language OCR with fallback; deterministic prescription-safety engine; statistical outbreak forecasting.
+- Hardware: Arduino Nano + MFRC522 (13.56 MHz) RFID reader connected over USB serial; low-cost, off-the-shelf and easy to replicate.
+- Monorepo with shared typed contracts between all apps, automated tests, and cloud deployment.
+Architecture in short: Kiosk and mobile apps -> REST API and WebSocket hub -> clinical engine, OCR and safety services -> database -> doctor, admin and patient portals, with FHIR adapter outward to ABDM.
+
+9. SAFETY AND RESPONSIBLE-AI DESIGN
+- Deterministic emergency triage; language models are not used for safety-critical decisions.
+- Human in the loop: every AI-extracted or AI-drafted item is a suggestion for the doctor to verify; OCR items are stored as "needs verification".
+- The system never claims an uncatalogued drug pair is safe; it asks for review.
+- Population-level surveillance signals are labelled as decision support and are never used to diagnose an individual.
+- Full audit trail and role-based access.
+
+10. INNOVATION AND UNIQUENESS
+- First-mile, patient-driven clinical history capture (not just administrative check-in) with document digitisation in a single flow.
+- Voice + touch on every question, designed for low-literacy and elderly users.
+- Deterministic safety layer separated from generative components.
+- Native AYUSH mode alongside allopathic trees, aligned to a Ministry of Ayush problem.
+- Privacy-by-design RFID identity (no PHI on card) and consent-gated data flow.
+- Beyond intake: prescription safety with Jan Aushadhi alternatives and regional surveillance from the same data pipeline.
+
+11. FEASIBILITY, SCALABILITY AND DEPLOYMENT
+- Runs on commodity hardware (a touchscreen PC or tablet, a camera or phone camera, a USD-10-class RFID reader) and standard web technology, so kiosks can be placed in OPD waiting areas without specialised infrastructure.
+- Stateless API and a distributed database allow multi-hospital, multi-tenant scale; kiosks and readers report heartbeats so the hospital can monitor the fleet.
+- Web-based clients can be updated centrally; the Android app serves patients who prefer their own phones.
+- Integration path with hospital information systems is via REST and FHIR resources, so the platform can sit beside existing registration systems.
+
+12. IMPACT AND BENEFICIARIES
+- Patients: shorter waits, history recorded in their language, records kept digitally, emergencies noticed earlier.
+- Doctors: complete structured history available on arrival, so more of the 2-5 minutes goes to examination and counselling.
+- Hospitals: lower load on nurse and registration staff, better queue prioritisation, digitised records.
+- AYUSH practitioners: practical capture of the extensive Dashavidha Pariksha history.
+- Health system: structured, consented data feeding ABDM and, in aggregate, public-health surveillance.
+
+13. CURRENT STATUS
+A working full-stack prototype has been built: patient kiosk (identification, language, consent, complaint, adaptive history, vitals, document scan), doctor dashboard, RFID portal, hospital and central admin portals, patient web portal, Android patient app, real-time backend, database schema covering patients, sessions, consents, history, documents, OCR jobs, timeline, queues, prescriptions, alerts and interoperability records, and physical RFID reader firmware and bridge. ABDM/FHIR connectivity is currently in demo mode.
+
+14. ROADMAP
+Phase A: integrate Bhashini / AI4Bharat speech models for Indian-language ASR and TTS; extend clinical question banks to all 13 languages; benchmark OCR on real handwritten Indian prescriptions and report accuracy.
+Phase B: live ABDM integration (ABHA verification, consent artefacts, FHIR bundles for Condition, Observation and DocumentReference); HIS/EMR connectors; automatic dating of documents from their content for a true clinical timeline; out-of-range lab-value highlighting.
+Phase C: pilot in an OPD with clinician feedback and time-motion measurement; clinical validation of question trees with AYUSH and allopathic experts.
+Phase D: vitals pod (BP, SpO2, temperature) on the kiosk, sign-language avatar, offline-first mode for low-connectivity sites, state-level rollout.
+
+15. RISKS AND MITIGATIONS
+- Speech accuracy in noisy wards: touch is always available; noise-robust Indian-language models are planned.
+- OCR errors on handwriting: confidence scores, "needs verification" status and original image shown to the doctor.
+- Data protection: consent-first flow aligned with DPDP Act 2023 principles, minimal data on devices, role-based access, audit logs, and no health data on RFID cards.
+- Clinical correctness: question trees to be reviewed by clinicians; the doctor confirms every summary.
+- Adoption: minimal staff involvement, fits beside existing registration, works on commodity hardware.

@@ -1,0 +1,16 @@
+PROBLEM
+In Indian government hospital OPDs, a doctor often has only 2-5 minutes per patient while 4,000-10,000 patients register every day (as stated in the problem statement). History-taking, the most important diagnostic step, is the first thing to be squeezed out. Patients arrive with unorganised paper prescriptions and reports, and AYUSH practitioners cannot complete the extensive Dashavidha Pariksha assessment. Registration systems capture only demographics, mobile apps exclude elderly, rural and low-literacy patients, and nurse-led history desks do not scale.
+
+OUR SOLUTION
+MediKiosk is an AI-assisted clinical intake platform that moves history-taking and record digitisation BEFORE the consultation. A patient identifies with a privacy-safe RFID card (the card stores only a random ID, never health data) or mobile OTP, chooses one of 13 Indian languages, hears and gives consent, and then completes an adaptive clinical interview by speaking or tapping. Emergency symptoms such as severe chest pain with breathlessness are caught by a deterministic, rule-based red-flag engine (no LLM in the safety path) and instantly push the patient to the top of the doctor's live queue. The patient can also scan old prescriptions and lab reports; OCR extracts medicines, doses, lab values and diagnoses, all marked "needs verification" until a human confirms them. The doctor sees a structured, editable summary (chief complaint, HPI, past history, drugs and allergies, family, personal, review of systems, prior investigations) the moment the patient enters, and can accept, amend or reject it. The AI never diagnoses.
+
+KEY FEATURES
+- Voice + touch dual-mode interview with adaptive question trees (chest pain, breathing difficulty, abdominal pain, fever, headache, general) and an extended AYUSH mode (Prakriti, Vikriti, Sara, Samhanana, Pramana, Satmya, Sattva, Ahara Shakti, Vyayama Shakti, Vaya).
+- Consent-first design: no clinical data is collected before consent is recorded; actions are audit-logged; idle-timeout protects the screen at a shared kiosk.
+- Document intelligence: camera capture, OCR, structured extraction, and a per-patient medical timeline.
+- Doctor dashboard with live priority queue, Patient 360 view, and prescription safety checks (drug-drug interactions, duplicate therapy, allergy cross-reactivity, Jan Aushadhi generic alternatives) based on the NLEM 2022 list.
+- FHIR R4 interoperability adapter (Patient, Encounter) prepared for ABHA/ABDM linkage.
+- Patient app and portal with OTP login for records, prescriptions and follow-ups; hospital-admin and central-admin portals for queues, device health and regional disease-surveillance signals.
+
+STATUS AND IMPACT
+A working full-stack prototype exists (kiosk, doctor dashboard, RFID portal, hospital and central admin, patient portal, Android patient app, backend with real-time WebSocket alerts, and Arduino + MFRC522 RFID hardware). The goal is to give doctors a complete, structured history in seconds, so the short consultation is spent on examination, reasoning and counselling, while emergencies are triaged earlier and patient records are digitised at the first mile of the ABDM ecosystem.
